@@ -3,23 +3,26 @@ package main
 import (
 	//"github.com/emicklei/go-restful"
 	//"github.com/emicklei/go-restful/swagger"
+	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
+	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/wsmaterials"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
-	"encoding/json"
 )
 
 var mcurl = ""
 var usr, _ = user.Current()
 
 type ServerOptions struct {
-	Port    int    `long:"port" default:"8080" description:"The port the server listens on"`
-	Address string `long:"address" default:"127.0.0.1" description:"The address to bind to"`
+	AsServer bool   `long:"server" description:"Run as webserver"`
+	Port     int    `long:"port" default:"8080" description:"The port the server listens on"`
+	Address  string `long:"address" default:"127.0.0.1" description:"The address to bind to"`
 }
 
 type ProjectOptions struct {
@@ -50,7 +53,7 @@ func initialize() {
 }
 
 type MaterialsWebsiteInfo struct {
-	Version string `json:"version"`
+	Version     string `json:"version"`
 	Description string `json:"description"`
 }
 
@@ -95,6 +98,24 @@ func setup() {
 	}
 }
 
+func listProjects() {
+	user, err := materials.CurrentUser()
+	if err != nil {
+		return
+	}
+	for _, p := range user.Projects {
+		fmt.Printf("%s, %s\n", p.Name, p.Directory)
+	}
+}
+
+func runWebServer() {
+	wsContainer := wsmaterials.NewRegisteredServicesContainer()
+	http.Handle("/", wsContainer)
+	dir := http.Dir("/home/gtarcea/GIT/prisms/materialscommons.org/website")
+	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
+	http.ListenAndServe(":8081", nil)
+}
+
 func main() {
 	var opts Options
 	_, err := flags.Parse(&opts)
@@ -108,5 +129,13 @@ func main() {
 
 	if opts.Initialize {
 		initialize()
+	}
+
+	if opts.Project.List {
+		listProjects()
+	}
+
+	if opts.Server.AsServer {
+		runWebServer()
 	}
 }
