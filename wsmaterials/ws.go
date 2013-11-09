@@ -2,7 +2,6 @@ package wsmaterials
 
 import (
 	"github.com/emicklei/go-restful"
-	"fmt"
 )
 
 func NewRegisteredServicesContainer() *restful.Container {
@@ -13,12 +12,4 @@ func NewRegisteredServicesContainer() *restful.Container {
 	}
 
 	return wsContainer
-}
-
-func JsonpFilter(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-	//callback := req.Request.FormValue("callback")
-	fmt.Println("before ProcessFilter")
-	chain.ProcessFilter(req, resp)
-	fmt.Println("after ProcessFilter")
-	fmt.Println(resp)
 }
