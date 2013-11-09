@@ -29,13 +29,17 @@ func CurrentUser() (*User, error) {
 	return &usr, nil
 }
 
+func (u *User) ReloadProjects() {
+	u.loadProjects()
+}
+
 func (u *User) loadProjects() {
 	projectsFile, err := os.Open(u.projectsFile())
 	if err != nil {
 		return
 	}
 	defer projectsFile.Close()
-	
+
 	projects := []Project{}
 	scanner := bufio.NewScanner(projectsFile)
 	for scanner.Scan() {
@@ -45,10 +49,6 @@ func (u *User) loadProjects() {
 		}
 	}
 	u.Projects = projects
-}
-
-func (u *User) ReloadProjects() {
-	u.loadProjects()
 }
 
 func (u *User) projectsFile() string {
