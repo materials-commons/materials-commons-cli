@@ -20,36 +20,35 @@ type User struct {
 
 func CurrentUser() (*User, error) {
 	u, err := user.Current()
-
 	if err != nil {
 		return nil, err
 	}
 
-	usr := User{
-		user: u,
-	}
-
+	usr := User{user: u}
 	usr.loadProjects()
-
 	return &usr, nil
 }
 
 func (u *User) loadProjects() {
 	projectsFile, err := os.Open(u.projectsFile())
-
 	if err != nil {
 		return
 	}
-
 	defer projectsFile.Close()
-
+	
+	projects := []Project{}
 	scanner := bufio.NewScanner(projectsFile)
 	for scanner.Scan() {
 		splitLine := strings.Split(scanner.Text(), "|")
 		if len(splitLine) == 2 {
-			u.Projects = append(u.Projects, Project{splitLine[0], splitLine[1]})
+			projects = append(projects, Project{splitLine[0], splitLine[1]})
 		}
 	}
+	u.Projects = projects
+}
+
+func (u *User) ReloadProjects() {
+	u.loadProjects()
 }
 
 func (u *User) projectsFile() string {
