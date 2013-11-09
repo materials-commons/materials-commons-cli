@@ -1,10 +1,10 @@
 package wsmaterials
 
 import (
+	"fmt"
 	"github.com/emicklei/go-restful"
 	"github.com/materials-commons/materials"
 	"net/http"
-	"fmt"
 )
 
 type ProjectResource struct {
@@ -31,7 +31,7 @@ func (p ProjectResource) register(container *restful.Container) {
 		Doc("list all projects").
 		Writes([]materials.Project{}))
 
-	ws.Route(ws.GET("/{project-name}").To(p.getProject).
+	ws.Route(ws.GET("/{project-name}").Filter(JsonpFilter).To(p.getProject).
 		Doc("Retrieve a particular project").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
 		Writes(materials.Project{}))
@@ -44,7 +44,6 @@ func (p ProjectResource) register(container *restful.Container) {
 }
 
 func (p ProjectResource) allProjects(request *restful.Request, response *restful.Response) {
-	fmt.Println("allProjects")
 	if len(p.user.Projects) == 0 {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotFound, "User has no projects.")
@@ -54,6 +53,16 @@ func (p ProjectResource) allProjects(request *restful.Request, response *restful
 }
 
 func (p ProjectResource) getProject(request *restful.Request, response *restful.Response) {
+	projectName := request.PathParameter("project-name")
+	for _, p := range p.user.Projects {
+		if p.Name == projectName {
+			response.WriteEntity(p)
+			return
+		}
+	}
+
+	response.AddHeader("Content-Type", "text/plain")
+	response.WriteErrorString(http.StatusNotFound, fmt.Sprintf("Project not found: %s", projectName))
 }
 
 func (p ProjectResource) getProjectTree(request *restful.Request, response *restful.Response) {
