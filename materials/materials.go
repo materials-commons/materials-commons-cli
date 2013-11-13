@@ -99,12 +99,12 @@ func setup() {
 }
 
 func listProjects() {
-	user, err := materials.CurrentUser()
+	projects, err := materials.CurrentUserProjects()
 	if err != nil {
 		return
 	}
-	for _, p := range user.Projects {
-		fmt.Printf("%s, %s\n", p.Name, p.Directory)
+	for _, p := range projects.Projects() {
+		fmt.Printf("%s, %s\n", p.Name, p.Path)
 	}
 }
 
