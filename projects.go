@@ -171,10 +171,18 @@ func (p *MaterialsProjects) writeToProjectsFile(projects []Project) error {
 // Exists returns true if there is a project matching
 // the given Name.
 func (p *MaterialsProjects) Exists(projectName string) bool {
+	_, found := p.Find(projectName)
+	return found
+}
+
+// Find returns (Project, true) if the project is found otherwise
+// it returns (Project{}, false)
+func (p *MaterialsProjects) Find(projectName string) (Project, bool) {
 	for _, project := range p.projects {
 		if project.Name == projectName {
-			return true
+			return project, true
 		}
 	}
-	return false
+
+	return Project{}, false
 }
