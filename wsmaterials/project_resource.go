@@ -69,77 +69,90 @@ func (p ProjectResource) getProject(request *restful.Request, response *restful.
 	response.WriteErrorString(http.StatusNotFound, fmt.Sprintf("Project not found: %s", projectName))
 }
 
-type ditem struct {
-	Id          string   `json:"id"`
-	Name        string   `json:"name"`
-	Displayname string   `json:"displayname"`
-	Dtype       string   `json:"type"`
-	Children    []*ditem `json:"children"`
-}
-
 func (p ProjectResource) getProjectTree(request *restful.Request, response *restful.Response) {
+	type ditem struct {
+		Id          string   `json:"id"`
+		Name        string   `json:"name"`
+		Displayname string   `json:"displayname"`
+		Dtype       string   `json:"type"`
+		Children    []*ditem `json:"children"`
+	}
+	
 	dirs := make(map[string]*ditem)
 	var currentDir *ditem
 	var topLevelDirs []*ditem
 	projectName := request.PathParameter("project-name")
 	project, found := p.Find(projectName)
 
-	if found {
+	createTopLevelEntry := func(path string) {
+		item := &ditem{
+			Id:          path,
+			Name:        path,
+			Displayname: path,
+			Dtype:       "datadir",
+			Children:    []*ditem{},
+		}
 
+		dirs[path] = item
+		currentDir = item
+		topLevelDirs = append(topLevelDirs, item)
+	}
+
+	// addChild adds a child to the currentDir. If currentDir
+	// is different than the childs parent it first updates
+	// currentDir to the ditem for the parent path.
+	addChild := func(path string, info os.FileInfo) {
+		parent := filepath.Dir(path)
+		d, found := dirs[parent]
+
+		// There should always be a parent
+		if !found {
+			panic("d should not be null")
+		}
+
+		// Create the ditem
+		item := ditem{
+			Id:          path,
+			Name:        path,
+			Displayname: filepath.Base(path),
+			Children:    []*ditem{},
+		}
+
+		// What type of entry is this?
+		if info.IsDir() {
+			item.Dtype = "datadir"
+			dirs[path] = &item
+		} else {
+			item.Dtype = "datafile"
+		}
+
+		// Update the currentDir if needed
+		if currentDir.Name != parent {
+			currentDir = d
+		}
+
+		// Append new entry to the currentDir list of children
+		currentDir.Children = append(currentDir.Children, &item)		
+	}
+	
+	if found {
 		filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
 			if path == project.Path {
-				item := &ditem{
-					Id:          path,
-					Name:        path,
-					Displayname: path,
-					Dtype:       "datadir",
-					Children:    []*ditem{},
-				}
-				dirs[path] = item
-				currentDir = item
-				topLevelDirs = append(topLevelDirs, item)
+				createTopLevelEntry(path)
 			} else {
-				parent := filepath.Dir(path)
-				d, found := dirs[parent]
-				if !found {
-					panic("d should not be null")
-				}
-				item := ditem{
-					Id:          path,
-					Name:        path,
-					Displayname: filepath.Base(path),
-					Children:    []*ditem{},
-				}
-				if info.IsDir() {
-					item.Dtype = "datadir"
-					dirs[path] = &item
-				} else {
-					item.Dtype = "datafile"
-				}
-
-				if currentDir.Name != parent {
-					currentDir = d
-				}
-				currentDir.Children = append(currentDir.Children, &item)
+				addChild(path, info)
 			}
 			return nil
 		})
 
 		response.WriteEntity(topLevelDirs)
-	}
-
-	response.AddHeader("Content-Type", "text/plain")
-	response.WriteErrorString(http.StatusNotFound, fmt.Sprintf("Project not found: %s", projectName))
-}
-
-func printTopLevel(ditems []*ditem) {
-	for _, item := range ditems {
-		fmt.Println(*item)
-		for _, item2 := range item.Children {
-			printTopLevel(item2.Children)
-		}
+	} else {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusNotFound,
+			fmt.Sprintf("Project not found: %s", projectName))
 	}
 }
+
 
 func (p *ProjectResource) newProject(request *restful.Request, response *restful.Response) {
 	project := new(materials.Project)
