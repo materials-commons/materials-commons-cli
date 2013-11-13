@@ -2,6 +2,7 @@ package materials
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -9,10 +10,27 @@ import (
 	"path/filepath"
 )
 
-func (p Project) UploadProject() error {
+func (p Project) Upload() error {
+	err := createProject(p.Name)
+	if err != nil {
+		return err
+	}
+
 	filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			createDataDir(p.Name, p.Path, path)
+		}
+
 		return nil
 	})
+	return nil
+}
+
+func createDataDir(projectName string, projectPath string, dirPath string) {
+	fmt.Printf("Create datadir: %s for project %s with project path %s\n", dirPath, projectName, projectPath)
+}
+
+func createProject(projectName string) error {
 	return nil
 }
 
