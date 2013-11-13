@@ -31,6 +31,7 @@ type ProjectOptions struct {
 	Add       bool   `long:"add" description:"Add the project to the project config file"`
 	Delete    bool   `long:"delete" description:"Delete the project from the project config file"`
 	List      bool   `long:"list" description:"List all known projects and their locations"`
+	Upload    bool   `long:"upload" description:"Uploads a new project. Cannot be used on existing projects"`
 }
 
 type Options struct {
@@ -116,6 +117,12 @@ func runWebServer() {
 	http.ListenAndServe(":8081", nil)
 }
 
+func uploadProject(projectName string) {
+	projects, _ := materials.CurrentUserProjects()
+	project, _ := projects.Find(projectName)
+	project.Upload()
+}
+
 func main() {
 	var opts Options
 	_, err := flags.Parse(&opts)
@@ -137,5 +144,9 @@ func main() {
 
 	if opts.Server.AsServer {
 		runWebServer()
+	}
+
+	if opts.Project.Upload {
+		uploadProject(opts.Project.Project)
 	}
 }
