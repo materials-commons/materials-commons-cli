@@ -22,13 +22,13 @@ type Project struct {
 
 // Projects contains a list of user projects and information that
 // is needed by the methods to load the projects file.
-type Projects struct {
+type MaterialsProjects struct {
 	dir      string
 	projects []Project
 }
 
 // CurrentUserProjects retrieves the projects for the currently logged in user.
-func CurrentUserProjects() (*Projects, error) {
+func CurrentUserProjects() (*MaterialsProjects, error) {
 	u, err := user.Current()
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func CurrentUserProjects() (*Projects, error) {
 }
 
 // ProjectsForUser retrieves the projects for the named user.
-func ProjectsForUser(username string) (*Projects, error) {
+func ProjectsForUser(username string) (*MaterialsProjects, error) {
 	u, err := user.Lookup(username)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func ProjectsForUser(username string) (*Projects, error) {
 
 // ProjectsFromHome retrieves the projects located in the directory
 // pointed at by the HOME environment variable.
-func ProjectsFromHome() (*Projects, error) {
+func ProjectsFromHome() (*MaterialsProjects, error) {
 	home := os.Getenv("HOME")
 	if home == "" {
 		return nil, errors.New("HOME Environment variable is undefined")
@@ -58,26 +58,29 @@ func ProjectsFromHome() (*Projects, error) {
 // ProjectsFrom retrieves the projects from the specified directory. The
 // path given cannot contain the .materials subdirectory. A .materials
 // subdirectory must exist in the path.
-func ProjectsFrom(dir string) (*Projects, error) {
+func ProjectsFrom(dir string) (*MaterialsProjects, error) {
 	return loadProjectsFrom(dir)
 }
 
 // Load projects using the specified directory as a base.
 // The projects file is located in {dir}/.materials/projects.
-func loadProjectsFrom(dir string) (*Projects, error) {
-	userProjects := Projects{dir: dir}
+func loadProjectsFrom(dir string) (*MaterialsProjects, error) {
+	userProjects := MaterialsProjects{dir: dir}
 	err := userProjects.loadProjects()
+	if err != nil {
+		return nil, err
+	}
 	return &userProjects, err
 }
 
 // Reload re-reads and loads the projects file.
-func (p *Projects) Reload() error {
+func (p *MaterialsProjects) Reload() error {
 	return p.loadProjects()
 }
 
 // Reads the projects file, parses its contents and loads it into
 // the Projects struct.
-func (p *Projects) loadProjects() error {
+func (p *MaterialsProjects) loadProjects() error {
 	projectsFile, err := os.Open(p.projectsFile())
 	if err != nil {
 		return err
@@ -98,17 +101,17 @@ func (p *Projects) loadProjects() error {
 
 // Creates the path to the projects file:
 // {dir}/.materias/projects
-func (p *Projects) projectsFile() string {
+func (p *MaterialsProjects) projectsFile() string {
 	return filepath.Join(p.dir, ".materials", "projects")
 }
 
 // Projects returns the list of loaded projects.
-func (p *Projects) Projects() []Project {
+func (p *MaterialsProjects) Projects() []Project {
 	return p.projects
 }
 
 // Add adds a new project and updates the projects file.
-func (p *Projects) Add(proj Project) error {
+func (p *MaterialsProjects) Add(proj Project) error {
 	if p.Exists(proj.Name) {
 		return errors.New(fmt.Sprintf("Project already exists: %s", proj.Name))
 	}
@@ -117,7 +120,7 @@ func (p *Projects) Add(proj Project) error {
 }
 
 // Remove removes a project and updates the projects file.
-func (p *Projects) Remove(projectName string) error {
+func (p *MaterialsProjects) Remove(projectName string) error {
 	projects, projectsUpdated := p.projectsExceptFor(projectName)
 
 	// We found the entry to remove. Thus we need to
@@ -137,7 +140,7 @@ func (p *Projects) Remove(projectName string) error {
 // projectsExceptFor returns a new list of projects except for the project
 // matching projectName. It returns true if it found a project matching
 // projectName.
-func (p *Projects) projectsExceptFor(projectName string) ([]Project, bool) {
+func (p *MaterialsProjects) projectsExceptFor(projectName string) ([]Project, bool) {
 	projects := []Project{}
 	found := false
 	for _, project := range p.projects {
@@ -152,7 +155,7 @@ func (p *Projects) projectsExceptFor(projectName string) ([]Project, bool) {
 
 // writeToProjectsFile overwrites the projects file with the list
 // of projects.
-func (p *Projects) writeToProjectsFile(projects []Project) error {
+func (p *MaterialsProjects) writeToProjectsFile(projects []Project) error {
 	file, err := os.Create(p.projectsFile())
 	if err != nil {
 		return err
@@ -167,7 +170,7 @@ func (p *Projects) writeToProjectsFile(projects []Project) error {
 
 // Exists returns true if there is a project matching
 // the given Name.
-func (p *Projects) Exists(projectName string) bool {
+func (p *MaterialsProjects) Exists(projectName string) bool {
 	for _, project := range p.projects {
 		if project.Name == projectName {
 			return true
