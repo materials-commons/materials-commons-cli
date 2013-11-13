@@ -77,7 +77,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 		Dtype       string   `json:"type"`
 		Children    []*ditem `json:"children"`
 	}
-	
+
 	dirs := make(map[string]*ditem)
 	var currentDir *ditem
 	var topLevelDirs []*ditem
@@ -132,9 +132,9 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 		}
 
 		// Append new entry to the currentDir list of children
-		currentDir.Children = append(currentDir.Children, &item)		
+		currentDir.Children = append(currentDir.Children, &item)
 	}
-	
+
 	if found {
 		filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
 			if path == project.Path {
@@ -152,7 +152,6 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 			fmt.Sprintf("Project not found: %s", projectName))
 	}
 }
-
 
 func (p *ProjectResource) newProject(request *restful.Request, response *restful.Response) {
 	project := new(materials.Project)
