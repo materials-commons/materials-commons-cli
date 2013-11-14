@@ -12,5 +12,5 @@ fmt:
 	go fmt
 	(cd wsmaterials; go fmt)
 	(cd materials; go fmt)
-	(cd website; go fmt)
+	(cd site; go fmt)
 	(cd desktop; go fmt)
