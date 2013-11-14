@@ -20,7 +20,7 @@ type Project struct {
 	Path string `json:"path" xml:"path"`
 }
 
-// Projects contains a list of user projects and information that
+// MaterialsProjects contains a list of user projects and information that
 // is needed by the methods to load the projects file.
 type MaterialsProjects struct {
 	dir      string
@@ -92,7 +92,10 @@ func (p *MaterialsProjects) loadProjects() error {
 	for scanner.Scan() {
 		splitLine := strings.Split(scanner.Text(), "|")
 		if len(splitLine) == 2 {
-			projects = append(projects, Project{splitLine[0], splitLine[1]})
+			projects = append(projects, Project{
+				Name: strings.TrimSpace(splitLine[0]),
+				Path: strings.TrimSpace(splitLine[1]),
+			})
 		}
 	}
 	p.projects = projects
@@ -162,7 +165,7 @@ func (p *MaterialsProjects) writeToProjectsFile(projects []Project) error {
 	}
 	defer file.Close()
 	for _, project := range projects {
-		projectLine := fmt.Sprintf("%s|%s\n", project.Name, project.Path)
+		projectLine := fmt.Sprintf("%s|%s\n", strings.TrimSpace(project.Name), strings.TrimSpace(project.Path))
 		file.WriteString(projectLine)
 	}
 	return nil
