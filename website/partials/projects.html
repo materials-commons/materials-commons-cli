@@ -1,0 +1,15 @@
+<div class="row">
+    <div class="col-md-10 col-md-offset-2">
+        <h4>Projects</h4>
+        <ul>
+            <li ng-repeat="project in projects">{{ project.name }}, {{ project.path }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 col-md-offset-2">
+        <h4>Tree for project a</h4>
+        <ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id" display-attr="displayname"></ngtree>
+    </div>
+</div>
