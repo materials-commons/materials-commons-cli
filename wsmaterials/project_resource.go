@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type ProjectResource struct {
@@ -86,7 +87,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 
 	createTopLevelEntry := func(path string) {
 		item := &ditem{
-			Id:          path,
+			Id:          strings.Replace(path, "/", "_", -1),
 			Name:        path,
 			Displayname: path,
 			Dtype:       "datadir",
@@ -112,7 +113,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 
 		// Create the ditem
 		item := ditem{
-			Id:          path,
+			Id:          strings.Replace(strings.Replace(path, "/", "_", -1), ".", "_", -1),
 			Name:        path,
 			Displayname: filepath.Base(path),
 			Children:    []*ditem{},
