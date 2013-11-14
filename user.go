@@ -15,7 +15,7 @@ import (
 type User struct {
 	Username string
 	Apikey   string
-	path string
+	path     string
 }
 
 // NewCurrentUser creates a new User, and looks up
