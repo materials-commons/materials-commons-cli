@@ -112,7 +112,7 @@ func listProjects() {
 func runWebServer() {
 	wsContainer := wsmaterials.NewRegisteredServicesContainer()
 	http.Handle("/", wsContainer)
-	dir := http.Dir("/home/gtarcea/GIT/prisms/materialscommons.org/website")
+	dir := http.Dir("../website")
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	http.ListenAndServe(":8081", nil)
 }
