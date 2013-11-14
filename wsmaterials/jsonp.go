@@ -6,28 +6,28 @@ import (
 	"net/http"
 )
 
-type JsonpResponseWriter struct {
+type jsonpResponseWriter struct {
 	writer   http.ResponseWriter
 	callback string
 }
 
-func (j *JsonpResponseWriter) Header() http.Header {
+func (j *jsonpResponseWriter) Header() http.Header {
 	return j.writer.Header()
 }
 
-func (j *JsonpResponseWriter) WriteHeader(status int) {
+func (j *jsonpResponseWriter) WriteHeader(status int) {
 	j.writer.WriteHeader(status)
 }
 
-func (j *JsonpResponseWriter) Write(bytes []byte) (int, error) {
+func (j *jsonpResponseWriter) Write(bytes []byte) (int, error) {
 	if j.callback != "" {
 		bytes = []byte(fmt.Sprintf("%s(%s)", j.callback, bytes))
 	}
 	return j.writer.Write(bytes)
 }
 
-func NewJsonpResponseWriter(httpWriter http.ResponseWriter, callback string) *JsonpResponseWriter {
-	jsonpResponseWriter := new(JsonpResponseWriter)
+func newJsonpResponseWriter(httpWriter http.ResponseWriter, callback string) *jsonpResponseWriter {
+	jsonpResponseWriter := new(jsonpResponseWriter)
 	jsonpResponseWriter.writer = httpWriter
 	jsonpResponseWriter.callback = callback
 	return jsonpResponseWriter
@@ -35,7 +35,7 @@ func NewJsonpResponseWriter(httpWriter http.ResponseWriter, callback string) *Js
 
 func JsonpFilter(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	callback := req.Request.FormValue("callback")
-	jsonpResponseWriter := NewJsonpResponseWriter(resp.ResponseWriter, callback)
+	jsonpResponseWriter := newJsonpResponseWriter(resp.ResponseWriter, callback)
 	resp.ResponseWriter = jsonpResponseWriter
 	chain.ProcessFilter(req, resp)
 }
