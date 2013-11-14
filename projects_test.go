@@ -16,7 +16,7 @@ func TestNonExistantUser(t *testing.T) {
 func TestProjectsFrom(t *testing.T) {
 	projects, err := ProjectsFrom("test_data")
 	if err != nil {
-		t.Fatalf("TsetProjectsFrom failed loading the test_data projects\n")
+		t.Fatalf("TestProjectsFrom failed loading the test_data projects\n")
 	}
 
 	if len(projects.Projects()) != 2 {
