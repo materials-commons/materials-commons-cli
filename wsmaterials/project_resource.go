@@ -87,7 +87,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 
 	createTopLevelEntry := func(path string) {
 		item := &ditem{
-			Id:          strings.Replace(path, "/", "_", -1),
+			Id:          path2Id(path),
 			Name:        path,
 			Displayname: path,
 			Dtype:       "datadir",
@@ -113,7 +113,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 
 		// Create the ditem
 		item := ditem{
-			Id:          strings.Replace(strings.Replace(path, "/", "_", -1), ".", "_", -1),
+			Id:          path2Id(path),
 			Name:        path,
 			Displayname: filepath.Base(path),
 			Children:    []*ditem{},
@@ -152,6 +152,10 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 		response.WriteErrorString(http.StatusNotFound,
 			fmt.Sprintf("Project not found: %s", projectName))
 	}
+}
+
+func path2Id(path string) string {
+	return strings.Replace(strings.Replace(path, "/", "_", -1), ".", "_", -1)
 }
 
 func (p *ProjectResource) newProject(request *restful.Request, response *restful.Response) {
