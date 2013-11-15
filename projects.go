@@ -16,8 +16,9 @@ import (
 // directory of the project. The path is the full path to
 // the project excluding the name.
 type Project struct {
-	Name string `json:"name" xml:"name"`
-	Path string `json:"path" xml:"path"`
+	Name   string `json:"name" xml:"name"`
+	Path   string `json:"path" xml:"path"`
+	Status string `json:"status" xml:"status"`
 }
 
 // MaterialsProjects contains a list of user projects and information that
@@ -91,10 +92,11 @@ func (p *MaterialsProjects) loadProjects() error {
 	scanner := bufio.NewScanner(projectsFile)
 	for scanner.Scan() {
 		splitLine := strings.Split(scanner.Text(), "|")
-		if len(splitLine) == 2 {
+		if len(splitLine) == 3 {
 			projects = append(projects, Project{
-				Name: strings.TrimSpace(splitLine[0]),
-				Path: strings.TrimSpace(splitLine[1]),
+				Name:   strings.TrimSpace(splitLine[0]),
+				Path:   strings.TrimSpace(splitLine[1]),
+				Status: strings.TrimSpace(splitLine[2]),
 			})
 		}
 	}
@@ -165,7 +167,10 @@ func (p *MaterialsProjects) writeToProjectsFile(projects []Project) error {
 	}
 	defer file.Close()
 	for _, project := range projects {
-		projectLine := fmt.Sprintf("%s|%s\n", strings.TrimSpace(project.Name), strings.TrimSpace(project.Path))
+		projectLine := fmt.Sprintf("%s|%s|%s\n",
+			strings.TrimSpace(project.Name),
+			strings.TrimSpace(project.Path),
+			strings.TrimSpace(project.Status))
 		file.WriteString(projectLine)
 	}
 	return nil

@@ -7,20 +7,32 @@ function ProjectsController($scope, Restangular, $http) {
     $scope.projectsData = [];
     var allProjects = Restangular.all('projects');
     allProjects.getList().then(function(projects) {
-        angular.forEach(projects, function(project) {
-            $scope.projectsData.push({Name: project.name, Path: project.path, Status: "Unloaded"})
-        });
-//        console.dir($scope.projects);
-//        if (!$scope.$$phase) {
-//            $scope.$apply()
-//        }
+        $scope.projects = projects;
     });
 
     $scope.selected = [];
 
+    $scope.statusButtonName = function(status) {
+        if (status == "Unloaded") {
+            return "Upload"
+        }
+        return status;
+    }
+
+    $scope.statusButtonAction = function(val) {
+        console.log("uploading...");
+        console.dir(val);
+    }
+
     $scope.projectGridOptions = {
-        data: 'projectsData',
+        data: 'projects',
         multiSelect: false,
+        columnDefs: [
+            {field: 'name', displayName: 'Name'},
+            {field: 'path', displayName: 'Path'},
+            {field: 'status', displayName: 'Status',
+                cellTemplate:'<div>{{ row.entity[col.field] }}  <button ng-click="statusButtonAction(row.entity)">{{ statusButtonName(row.entity[col.field]) }}</button></div>'}
+        ],
         selectedItems: $scope.selected,
         afterSelectionChange: function() {
             //console.dir($scope.selected);

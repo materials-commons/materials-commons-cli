@@ -50,7 +50,7 @@ func TestReadCorruptedProjectsFile(t *testing.T) {
 
 func TestProjectAddDuplicate(t *testing.T) {
 	p, _ := ProjectsFrom("test_data")
-	err := p.Add(Project{Name: "proj1", Path: "/tmp"})
+	err := p.Add(Project{Name: "proj1", Path: "/tmp", Status: "Unloaded"})
 	if err == nil {
 		t.Fatalf("Duplicate project was added\n")
 	}
@@ -67,7 +67,7 @@ func TestProjectAddDuplicate(t *testing.T) {
 
 func TestProjectAdd(t *testing.T) {
 	p, _ := ProjectsFrom("test_data")
-	err := p.Add(Project{Name: "new proj", Path: "/tmp"})
+	err := p.Add(Project{Name: "new proj", Path: "/tmp", Status: "Unloaded"})
 	if err != nil {
 		t.Fatalf("Add failed to add new project\n")
 	}
