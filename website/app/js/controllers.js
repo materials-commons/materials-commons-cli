@@ -1,28 +1,29 @@
-
 function HomeController($scope) {
-
+    'use strict';
 }
 
 function ProjectsController($scope, Restangular, $http) {
+    'use strict';
+
     $scope.projectsData = [];
     var allProjects = Restangular.all('projects');
-    allProjects.getList().then(function(projects) {
+    allProjects.getList().then(function (projects) {
         $scope.projects = projects;
     });
 
     $scope.selected = [];
 
-    $scope.statusButtonName = function(status) {
-        if (status == "Unloaded") {
-            return "Upload"
+    $scope.statusButtonName = function (status) {
+        if (status === "Unloaded") {
+            return "Upload";
         }
         return status;
-    }
+    };
 
-    $scope.statusButtonAction = function(val) {
+    $scope.statusButtonAction = function (val) {
         console.log("uploading...");
         console.dir(val);
-    }
+    };
 
     $scope.projectGridOptions = {
         data: 'projects',
@@ -31,15 +32,15 @@ function ProjectsController($scope, Restangular, $http) {
             {field: 'name', displayName: 'Name'},
             {field: 'path', displayName: 'Path'},
             {field: 'status', displayName: 'Status',
-                cellTemplate:'<div>{{ row.entity[col.field] }}  <button ng-click="statusButtonAction(row.entity)">{{ statusButtonName(row.entity[col.field]) }}</button></div>'}
+                cellTemplate: '<div>{{ row.entity[col.field] }}  <button ng-click="statusButtonAction(row.entity)">{{ statusButtonName(row.entity[col.field]) }}</button></div>'}
         ],
         selectedItems: $scope.selected,
-        afterSelectionChange: function() {
+        afterSelectionChange: function () {
             //console.dir($scope.selected);
         }
     };
 
-    Restangular.one("projects", "a").customGET("tree").then(function(tree) {
+    Restangular.one("projects", "a").customGET("tree").then(function (tree) {
         $scope.projectTree = tree;
     });
 }
