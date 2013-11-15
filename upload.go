@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func (p Project) Upload() error {
@@ -31,7 +32,13 @@ func createDataDir(projectName string, projectPath string, dirPath string) {
 }
 
 func createProject(projectName string) error {
-	return nil
+	//	user := NewCurrentUser()
+	json :=`{"name":"` + projectName + `", "description":"Newly created project"}`
+	b := strings.NewReader(json)
+	_, err := http.Post("http://localhost:5000/projects?apikey=4a3ec8f43cc511e3ba368851fb4688d4",
+		"application/json", b)
+
+	return err
 }
 
 func newFileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {

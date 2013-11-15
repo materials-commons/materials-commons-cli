@@ -18,6 +18,7 @@ import (
 
 var mcurl = ""
 var usr, _ = user.Current()
+//var user = NewCurrentUser()
 
 type ServerOptions struct {
 	AsServer bool   `long:"server" description:"Run as webserver"`
