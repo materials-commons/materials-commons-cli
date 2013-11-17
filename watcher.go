@@ -27,7 +27,7 @@ func NewRecursiveWatcher(path string) (*RecursiveWatcher, error) {
 
 	rWatcher := &RecursiveWatcher{Watcher: watcher}
 	rWatcher.Files = make(chan string, 10)
-	rWatcher.Folders = make(chan string, len(folder))
+	rWatcher.Folders = make(chan string, len(folders))
 
 	for _, folder := range folders {
 		rWatcher.AddFolder(folder)
@@ -71,7 +71,7 @@ func (watcher *RecursiveWatcher) Run() {
 }
 
 func Subfolders(path string) (paths []string) {
-	filepath.Walk(path, func(subpath, info os.FileInfo, err error) error {
+	filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
