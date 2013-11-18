@@ -10,8 +10,14 @@ import (
 	"strings"
 )
 
+type ProjectFileStatus struct {
+	FilePath string `json:"filepath"`
+	Status   string `json:"status"`
+}
+
 type ProjectResource struct {
 	*materials.MaterialsProjects
+	events []ProjectFileStatus
 }
 
 func newProjectResource(container *restful.Container) error {
@@ -19,9 +25,44 @@ func newProjectResource(container *restful.Container) error {
 	if err != nil {
 		return err
 	}
-	projectResource := ProjectResource{p}
+	projectResource := ProjectResource{
+		MaterialsProjects: p,
+		events:            make([]ProjectFileStatus, 10),
+	}
 	projectResource.register(container)
+	go projectResource.monitorEventLoop()
 	return nil
+}
+
+func (p *ProjectResource) monitorEventLoop() {
+	var projectPaths []string
+	for _, project := range p.Projects() {
+		projectPaths = append(projectPaths, project.Path)
+	}
+	watcher, err := materials.NewRecursiveWatcher("/tmp/a")
+	if err != nil {
+		return
+	}
+	watcher.Run()
+	defer watcher.Close()
+
+	//out:
+	for {
+		select {
+		case file := <-watcher.Files:
+			fmt.Printf("File changed: %s\n", file)
+			p.events[0] = ProjectFileStatus{
+				FilePath: file,
+				Status:   "File Changed",
+			}
+		case folder := <-watcher.Folders:
+			fmt.Printf("Folder changed: %s\n", folder)
+			p.events[0] = ProjectFileStatus{
+				FilePath: folder,
+				Status:   "Directory Changed",
+			}
+		}
+	}
 }
 
 func (p ProjectResource) register(container *restful.Container) {
@@ -46,6 +87,11 @@ func (p ProjectResource) register(container *restful.Container) {
 	ws.Route(ws.POST("/projects").To(p.newProject).
 		Doc("Create a new project").
 		Reads(materials.Project{}))
+
+	ws.Route(ws.GET("/{project-name}/changes").Filter(JsonpFilter).To(p.projectChanges).
+		Doc("list all file system changes to the project").
+		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
+		Writes(ProjectFileStatus{}))
 
 	container.Add(ws)
 }
@@ -174,4 +220,9 @@ func (p *ProjectResource) newProject(request *restful.Request, response *restful
 
 	response.WriteHeader(http.StatusCreated)
 	response.WriteEntity(project)
+}
+
+func (p *ProjectResource) projectChanges(request *restful.Request, response *restful.Response) {
+	fmt.Println(p.events[0])
+	response.WriteEntity(p.events[0])
 }
