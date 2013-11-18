@@ -88,9 +88,8 @@ func (p ProjectResource) register(container *restful.Container) {
 		Doc("Create a new project").
 		Reads(materials.Project{}))
 
-	ws.Route(ws.GET("/{project-name}/changes").Filter(JsonpFilter).To(p.projectChanges).
-		Doc("list all file system changes to the project").
-		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
+	ws.Route(ws.GET("/changes").Filter(JsonpFilter).To(p.projectChanges).
+		Doc("list all file system changes for all the projects").
 		Writes(ProjectFileStatus{}))
 
 	container.Add(ws)
