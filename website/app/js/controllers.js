@@ -45,7 +45,26 @@ function ProjectsController($scope, Restangular, $http) {
     });
 }
 
-function ChangesController($scope) {
+function ChangesController($scope, Restangular, $timeout) {
+    $scope.events = [];
+    (function tick() {
+        console.log("tick")
+        Restangular.all('projects/changes').getList().then(function(eventsInfo) {
+            //console.dir(eventsInfo);
+            var found = false;
+            $scope.events.forEach(function(event) {
+                if (event.filepath == eventsInfo.filepath) {
+                    found = true;
+                }
+            });
+
+            if (! found) {
+                $scope.events.push(eventsInfo);
+            }
+        })
+        $timeout(tick, 3000);
+    })();
+
 
 }
 
