@@ -212,5 +212,5 @@ func (p *MaterialsProjects) find(projectName string) (Project, int) {
 		}
 	}
 
-	return Project{}, -1	
+	return Project{}, -1
 }

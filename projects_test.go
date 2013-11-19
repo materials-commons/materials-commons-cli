@@ -118,13 +118,13 @@ func TestProjectFind(t *testing.T) {
 	}
 
 	_, found = p.Find("proj1")
-	if ! found {
+	if !found {
 		t.Fatalf("Did not find project proj1\n")
 	}
 
 	p.Add(Project{Name: "newproj", Path: "/tmp/newproj"})
 	_, found = p.Find("newproj")
-	if ! found {
+	if !found {
 		t.Fatalf("Did not find added project newproj\n")
 	}
 
