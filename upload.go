@@ -3,6 +3,7 @@ package materials
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -35,18 +36,27 @@ func (p Project) Upload(mc *MaterialsCommons) error {
 		if info.IsDir() {
 			if path != p.Path {
 				parentId, _ := dir2id[filepath.Dir(path)]
-				id, _ := createDataDir(ids.ProjectId, p.Path, path, parentId, mc)
+				id, err := createDataDir(ids.ProjectId, p.Path, path, parentId, mc)
+				if err != nil {
+					return err
+				}
 				dir2id[path] = id
 			}
 		} else {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
 			uri := mc.UrlPath("/import")
-			res, err := postFile(ddirid, ids.ProjectId, path, uri)
+			resp, err := postFile(ddirid, ids.ProjectId, path, uri)
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Printf("status code = %d\n", res.StatusCode)
+				if resp.StatusCode > 299 {
+					body, _ := ioutil.ReadAll(resp.Body)
+					resp.Body.Close()
+					fmt.Printf("Unable to import file %s, error: %s\n", path, string(body))
+				} else {
+					fmt.Printf("Imported file %s\n", path)
+				}
 			}
 		}
 
@@ -66,6 +76,12 @@ func createDataDir(projectId, projectPath, dirPath, parentId string, mc *Materia
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode > 299 {
+		return "", errors.New(
+			fmt.Sprintf("Unable to create datadir %s, error: %s",
+				dirPath, string(body)))
+	}
 	var data McId
 	json.Unmarshal(body, &data)
 	return data.Id, nil
@@ -86,8 +102,14 @@ func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirId
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	body, _ := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode > 299 {
+		return nil, errors.New(
+			fmt.Sprintf("Unable to create create project %s, error: %s",
+				projectName, string(body)))
+	}
+
 	var data Project2DatadirIds
 	json.Unmarshal(body, &data)
 	return &data, nil
