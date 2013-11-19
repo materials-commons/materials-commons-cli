@@ -142,6 +142,18 @@ func (p *MaterialsProjects) Remove(projectName string) error {
 	}
 }
 
+func (p *MaterialsProjects) Update(proj Project) error {
+	_, index := p.find(proj.Name)
+	if index != -1 {
+		projects := p.Projects()
+		projects[index].Path = proj.Path
+		projects[index].Status = proj.Status
+		return p.writeToProjectsFile(p.Projects())
+	}
+
+	return errors.New(fmt.Sprintf("Project not found: %s", proj.Name))
+}
+
 // projectsExceptFor returns a new list of projects except for the project
 // matching projectName. It returns true if it found a project matching
 // projectName.
@@ -186,11 +198,19 @@ func (p *MaterialsProjects) Exists(projectName string) bool {
 // Find returns (Project, true) if the project is found otherwise
 // it returns (Project{}, false)
 func (p *MaterialsProjects) Find(projectName string) (Project, bool) {
-	for _, project := range p.projects {
+	project, index := p.find(projectName)
+	return project, index != -1
+}
+
+// find returns (Project, index) where index is -1 if
+// the project wasn't found, otherwise it is the index
+// in the Projects array.
+func (p *MaterialsProjects) find(projectName string) (Project, int) {
+	for index, project := range p.projects {
 		if project.Name == projectName {
-			return project, true
+			return project, index
 		}
 	}
 
-	return Project{}, false
+	return Project{}, -1	
 }
