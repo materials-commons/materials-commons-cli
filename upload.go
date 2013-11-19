@@ -45,18 +45,22 @@ func (p Project) Upload(mc *MaterialsCommons) error {
 		} else {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
-			uri := mc.UrlPath("/import")
-			resp, err := postFile(ddirid, ids.ProjectId, path, uri)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				if resp.StatusCode > 299 {
-					body, _ := ioutil.ReadAll(resp.Body)
-					resp.Body.Close()
-					fmt.Printf("Unable to import file %s, error: %s\n", path, string(body))
+			if !fileAlreadyUploaded(ddirid, path, mc) {
+				uri := mc.UrlPath("/import")
+				resp, err := postFile(ddirid, ids.ProjectId, path, uri)
+				if err != nil {
+					fmt.Println(err)
 				} else {
-					fmt.Printf("Imported file %s\n", path)
+					if resp.StatusCode > 299 {
+						body, _ := ioutil.ReadAll(resp.Body)
+						resp.Body.Close()
+						fmt.Printf("Unable to import file %s, error: %s\n", path, string(body))
+					} else {
+						fmt.Printf("Imported file %s\n", path)
+					}
 				}
+			} else {
+				fmt.Printf("File already uploaded: %s\n", path)
 			}
 		}
 
@@ -113,6 +117,25 @@ func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirId
 	var data Project2DatadirIds
 	json.Unmarshal(body, &data)
 	return &data, nil
+}
+
+func fileAlreadyUploaded(ddirId, filename string, mc *MaterialsCommons) bool {
+	uri := mc.UrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
+	resp, err := http.Get(uri)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return false
+	}
+
+	if resp.StatusCode > 499 {
+		// Server error, assume it is uploaded for now
+		return true
+	} else if resp.StatusCode > 299 {
+		return false
+	}
+
+	return true
 }
 
 func postFile(ddirId, projectId, filename, uri string) (*http.Response, error) {
