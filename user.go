@@ -23,7 +23,7 @@ type User struct {
 // to the .user file based on the current users home directory.
 func NewCurrentUser() (*User, error) {
 	u, _ := user.Current()
-	user := &User{path: u.HomeDir}
+	user := &User{path: u.HomeDir + "/.materials"}
 	user.readUser()
 	return user, nil
 }
@@ -46,16 +46,17 @@ func (u *User) readUser() error {
 
 	pieces := strings.Split(string(content), "|")
 	if len(pieces) != 2 {
-		return errors.New("The .users file is corrupted")
+		return errors.New("The .user file is corrupted")
 	}
 
-	u.Username = pieces[0]
-	u.Apikey = pieces[1]
+	u.Username = strings.TrimSpace(pieces[0])
+	u.Apikey = strings.TrimSpace(pieces[1])
 	return nil
 }
 
 // dotuser constructs the path to the .user file
 func dotuser(dotmaterialsPath string) string {
+	fmt.Println(dotmaterialsPath)
 	return filepath.Join(dotmaterialsPath, ".user")
 }
 
