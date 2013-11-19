@@ -22,5 +22,6 @@ func NewMaterialsCommons(user *User) *MaterialsCommons {
 }
 
 func (mc *MaterialsCommons) UrlPath(service string) string {
-	return mc.baseUri + service + "?apikey=" + mc.user.Apikey
+	uri := mc.baseUri + service + "?apikey=" + mc.user.Apikey
+	return uri
 }
