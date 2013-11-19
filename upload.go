@@ -22,8 +22,8 @@ type McId struct {
 	Id string `json:"id"`
 }
 
-func (p Project) Upload() error {
-	ids, err := createProject(p.Name)
+func (p Project) Upload(mc *MaterialsCommons) error {
+	ids, err := createProject(p.Name, mc)
 	if err != nil {
 		return err
 	}
@@ -35,13 +35,14 @@ func (p Project) Upload() error {
 		if info.IsDir() {
 			if path != p.Path {
 				parentId, _ := dir2id[filepath.Dir(path)]
-				id, _ := createDataDir(ids.ProjectId, p.Path, path, parentId)
+				id, _ := createDataDir(ids.ProjectId, p.Path, path, parentId, mc)
 				dir2id[path] = id
 			}
 		} else {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
-			res, err := postFile(ddirid, ids.ProjectId, path, "http://localhost:5000/import?apikey=4a3ec8f43cc511e3ba368851fb4688d4")
+			uri := mc.UrlPath("/import")
+			res, err := postFile(ddirid, ids.ProjectId, path, uri)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -54,12 +55,12 @@ func (p Project) Upload() error {
 	return nil
 }
 
-func createDataDir(projectId, projectPath, dirPath, parentId string) (string, error) {
+func createDataDir(projectId, projectPath, dirPath, parentId string, mc *MaterialsCommons) (string, error) {
 	ddirName := makeDatadirName(projectPath, dirPath)
 	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
 	b := strings.NewReader(j)
-	resp, err := http.Post("http://localhost:5000/datadirs?apikey=4a3ec8f43cc511e3ba368851fb4688d4",
-		"application/json", b)
+	uri := mc.UrlPath("/datadirs")
+	resp, err := http.Post(uri, "application/json", b)
 	if err != nil {
 		return "", err
 	}
@@ -75,12 +76,12 @@ func makeDatadirName(projectPath, dirPath string) string {
 	return strings.Replace(dirPath, projectPathParent, "", 1)
 }
 
-func createProject(projectName string) (*Project2DatadirIds, error) {
+func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirIds, error) {
 	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
 	b := strings.NewReader(j)
 
-	resp, err := http.Post("http://localhost:5000/projects?apikey=4a3ec8f43cc511e3ba368851fb4688d4",
-		"application/json", b)
+	uri := mc.UrlPath("/projects")
+	resp, err := http.Post(uri, "application/json", b)
 	if err != nil {
 		return nil, err
 	}

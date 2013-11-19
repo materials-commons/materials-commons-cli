@@ -17,7 +17,8 @@ type ProjectFileStatus struct {
 
 type ProjectResource struct {
 	*materials.MaterialsProjects
-	events []ProjectFileStatus
+	materialsCommons *materials.MaterialsCommons
+	events           []ProjectFileStatus
 }
 
 func newProjectResource(container *restful.Container) error {
@@ -25,8 +26,17 @@ func newProjectResource(container *restful.Container) error {
 	if err != nil {
 		return err
 	}
+
+	u, err := materials.NewCurrentUser()
+	if err != nil {
+		return err
+	}
+
+	mc := materials.NewMaterialsCommons(u)
+
 	projectResource := ProjectResource{
 		MaterialsProjects: p,
+		materialsCommons:  mc,
 		events:            make([]ProjectFileStatus, 10),
 	}
 	projectResource.register(container)
@@ -84,13 +94,17 @@ func (p ProjectResource) register(container *restful.Container) {
 		Doc("Retrieve the directory/file tree for the project").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
 
-	ws.Route(ws.POST("/projects").To(p.newProject).
+	ws.Route(ws.POST("").To(p.newProject).
 		Doc("Create a new project").
 		Reads(materials.Project{}))
 
 	ws.Route(ws.GET("/changes").Filter(JsonpFilter).To(p.projectChanges).
 		Doc("list all file system changes for all the projects").
 		Writes(ProjectFileStatus{}))
+
+	ws.Route(ws.POST("/{project-name}/upload").To(p.uploadProject).
+		Doc("Uploads/imports a project to Materials Commons").
+		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
 
 	container.Add(ws)
 }
@@ -109,10 +123,11 @@ func (p ProjectResource) getProject(request *restful.Request, response *restful.
 	project, found := p.Find(projectName)
 	if found {
 		response.WriteEntity(project)
+	} else {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusNotFound,
+			fmt.Sprintf("Project not found: %s", projectName))
 	}
-
-	response.AddHeader("Content-Type", "text/plain")
-	response.WriteErrorString(http.StatusNotFound, fmt.Sprintf("Project not found: %s", projectName))
 }
 
 func (p ProjectResource) getProjectTree(request *restful.Request, response *restful.Response) {
@@ -224,4 +239,21 @@ func (p *ProjectResource) newProject(request *restful.Request, response *restful
 func (p *ProjectResource) projectChanges(request *restful.Request, response *restful.Response) {
 	fmt.Println(p.events[0])
 	response.WriteEntity(p.events[0])
+}
+
+func (p *ProjectResource) uploadProject(request *restful.Request, response *restful.Response) {
+	projectName := request.PathParameter("project-name")
+	project, found := p.Find(projectName)
+	if found {
+		err := project.Upload(p.materialsCommons)
+		if err != nil {
+			response.WriteErrorString(http.StatusCreated, "Project uploaded")
+		} else {
+			response.WriteErrorString(http.StatusServiceUnavailable, "Unable to upload project")
+		}
+	} else {
+		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusNotFound,
+			fmt.Sprintf("Project not found: %s", projectName))
+	}
 }
