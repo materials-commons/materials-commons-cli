@@ -23,7 +23,7 @@ var commons = materials.NewMaterialsCommons(mcuser)
 
 type ServerOptions struct {
 	AsServer bool   `long:"server" description:"Run as webserver"`
-	Port     int    `long:"port" default:"8080" description:"The port the server listens on"`
+	Port     int    `long:"port" default:"8081" description:"The port the server listens on"`
 	Address  string `long:"address" default:"127.0.0.1" description:"The address to bind to"`
 }
 
@@ -150,7 +150,7 @@ func listProjects() {
 	}
 }
 
-func runWebServer() {
+func runWebServer(address string, port int) {
 	wsContainer := wsmaterials.NewRegisteredServicesContainer()
 	http.Handle("/", wsContainer)
 	mcwebdir := os.Getenv("MCWEBDIR")
@@ -160,7 +160,8 @@ func runWebServer() {
 	websiteDir := filepath.Join(mcwebdir, "website")
 	dir := http.Dir(websiteDir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
-	http.ListenAndServe(":8081", nil)
+	addr := fmt.Sprintf("%s:%d", address, port)
+	http.ListenAndServe(addr, nil)
 }
 
 func uploadProject(projectName string) {
@@ -191,7 +192,7 @@ func main() {
 	}
 
 	if opts.Server.AsServer {
-		runWebServer()
+		runWebServer(opts.Server.Address, opts.Server.Port)
 	}
 
 	if opts.Project.Upload {
