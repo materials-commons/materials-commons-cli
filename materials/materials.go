@@ -161,7 +161,7 @@ func runWebServer(address string, port int) {
 	dir := http.Dir(websiteDir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	addr := fmt.Sprintf("%s:%d", address, port)
-	http.ListenAndServe(addr, nil)
+	fmt.Println(http.ListenAndServe(addr, nil))
 }
 
 func uploadProject(projectName string) {
