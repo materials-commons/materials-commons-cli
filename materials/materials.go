@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"crypto/tls"
 )
 
 var mcurl = ""
@@ -81,10 +82,19 @@ func downloadWebsite(dirPath string) {
 	out, _ := os.Create(websiteTarPath)
 	defer out.Close()
 
-	resp, _ := http.Get(mcurl + "/materials.tar.gz")
+	client := makeClient()
+
+	resp, _ := client.Get(mcurl + "/materials.tar.gz")
 	defer resp.Body.Close()
 	io.Copy(out, resp.Body)
 	unpackWebsite(websiteTarPath)
+}
+
+func makeClient() *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	return &http.Client{Transport: tr}
 }
 
 func unpackWebsite(path string) {
