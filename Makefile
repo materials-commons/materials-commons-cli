@@ -1,4 +1,8 @@
 GODIRS = . wsmaterials materials site desktop
+
+all: fmt test
+	(cd materials; go build materials.go)
+
 test:
 	rm -rf test_data/.materials
 	rm -rf test_data/corrupted
