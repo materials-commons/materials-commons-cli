@@ -46,7 +46,7 @@ func (p Project) Upload(mc *MaterialsCommons) error {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
 			if !fileAlreadyUploaded(ddirid, path, mc) {
-				uri := mc.UrlPath("/import")
+				uri := mc.ApiUrlPath("/import")
 				resp, err := postFile(ddirid, ids.ProjectId, path, uri)
 				if err != nil {
 					fmt.Println(err)
@@ -73,7 +73,7 @@ func createDataDir(projectId, projectPath, dirPath, parentId string, mc *Materia
 	ddirName := makeDatadirName(projectPath, dirPath)
 	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
 	b := strings.NewReader(j)
-	uri := mc.UrlPath("/datadirs")
+	uri := mc.ApiUrlPath("/datadirs")
 	resp, err := http.Post(uri, "application/json", b)
 	if err != nil {
 		return "", err
@@ -100,7 +100,7 @@ func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirId
 	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
 	b := strings.NewReader(j)
 
-	uri := mc.UrlPath("/projects")
+	uri := mc.ApiUrlPath("/projects")
 	resp, err := http.Post(uri, "application/json", b)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirId
 }
 
 func fileAlreadyUploaded(ddirId, filename string, mc *MaterialsCommons) bool {
-	uri := mc.UrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
+	uri := mc.ApiUrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
 	resp, err := http.Get(uri)
 	defer resp.Body.Close()
 
