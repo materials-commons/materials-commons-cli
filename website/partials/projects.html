@@ -1,16 +1,47 @@
 <div class="row">
     <div class="col-md-10 col-md-offset-2">
         <h4>Projects</h4>
+
         <div class="col-md-8" ng-grid="projectGridOptions"></div>
-        <!--<ul>-->
-            <!--<li ng-repeat="project in projects">{{ project.name }}, {{ project.path }}</li>-->
-        <!--</ul>-->
     </div>
 </div>
 
+<hr>
+
+<div class="row">
+    <div class="col-md-10 col-sm-offset-1">
+        <form class="form-horizontal" role="form">
+            <div class="form-group">
+                <label for="inputProjectName" class="col-sm-2 control-label">Name</label>
+
+                <div class="col-sm-6">
+                    <input type="text" class="form-control" id="inputProjectName" ng-model="newProjectName" placeholder="Name">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inputProjectPath" class="col-sm-2 control-label">Path</label>
+
+                <div class="col-sm-6">
+                    <input type="text" class="form-control" id="inputProjectPath" ng-model="newProjectPath" placeholder="Path">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-default" ng-click="newProject()">New Project</button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<hr>
+
 <div class="row">
     <div class="col-md-10 col-md-offset-2">
-        <h4>Tree for project a</h4>
-        <ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id" display-attr="displayname"></ngtree>
+        <h4>Tree for project {{project}}</h4>
+        <ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id"
+                display-attr="displayname"></ngtree>
     </div>
 </div>

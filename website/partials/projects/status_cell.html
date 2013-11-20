@@ -1,0 +1,9 @@
+<div>
+    {{ row.entity[col.field] }}
+    <button ng-show="row.entity[col.field] == 'Unloaded'" ng-click="statusButtonAction(row.entity)">
+        Upload
+    </button>
+    <button ng-show="row.entity[col.field] == 'Changed'" ng-click='statusButtonAction(row.entity)'>
+        Sync
+    </button>
+</div>
