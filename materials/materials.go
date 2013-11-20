@@ -1,15 +1,13 @@
 package main
 
 import (
-	//"github.com/emicklei/go-restful"
-	//"github.com/emicklei/go-restful/swagger"
-	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/wsmaterials"
 	"io"
-	"io/ioutil"
+	"archive/tar"
+	"compress/gzip"
 	"net/http"
 	"os"
 	"os/user"
@@ -53,6 +51,8 @@ func initialize() {
 	checkError(err)
 
 	if newVersionOfWebsite() {
+		websiteFilepath := filepath.Join(dirPath, "website")
+		os.RemoveAll(websiteFilepath)
 		downloadWebsite(dirPath)
 	}
 }
@@ -63,23 +63,60 @@ type MaterialsWebsiteInfo struct {
 }
 
 func newVersionOfWebsite() bool {
-	resp, _ := http.Get(mcurl + "/materials_website.json")
-	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	var websiteInfo MaterialsWebsiteInfo
-	json.Unmarshal(body, &websiteInfo)
-	return false
+	/*
+		resp, _ := http.Get(mcurl + "/materials_website.json")
+		defer resp.Body.Close()
+
+		body, _ := ioutil.ReadAll(resp.Body)
+		var websiteInfo MaterialsWebsiteInfo
+		json.Unmarshal(body, &websiteInfo)
+	*/
+	return true
 }
 
 func downloadWebsite(dirPath string) {
 	getDownloadedVersionOfWebsite()
-	out, _ := os.Create(filepath.Join(dirPath, "materials_website.tar"))
+	websiteTarPath := filepath.Join(dirPath, "materials.tar.gz")
+	out, _ := os.Create(websiteTarPath)
 	defer out.Close()
 
-	resp, _ := http.Get(mcurl + "/materials_website.tar")
+	resp, _ := http.Get(mcurl + "/materials.tar.gz")
 	defer resp.Body.Close()
 	io.Copy(out, resp.Body)
+	unpackWebsite(websiteTarPath)
+}
+
+func unpackWebsite(path string) {
+	file, _ := os.Open(path)
+	defer file.Close()
+
+	zhandle, _ := gzip.NewReader(file)
+	defer zhandle.Close()
+
+	thandle := tar.NewReader(zhandle)
+	for {
+		hdr, err := thandle.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			break
+		}
+
+		if hdr.Typeflag == tar.TypeDir {
+			dirpath := filepath.Join(mcuser.DotMaterialsPath(), hdr.Name)
+			os.MkdirAll(dirpath, 0777)
+		} else if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA {
+			filepath := filepath.Join(mcuser.DotMaterialsPath(), hdr.Name)
+			out, _ := os.Create(filepath)
+			if _, err := io.Copy(out, thandle); err != nil {
+				fmt.Println(err)
+			}
+			out.Close()
+		}
+	}
 }
 
 func getDownloadedVersionOfWebsite() int {
@@ -116,7 +153,12 @@ func listProjects() {
 func runWebServer() {
 	wsContainer := wsmaterials.NewRegisteredServicesContainer()
 	http.Handle("/", wsContainer)
-	dir := http.Dir("../website")
+	mcwebdir := os.Getenv("MCWEBDIR")
+	if mcwebdir == "" {
+		mcwebdir = mcuser.DotMaterialsPath()
+	}
+	websiteDir := filepath.Join(mcwebdir, "website")
+	dir := http.Dir(websiteDir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	http.ListenAndServe(":8081", nil)
 }
@@ -125,6 +167,8 @@ func uploadProject(projectName string) {
 	projects, _ := materials.CurrentUserProjects()
 	project, _ := projects.Find(projectName)
 	project.Upload(commons)
+	project.Status = "Loaded"
+	projects.Update(project)
 }
 
 func main() {
