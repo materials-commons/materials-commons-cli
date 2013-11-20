@@ -167,9 +167,13 @@ func runWebServer(address string, port int) {
 func uploadProject(projectName string) {
 	projects, _ := materials.CurrentUserProjects()
 	project, _ := projects.Find(projectName)
-	project.Upload(commons)
-	project.Status = "Loaded"
-	projects.Update(project)
+	err := project.Upload(commons)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		project.Status = "Loaded"
+		projects.Update(project)
+	}
 }
 
 func main() {
