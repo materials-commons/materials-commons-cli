@@ -56,7 +56,6 @@ func (u *User) readUser() error {
 
 // dotuser constructs the path to the .user file
 func dotuser(dotmaterialsPath string) string {
-	fmt.Println(dotmaterialsPath)
 	return filepath.Join(dotmaterialsPath, ".user")
 }
 
