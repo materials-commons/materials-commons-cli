@@ -40,7 +40,10 @@ func newProjectResource(container *restful.Container) error {
 		events:            make([]ProjectFileStatus, 10),
 	}
 	projectResource.register(container)
-	go projectResource.monitorEventLoop()
+
+	if false {
+		go projectResource.monitorEventLoop()
+	}
 	return nil
 }
 
