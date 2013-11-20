@@ -10,7 +10,7 @@ type MaterialsCommons struct {
 }
 
 func NewMaterialsCommons(user *User) *MaterialsCommons {
-	mcurl := os.Getenv("MCURL")
+	mcurl := os.Getenv("MCAPIURL")
 	if mcurl == "" {
 		mcurl = "https://api.materialscommons.org"
 	}
@@ -21,7 +21,7 @@ func NewMaterialsCommons(user *User) *MaterialsCommons {
 	}
 }
 
-func (mc *MaterialsCommons) UrlPath(service string) string {
+func (mc *MaterialsCommons) ApiUrlPath(service string) string {
 	uri := mc.baseUri + service + "?apikey=" + mc.user.Apikey
 	return uri
 }
