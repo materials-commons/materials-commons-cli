@@ -105,7 +105,7 @@ func (p ProjectResource) register(container *restful.Container) {
 		Doc("list all file system changes for all the projects").
 		Writes(ProjectFileStatus{}))
 
-	ws.Route(ws.POST("/{project-name}/upload").To(p.uploadProject).
+	ws.Route(ws.GET("/{project-name}/upload").To(p.uploadProject).
 		Doc("Uploads/imports a project to Materials Commons").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
 
@@ -250,9 +250,11 @@ func (p *ProjectResource) uploadProject(request *restful.Request, response *rest
 	if found {
 		err := project.Upload(p.materialsCommons)
 		if err != nil {
-			response.WriteErrorString(http.StatusCreated, "Project uploaded")
-		} else {
 			response.WriteErrorString(http.StatusServiceUnavailable, "Unable to upload project")
+		} else {
+			project.Status = "Loaded"
+			p.Update(project)
+			response.WriteErrorString(http.StatusCreated, "Project uploaded")
 		}
 	} else {
 		response.AddHeader("Content-Type", "text/plain")
