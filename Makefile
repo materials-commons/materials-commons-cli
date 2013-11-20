@@ -1,3 +1,4 @@
+GODIRS = . wsmaterials materials site desktop
 test:
 	rm -rf test_data/.materials
 	rm -rf test_data/corrupted
@@ -9,8 +10,4 @@ test:
 	go test -v
 
 fmt:
-	go fmt
-	(cd wsmaterials; go fmt)
-	(cd materials; go fmt)
-	(cd site; go fmt)
-	(cd desktop; go fmt)
+	-for d in $(GODIRS); do (cd $$d; go fmt); done
