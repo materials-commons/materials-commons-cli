@@ -36,8 +36,14 @@ func NewUserFrom(path string) (*User, error) {
 	return user, nil
 }
 
+// DotMaterialsPath returns the path to the
+// users .materials directory.
+func (u *User) DotMaterialsPath() string {
+	return u.path
+}
+
 // readUser reads the .user file and fills in the materials commons
-// username and apikey
+// username and apikey.
 func (u *User) readUser() error {
 	content, err := ioutil.ReadFile(u.dotuserPath())
 	if err != nil {
