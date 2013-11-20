@@ -25,7 +25,17 @@ function ProjectsController($scope, Restangular, $http) {
         console.dir(val);
     };
 
-    $scope.newProject = function() {
+    $scope.uploadProject = function (what) {
+        Restangular.one("projects", what.name).customGET("upload").then(function () {
+            allProjects.getList().then(function (projects) {
+                $scope.projects = projects;
+            });
+        }, function () {
+            console.log("Upload failed");
+        });
+    };
+
+    $scope.newProject = function () {
         console.log("Creating project: " + $scope.newProjectName);
         console.log("  Located at: " + $scope.newProjectPath);
         var proj = {
@@ -33,12 +43,12 @@ function ProjectsController($scope, Restangular, $http) {
             path: $scope.newProjectPath,
             status: "Unloaded"
         }
-        allProjects.post(proj).then(function() {
+        allProjects.post(proj).then(function () {
             console.log("Project created");
             allProjects.getList().then(function (projects) {
                 $scope.projects = projects;
             });
-        }, function() {
+        }, function () {
             console.log("Project creation failed!");
         });
         $scope.newProjectName = "";
