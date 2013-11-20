@@ -1,18 +1,18 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"crypto/tls"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/wsmaterials"
 	"io"
-	"archive/tar"
-	"compress/gzip"
 	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
-	"crypto/tls"
 )
 
 var mcurl = ""

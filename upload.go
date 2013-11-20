@@ -2,6 +2,7 @@ package materials
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"crypto/tls"
 )
 
 type Project2DatadirIds struct {
