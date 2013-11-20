@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"crypto/tls"
 )
 
 type Project2DatadirIds struct {
@@ -24,7 +25,8 @@ type McId struct {
 }
 
 func (p Project) Upload(mc *MaterialsCommons) error {
-	ids, err := createProject(p.Name, mc)
+	client := makeClient()
+	ids, err := createProject(p.Name, mc, client)
 	if err != nil {
 		return err
 	}
@@ -36,7 +38,7 @@ func (p Project) Upload(mc *MaterialsCommons) error {
 		if info.IsDir() {
 			if path != p.Path {
 				parentId, _ := dir2id[filepath.Dir(path)]
-				id, err := createDataDir(ids.ProjectId, p.Path, path, parentId, mc)
+				id, err := createDataDir(ids.ProjectId, p.Path, path, parentId, mc, client)
 				if err != nil {
 					return err
 				}
@@ -45,9 +47,9 @@ func (p Project) Upload(mc *MaterialsCommons) error {
 		} else {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
-			if !fileAlreadyUploaded(ddirid, path, mc) {
+			if !fileAlreadyUploaded(ddirid, path, mc, client) {
 				uri := mc.ApiUrlPath("/import")
-				resp, err := postFile(ddirid, ids.ProjectId, path, uri)
+				resp, err := postFile(ddirid, ids.ProjectId, path, uri, client)
 				if err != nil {
 					fmt.Println(err)
 				} else {
@@ -69,12 +71,19 @@ func (p Project) Upload(mc *MaterialsCommons) error {
 	return nil
 }
 
-func createDataDir(projectId, projectPath, dirPath, parentId string, mc *MaterialsCommons) (string, error) {
+func makeClient() *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	return &http.Client{Transport: tr}
+}
+
+func createDataDir(projectId, projectPath, dirPath, parentId string, mc *MaterialsCommons, client *http.Client) (string, error) {
 	ddirName := makeDatadirName(projectPath, dirPath)
 	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
 	b := strings.NewReader(j)
 	uri := mc.ApiUrlPath("/datadirs")
-	resp, err := http.Post(uri, "application/json", b)
+	resp, err := client.Post(uri, "application/json", b)
 	if err != nil {
 		return "", err
 	}
@@ -96,12 +105,12 @@ func makeDatadirName(projectPath, dirPath string) string {
 	return strings.Replace(dirPath, projectPathParent, "", 1)
 }
 
-func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirIds, error) {
+func createProject(projectName string, mc *MaterialsCommons, client *http.Client) (*Project2DatadirIds, error) {
 	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
 	b := strings.NewReader(j)
 
 	uri := mc.ApiUrlPath("/projects")
-	resp, err := http.Post(uri, "application/json", b)
+	resp, err := client.Post(uri, "application/json", b)
 	if err != nil {
 		return nil, err
 	}
@@ -119,9 +128,9 @@ func createProject(projectName string, mc *MaterialsCommons) (*Project2DatadirId
 	return &data, nil
 }
 
-func fileAlreadyUploaded(ddirId, filename string, mc *MaterialsCommons) bool {
+func fileAlreadyUploaded(ddirId, filename string, mc *MaterialsCommons, client *http.Client) bool {
 	uri := mc.ApiUrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
-	resp, err := http.Get(uri)
+	resp, err := client.Get(uri)
 	defer resp.Body.Close()
 
 	if err != nil {
@@ -138,7 +147,7 @@ func fileAlreadyUploaded(ddirId, filename string, mc *MaterialsCommons) bool {
 	return true
 }
 
-func postFile(ddirId, projectId, filename, uri string) (*http.Response, error) {
+func postFile(ddirId, projectId, filename, uri string, client *http.Client) (*http.Response, error) {
 	body := bytes.NewBufferString("")
 	writer := multipart.NewWriter(body)
 	defer writer.Close()
@@ -167,5 +176,5 @@ func postFile(ddirId, projectId, filename, uri string) (*http.Response, error) {
 	req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
 	req.ContentLength = int64(body.Len()) + int64(closeBuf.Len())
 
-	return http.DefaultClient.Do(req)
+	return client.Do(req)
 }
