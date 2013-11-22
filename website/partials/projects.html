@@ -2,7 +2,20 @@
     <div class="col-md-10 col-md-offset-2">
         <h4>Projects</h4>
 
-        <div class="col-md-8" ng-grid="projectGridOptions"></div>
+        <div class="col-md-6">
+            <table ng-table="tableParams" class="table-bordered">
+                <tr ng-repeat="project in projects" ng-click="showProject(project)">
+                    <td data-title="'Name'">{{ project.name }}</td>
+                    <td data-title="'Path'">{{ project.path }}</td>
+                    <td data-title="'Status'">{{ project.status }}
+                        <button ng-show="project.status === 'Unloaded'"
+                                ng-click="uploadProject(project);"> Upload</button>
+                        <button ng-show="project.status === 'Changed'"
+                                ng-click="uploadProject(project)">Sync</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -15,14 +28,16 @@
                 <label for="inputProjectName" class="col-sm-2 control-label">Name</label>
 
                 <div class="col-sm-6">
-                    <input type="text" class="form-control" id="inputProjectName" ng-model="newProjectName" placeholder="Name">
+                    <input type="text" class="form-control" id="inputProjectName" ng-model="newProjectName"
+                           placeholder="Name">
                 </div>
             </div>
             <div class="form-group">
                 <label for="inputProjectPath" class="col-sm-2 control-label">Path</label>
 
                 <div class="col-sm-6">
-                    <input type="text" class="form-control" id="inputProjectPath" ng-model="newProjectPath" placeholder="Path">
+                    <input type="text" class="form-control" id="inputProjectPath" ng-model="newProjectPath"
+                           placeholder="Path">
                 </div>
             </div>
 
@@ -40,7 +55,7 @@
 
 <div class="row">
     <div class="col-md-10 col-md-offset-2">
-        <h4>Tree for project {{project}}</h4>
+        <h4>Tree for project {{projectName}}</h4>
         <ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id"
                 display-attr="displayname"></ngtree>
     </div>

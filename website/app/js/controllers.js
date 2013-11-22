@@ -42,7 +42,7 @@ function ProjectsController($scope, Restangular, $http) {
             name: $scope.newProjectName,
             path: $scope.newProjectPath,
             status: "Unloaded"
-        }
+        };
         allProjects.post(proj).then(function () {
             console.log("Project created");
             allProjects.getList().then(function (projects) {
@@ -53,27 +53,15 @@ function ProjectsController($scope, Restangular, $http) {
         });
         $scope.newProjectName = "";
         $scope.newProjectPath = "";
-    }
-
-    $scope.projectGridOptions = {
-        data: 'projects',
-        multiSelect: false,
-        columnDefs: [
-            {field: 'name', displayName: 'Name'},
-            {field: 'path', displayName: 'Path'},
-            {field: 'status', displayName: 'Status', cellTemplate: 'partials/projects/status_cell.html'}
-        ],
-        selectedItems: $scope.selected,
-        afterSelectionChange: function (rowItem) {
-            $scope.project = rowItem.entity.name;
-            $scope.projectStatus = rowItem.entity.status;
-            Restangular.one("projects", $scope.project).customGET("tree").then(function (tree) {
-                $scope.projectTree = tree;
-            });
-        }
     };
 
-
+    $scope.showProject = function (project) {
+        $scope.projectName = project.name;
+        $scope.projectStatus = project.status;
+        Restangular.one("projects", $scope.projectName).customGET("tree").then(function (tree) {
+            $scope.projectTree = tree;
+        });
+    };
 }
 
 function ChangesController($scope, Restangular, $timeout) {
