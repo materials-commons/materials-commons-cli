@@ -84,7 +84,7 @@ func (p *MaterialsProjects) Reload() error {
 func (p *MaterialsProjects) loadProjects() error {
 	projectsFile, err := os.Open(p.projectsFile())
 	if err != nil {
-		return err
+		return p.createEmptyProjectsFile()
 	}
 	defer projectsFile.Close()
 
@@ -108,6 +108,16 @@ func (p *MaterialsProjects) loadProjects() error {
 // {dir}/.materias/projects
 func (p *MaterialsProjects) projectsFile() string {
 	return filepath.Join(p.dir, ".materials", "projects")
+}
+
+// Attempts to create an empty projects file.
+func (p *MaterialsProjects) createEmptyProjectsFile() error {
+	file, err := os.Create(p.projectsFile())
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return nil
 }
 
 // Projects returns the list of loaded projects.
