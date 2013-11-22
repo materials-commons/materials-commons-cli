@@ -59,8 +59,19 @@ function ProjectsController($scope, Restangular, $http) {
         $scope.projectName = project.name;
         $scope.projectStatus = project.status;
         Restangular.one("projects", $scope.projectName).customGET("tree").then(function (tree) {
-            $scope.projectTree = tree;
+            var flattened = $scope.flattenTree(tree);
+            $scope.projectTree = flattened;
         });
+    };
+
+    $scope.flattenTree = function (tree) {
+        var flatTree = [],
+            treeModel = new TreeModel(),
+            root = treeModel.parse(tree[0]);
+        root.walk({strategy: 'pre'}, function (node) {
+            flatTree.push(node.model);
+        });
+        return flatTree;
     };
 }
 

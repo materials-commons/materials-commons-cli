@@ -1,4 +1,4 @@
-var app = angular.module('materials', ['ngRoute', 'restangular', 'NgTree', 'ngTable']);
+var app = angular.module('materials', ['ngRoute', 'restangular', 'ngTable', 'mcdirectives']);
 
 app.config(['$routeProvider', '$locationProvider', '$httpProvider', function ($routeProvider) {
     $routeProvider.

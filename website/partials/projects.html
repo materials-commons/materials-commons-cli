@@ -9,9 +9,11 @@
                     <td data-title="'Path'">{{ project.path }}</td>
                     <td data-title="'Status'">{{ project.status }}
                         <button ng-show="project.status === 'Unloaded'"
-                                ng-click="uploadProject(project);"> Upload</button>
+                                ng-click="uploadProject(project);"> Upload
+                        </button>
                         <button ng-show="project.status === 'Changed'"
-                                ng-click="uploadProject(project)">Sync</button>
+                                ng-click="uploadProject(project)">Sync
+                        </button>
                     </td>
                 </tr>
             </table>
@@ -56,7 +58,21 @@
 <div class="row">
     <div class="col-md-10 col-md-offset-2">
         <h4>Tree for project {{projectName}}</h4>
-        <ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id"
-                display-attr="displayname"></ngtree>
+        <!--<ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id"-->
+        <!--display-attr="displayname"></ngtree>-->
+        <table treetable treedata="projectTree">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Kind</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="entry in projectTree" data-tt-id={{entry.id}} data-tt-parent-id={{entry.parent_id}}>
+                    <td>{{ entry.displayname }}</td>
+                    <td>{{ entry.type }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
