@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -136,6 +137,7 @@ func (p ProjectResource) getProject(request *restful.Request, response *restful.
 func (p ProjectResource) getProjectTree(request *restful.Request, response *restful.Response) {
 	type ditem struct {
 		Id          string   `json:"id"`
+		ParentId    string   `json:"parent_id"`
 		Name        string   `json:"name"`
 		Displayname string   `json:"displayname"`
 		Dtype       string   `json:"type"`
@@ -147,16 +149,18 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 	var topLevelDirs []*ditem
 	projectName := request.PathParameter("project-name")
 	project, found := p.Find(projectName)
+	nextId := 0
 
 	createTopLevelEntry := func(path string) {
 		item := &ditem{
-			Id:          path2Id(path),
+			Id:          strconv.Itoa(nextId),
 			Name:        path,
 			Displayname: path,
 			Dtype:       "datadir",
 			Children:    []*ditem{},
 		}
 
+		nextId++
 		dirs[path] = item
 		currentDir = item
 		topLevelDirs = append(topLevelDirs, item)
@@ -176,11 +180,14 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 
 		// Create the ditem
 		item := ditem{
-			Id:          path2Id(path),
+			Id:          strconv.Itoa(nextId),
+			ParentId:    d.Id,
 			Name:        path,
 			Displayname: filepath.Base(path),
 			Children:    []*ditem{},
 		}
+
+		nextId++
 
 		// What type of entry is this?
 		if info.IsDir() {
