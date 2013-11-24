@@ -175,6 +175,7 @@ func postFile(ddirId, projectId, filename, uri string, client *http.Client) (*ht
 
 	req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
 	req.ContentLength = int64(body.Len()) + int64(closeBuf.Len())
+	req.Close = true
 
 	return client.Do(req)
 }
