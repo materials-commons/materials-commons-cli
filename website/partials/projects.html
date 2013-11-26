@@ -65,14 +65,31 @@
             <tr>
                 <th>Name</th>
                 <th>Kind</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
-                <tr ng-repeat="entry in projectTree" data-tt-id={{entry.id}} data-tt-parent-id={{entry.parent_id}}>
-                    <td>{{ entry.displayname }}</td>
-                    <td>{{ entry.type }}</td>
-                </tr>
+            <tr ng-repeat="entry in projectTree" data-tt-id={{entry.id}} data-tt-parent-id={{entry.parent_id}}
+                contextmenu="mymenu">
+                <td>{{ entry.displayname }}</td>
+                <td>{{ entry.type }}</td>
+                <td>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                            Action <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a ng-click="action1(entry)">Action 1</a></li>
+                            <li><a ng-click="action2(entry)">Action 2</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
             </tbody>
         </table>
+        <menu type="context" id="mymenu">
+            <menuitem label="Menu Item 1"></menuitem>
+            <menuitem label="Menu Item 2"></menuitem>
+        </menu>
     </div>
 </div>

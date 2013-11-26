@@ -64,6 +64,16 @@ function ProjectsController($scope, Restangular, $http) {
         });
     };
 
+    $scope.action1 = function (item) {
+        console.log("action1");
+        console.dir(item);
+    };
+
+    $scope.action2 = function (item) {
+        console.log("action2");
+        console.dir(item);
+    };
+
     $scope.flattenTree = function (tree) {
         var flatTree = [],
             treeModel = new TreeModel(),
