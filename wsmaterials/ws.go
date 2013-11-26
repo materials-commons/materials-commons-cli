@@ -11,5 +11,9 @@ func NewRegisteredServicesContainer() *restful.Container {
 		panic("Could not register ProjectResource")
 	}
 
+	if err := newUpdateResource(wsContainer); err != nil {
+		panic("Could not register UpdateResource")
+	}
+
 	return wsContainer
 }

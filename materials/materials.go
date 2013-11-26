@@ -8,11 +8,13 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/wsmaterials"
+	//"bitbucket.org/kardianos/osext"
 	"io"
 	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
+	"time"
 )
 
 var mcurl = ""
@@ -26,6 +28,7 @@ type ServerOptions struct {
 	AsServer bool   `long:"server" description:"Run as webserver"`
 	Port     int    `long:"port" default:"8081" description:"The port the server listens on"`
 	Address  string `long:"address" default:"127.0.0.1" description:"The address to bind to"`
+	Retry    int    `long:"retry" default:"0" description:"Number of times to retry connecting to address/port"`
 }
 
 type ProjectOptions struct {
@@ -160,7 +163,7 @@ func listProjects() {
 	}
 }
 
-func runWebServer(address string, port int) {
+func runWebServer(address string, port, retry int) {
 	wsContainer := wsmaterials.NewRegisteredServicesContainer()
 	http.Handle("/", wsContainer)
 	mcwebdir := os.Getenv("MCWEBDIR")
@@ -171,6 +174,13 @@ func runWebServer(address string, port int) {
 	dir := http.Dir(websiteDir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	addr := fmt.Sprintf("%s:%d", address, port)
+	if retry != 0 {
+		for i := 0; i < retry; i++ {
+			fmt.Println(http.ListenAndServe(addr, nil))
+			time.Sleep(1000 * time.Millisecond)
+		}
+		os.Exit(1)
+	}
 	fmt.Println(http.ListenAndServe(addr, nil))
 }
 
@@ -206,7 +216,7 @@ func main() {
 	}
 
 	if opts.Server.AsServer {
-		runWebServer(opts.Server.Address, opts.Server.Port)
+		runWebServer(opts.Server.Address, opts.Server.Port, opts.Server.Retry)
 	}
 
 	if opts.Project.Upload {
