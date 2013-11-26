@@ -175,7 +175,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 
 		// There should always be a parent
 		if !found {
-			panic("d should not be null")
+			panic("No parent found (there should always be a parent)")
 		}
 
 		// Create the ditem
