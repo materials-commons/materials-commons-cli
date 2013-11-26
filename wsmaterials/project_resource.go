@@ -234,12 +234,14 @@ func (p *ProjectResource) newProject(request *restful.Request, response *restful
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotAcceptable, err.Error())
+		return
 	}
 
 	err = p.Add(*project)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotAcceptable, err.Error())
+		return
 	}
 
 	response.WriteHeader(http.StatusCreated)
