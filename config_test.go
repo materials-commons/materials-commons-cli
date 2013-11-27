@@ -13,16 +13,16 @@ var _ = fmt.Printf
 func TestNoConfigNoEnv(t *testing.T) {
 	u, _ := NewUserFrom("test_data/noconfig")
 	ConfigInitialize(u)
-	if Config.materialsCommons.api != "https://api.materialscommons.org" {
-		t.Fatalf("api value incorrect %s\n", Config.materialsCommons.api)
+	if Config.materialscommons.api != "https://api.materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.materialscommons.api)
 	}
 
-	if Config.materialsCommons.url != "https://materialscommons.org" {
-		t.Fatalf("api value incorrect %s\n", Config.materialsCommons.url)
+	if Config.materialscommons.url != "https://materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.materialscommons.url)
 	}
 
-	if Config.materialsCommons.download != "https://download.materialscommons.org" {
-		t.Fatalf("api value incorrect %s\n", Config.materialsCommons.download)
+	if Config.materialscommons.download != "https://download.materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.materialscommons.download)
 	}
 
 	if Config.user.defaultProject != "" {
@@ -51,7 +51,7 @@ func TestWithEnvSetting(t *testing.T) {
 	u, _ := NewUserFrom("test_data/noconfig")
 	os.Setenv("MCURL", "http://localhost")
 	ConfigInitialize(u)
-	if Config.materialsCommons.url != "http://localhost" {
-		t.Fatalf("url expected http://localhost, got %s\n", Config.materialsCommons.url)
+	if Config.materialscommons.url != "http://localhost" {
+		t.Fatalf("url expected http://localhost, got %s\n", Config.materialscommons.url)
 	}
 }
