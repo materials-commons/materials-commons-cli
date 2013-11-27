@@ -23,7 +23,8 @@ type User struct {
 // to the .user file based on the current users home directory.
 func NewCurrentUser() (*User, error) {
 	u, _ := user.Current()
-	user := &User{path: u.HomeDir + "/.materials"}
+	path := filepath.Join(u.HomeDir, ".materials")
+	user := &User{path: path}
 	user.readUser()
 	return user, nil
 }
@@ -31,6 +32,7 @@ func NewCurrentUser() (*User, error) {
 // NewUserFrom creates a new user User and reads the materials commons information
 // from the .user file in the given path.
 func NewUserFrom(path string) (*User, error) {
+	path = filepath.Join(path, ".materials")
 	user := &User{path: path}
 	user.readUser()
 	return user, nil

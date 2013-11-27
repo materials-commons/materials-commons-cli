@@ -1,8 +1,12 @@
 package materials
 
 import (
+	"fmt"
+	"path/filepath"
 	"testing"
 )
+
+var _ = fmt.Printf
 
 func TestCreateNewUser(t *testing.T) {
 	u, err := NewUserFrom("test_data")
@@ -17,6 +21,11 @@ func TestCreateNewUser(t *testing.T) {
 
 	if u.Apikey == "" {
 		t.Fatalf("No apikey\n")
+	}
+
+	expectedPath := filepath.Join("test_data", ".materials")
+	if u.DotMaterialsPath() != expectedPath {
+		t.Fatalf("DotMaterialsPath expected %s, got %s\n", expectedPath, u.DotMaterialsPath())
 	}
 }
 
