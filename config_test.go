@@ -1,0 +1,57 @@
+package materials
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+var _ = fmt.Printf
+
+func TestNoConfigNoEnv(t *testing.T) {
+	u, _ := NewUserFrom("test_data/noconfig")
+	ConfigInitialize(u)
+	if Config.materialsCommons.api != "https://api.materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.materialsCommons.api)
+	}
+
+	if Config.materialsCommons.url != "https://materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.materialsCommons.url)
+	}
+
+	if Config.materialsCommons.download != "https://download.materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.materialsCommons.download)
+	}
+
+	if Config.user.defaultProject != "" {
+		t.Fatalf("defaultProject incorrect %s\n", Config.user.defaultProject)
+	}
+
+	expectedWebdir := filepath.Join(u.DotMaterialsPath(), "website")
+	if Config.server.webdir != expectedWebdir {
+		t.Fatalf("webdir incorrect %s\n", Config.server.webdir)
+	}
+
+	if Config.server.port != 8081 {
+		t.Fatalf("port incorrect %d\n", Config.server.port)
+	}
+
+	if Config.server.address != "localhost" {
+		t.Fatalf("address incorrect %s\n", Config.server.address)
+	}
+
+	if Config.server.updateInterval != 4*time.Hour {
+		t.Fatalf("address incorrect %d\n", Config.server.updateInterval)
+	}
+}
+
+func TestWithEnvSetting(t *testing.T) {
+	u, _ := NewUserFrom("test_data/noconfig")
+	os.Setenv("MCURL", "http://localhost")
+	ConfigInitialize(u)
+	if Config.materialsCommons.url != "http://localhost" {
+		t.Fatalf("url expected http://localhost, got %s\n", Config.materialsCommons.url)
+	}
+}
