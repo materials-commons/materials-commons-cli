@@ -46,6 +46,11 @@ var defaultSettings = map[string]interface{}{
 
 var Config config
 
+//*********************************************************
+// Create on Initialize() for the materials package
+// that encompasses all the other initialization, such
+// as projects, and .user
+//*********************************************************
 func ConfigInitialize(user *User) {
 	Config.user.User = user
 	Config.setConfigOverrides()
