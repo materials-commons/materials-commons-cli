@@ -172,6 +172,12 @@ func (c config) DefaultProject() string {
 	return c.user.defaultProject
 }
 
-func (c config) ApiServiceUrlPath(service string) string {
-	return ""
+// Constructs the url to access an api service. Includes the
+// apikey. Prepends a "/" if needed.
+func (c config) ApiUrlPath(service string) string {
+	if string(service[0]) != "/" {
+		service = "/" + service
+	}
+	uri := c.materialscommons.api + service + "?apikey=" + c.user.Apikey
+	return uri
 }

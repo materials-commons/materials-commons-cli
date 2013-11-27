@@ -18,8 +18,7 @@ type ProjectFileStatus struct {
 
 type ProjectResource struct {
 	*materials.MaterialsProjects
-	materialsCommons *materials.MaterialsCommons
-	events           []ProjectFileStatus
+	events []ProjectFileStatus
 }
 
 func newProjectResource(container *restful.Container) error {
@@ -28,16 +27,8 @@ func newProjectResource(container *restful.Container) error {
 		return err
 	}
 
-	u, err := materials.NewCurrentUser()
-	if err != nil {
-		return err
-	}
-
-	mc := materials.NewMaterialsCommons(u)
-
 	projectResource := ProjectResource{
 		MaterialsProjects: p,
-		materialsCommons:  mc,
 		events:            make([]ProjectFileStatus, 10),
 	}
 	projectResource.register(container)
@@ -257,7 +248,7 @@ func (p *ProjectResource) uploadProject(request *restful.Request, response *rest
 	projectName := request.PathParameter("project-name")
 	project, found := p.Find(projectName)
 	if found {
-		err := project.Upload(p.materialsCommons)
+		err := project.Upload()
 		if err != nil {
 			response.WriteErrorString(http.StatusServiceUnavailable, "Unable to upload project")
 		} else {

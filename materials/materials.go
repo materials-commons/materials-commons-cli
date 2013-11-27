@@ -20,7 +20,6 @@ import (
 var mcurl = ""
 var usr, _ = user.Current()
 var mcuser, _ = materials.NewCurrentUser()
-var commons = materials.NewMaterialsCommons(mcuser)
 
 //var user = NewCurrentUser()
 
@@ -187,7 +186,7 @@ func runWebServer(address string, port, retry int) {
 func uploadProject(projectName string) {
 	projects, _ := materials.CurrentUserProjects()
 	project, _ := projects.Find(projectName)
-	err := project.Upload(commons)
+	err := project.Upload()
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -197,6 +196,7 @@ func uploadProject(projectName string) {
 }
 
 func main() {
+	materials.ConfigInitialize(mcuser)
 	var opts Options
 	_, err := flags.Parse(&opts)
 
