@@ -2,10 +2,12 @@ package site
 
 import (
 	"fmt"
+	"github.com/materials-commons/gohandy/ezhttp"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/wsmaterials"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -35,4 +37,20 @@ func setupSite() string {
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	addr := fmt.Sprintf("%s:%d", materials.Config.ServerAddress(), materials.Config.ServerPort())
 	return addr
+}
+
+func Download() (to string, err error) {
+	const MaterialsFile = "materials.tar.gz"
+	client := ezhttp.NewClient()
+	url := fmt.Sprintf("%s/%s", materials.Config.MCDownload(), MaterialsFile)
+	to = filepath.Join(materials.Config.DotMaterials(), MaterialsFile)
+	status, err := client.FileGet(url, to)
+	switch {
+	case err != nil:
+		return
+	case status != 200:
+		return to, fmt.Errorf("Download failed with HTTP status code %d", status)
+	default:
+		return to, nil
+	}
 }

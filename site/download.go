@@ -16,7 +16,7 @@ type WebsiteInfo struct {
 	Description string `json:"description"`
 }
 
-func Download() error {
+func Download2() error {
 	return nil
 }
 
