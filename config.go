@@ -175,8 +175,16 @@ func (c config) ServerPort() uint {
 	return c.server.port
 }
 
+func (c *config) SetServerPort(port uint) {
+	c.server.port = port
+}
+
 func (c config) ServerAddress() string {
 	return c.server.address
+}
+
+func (c *config) SetServerAddress(address string) {
+	c.server.address = address
 }
 
 func (c config) WebDir() string {
