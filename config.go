@@ -38,7 +38,7 @@ type configFile map[string]interface{}
 var defaultSettings = map[string]interface{}{
 	"server_address":        "localhost",
 	"server_port":           uint(8081),
-	"update_check_interval": uint(4 * time.Hour),
+	"update_check_interval": 4 * time.Hour,
 	"MCURL":                 "https://materialscommons.org",
 	"MCAPIURL":              "https://api.materialscommons.org",
 	"MCDOWNLOADURL":         "https://download.materialscommons.org",
@@ -58,10 +58,9 @@ func ConfigInitialize(user *User) {
 
 func (c *config) setConfigOverrides() {
 	configFromFile, _ := readConfigFile(c.user.DotMaterialsPath())
-	c.server.port = getConfigUint("server_port", "MATERIALS_PORT", *configFromFile)
-	c.server.address = getConfigStr("server_address", "MATERIALS_ADDRESS", *configFromFile)
-	updateInterval := time.Duration(getConfigUint("update_check_interval",
-		"MATERIALS_UPDATE_CHECK_INTERVAL", *configFromFile))
+	c.server.port = getConfigUint("server_port", "MATERIALS_PORT", configFromFile)
+	c.server.address = getConfigStr("server_address", "MATERIALS_ADDRESS", configFromFile)
+	updateInterval := getConfigDuration("update_check_interval", "MATERIALS_UPDATE_CHECK_INTERVAL", configFromFile)
 	c.server.updateInterval = updateInterval
 	c.materialscommons.api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
 	c.materialscommons.url = getDefaultedConfigStr("MCURL", "MCURL")
@@ -74,7 +73,7 @@ func (c *config) setConfigOverrides() {
 
 	c.server.webdir = webdir
 
-	cf := *configFromFile
+	cf := configFromFile
 	defaultProject, ok := cf["default_project"].(string)
 	if ok {
 		c.user.defaultProject = defaultProject
@@ -92,6 +91,21 @@ func getConfigUint(jsonName, envName string, c configFile) uint {
 		return jsonVal
 	default:
 		val, _ := defaultSettings[jsonName].(uint)
+		return val
+	}
+}
+
+func getConfigDuration(jsonName, envName string, c configFile) time.Duration {
+	envVal, err := strconv.ParseUint(os.Getenv(envName), 0, 32)
+	jsonVal, ok := c[jsonName].(time.Duration)
+
+	switch {
+	case err == nil:
+		return time.Duration(envVal)
+	case ok && jsonVal != 0:
+		return jsonVal
+	default:
+		val, _ := defaultSettings[jsonName].(time.Duration)
 		return val
 	}
 }
@@ -120,11 +134,11 @@ func getDefaultedConfigStr(envName, settingsName string) string {
 	return envVal
 }
 
-func readConfigFile(dotmaterialsPath string) (cf *configFile, err error) {
+func readConfigFile(dotmaterialsPath string) (cf configFile, err error) {
 	configPath := configPath(dotmaterialsPath)
 	bytes, err := ioutil.ReadFile(configPath)
 	var config configFile
-	cf = &config
+	cf = config
 
 	if err != nil {
 		return cf, err
@@ -134,7 +148,7 @@ func readConfigFile(dotmaterialsPath string) (cf *configFile, err error) {
 		return cf, err
 	}
 
-	return &config, nil
+	return config, nil
 }
 
 func configPath(path string) string {
