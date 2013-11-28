@@ -17,11 +17,7 @@ import (
 	"time"
 )
 
-var mcurl = ""
-var usr, _ = user.Current()
 var mcuser, _ = materials.NewCurrentUser()
-
-//var user = NewCurrentUser()
 
 type ServerOptions struct {
 	AsServer bool   `long:"server" description:"Run as webserver"`
@@ -86,7 +82,7 @@ func downloadWebsite(dirPath string) {
 
 	client := makeClient()
 
-	resp, _ := client.Get(mcurl + "/materials.tar.gz")
+	resp, _ := client.Get(materials.Config.MCUrl() + "/materials.tar.gz")
 	defer resp.Body.Close()
 	io.Copy(out, resp.Body)
 	unpackWebsite(websiteTarPath)
@@ -143,15 +139,6 @@ func checkError(err error) {
 	}
 }
 
-func setup() {
-	envMCURL := os.Getenv("MCURL")
-	if envMCURL == "" {
-		mcurl = "https://materialscommons.org"
-	} else {
-		mcurl = envMCURL
-	}
-}
-
 func listProjects() {
 	projects, err := materials.CurrentUserProjects()
 	if err != nil {
@@ -204,8 +191,6 @@ func main() {
 		panic(err)
 		os.Exit(1)
 	}
-
-	setup()
 
 	if opts.Initialize {
 		initialize()
