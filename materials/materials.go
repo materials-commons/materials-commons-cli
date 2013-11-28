@@ -8,7 +8,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/wsmaterials"
-	//"bitbucket.org/kardianos/osext"
 	"io"
 	"net/http"
 	"os"
