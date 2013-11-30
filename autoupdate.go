@@ -4,8 +4,7 @@ import (
 	"bitbucket.org/kardianos/osext"
 	"fmt"
 	"github.com/materials-commons/gohandy/ezhttp"
-	"hash/crc32"
-	"io/ioutil"
+	"github.com/materials-commons/gohandy/handyfile"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -72,7 +71,7 @@ func Update(url string) bool {
 // me returns current binary path and checksum.
 func me() (mypath string, mychecksum uint32) {
 	mypath, _ = osext.Executable()
-	mychecksum = checksumFor(mypath)
+	mychecksum = handyfile.Checksum32(mypath)
 	return
 }
 
@@ -85,7 +84,7 @@ func downloaded(url string) (dlpath string, dlchecksum uint32, err error) {
 		return
 	}
 
-	dlchecksum = checksumFor(dlpath)
+	dlchecksum = handyfile.Checksum32(dlpath)
 	return
 }
 
@@ -102,16 +101,6 @@ func binaryUrlForRuntime(url, whichRuntime string) string {
 	}
 	s := []string{url, whichRuntime, exe}
 	return strings.Join(s, "/")
-}
-
-// checksumFor computes the checksum for a given path.
-func checksumFor(path string) uint32 {
-	file, _ := os.Open(path)
-	defer file.Close()
-	c := crc32.NewIEEE()
-	bytes, _ := ioutil.ReadAll(file)
-	withcrc := c.Sum(bytes)
-	return crc32.ChecksumIEEE(withcrc)
 }
 
 // downloadNewBinary downloads our binary from the given url.
@@ -135,5 +124,5 @@ func downloadNewBinary(url string) (string, error) {
 
 // Replaces current binary with the downloaded one.
 func replaceMe(mypath, downloadedPath string) error {
-	return os.Rename(mypath, downloadedPath)
+	return os.Rename(downloadedPath, mypath)
 }
