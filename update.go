@@ -43,7 +43,6 @@ func Restart() {
 		panic(fmt.Sprintf("Don't know what the background command is on %s platform", runtime.GOOS))
 	}
 	run = append(run, commandPath, "--server", "--retry=10")
-	//command := exec.Command("nohup", commandPath, "--server", "--retry=10")
 	command := exec.Command(run[0], run[1:]...)
 	command.Start()
 	os.Exit(0)

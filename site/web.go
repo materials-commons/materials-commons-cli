@@ -2,13 +2,10 @@ package site
 
 import (
 	"fmt"
-	"github.com/materials-commons/gohandy/ezhttp"
-	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/wsmaterials"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -41,58 +38,4 @@ func setupSite() string {
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	addr := fmt.Sprintf("%s:%d", materials.Config.ServerAddress(), materials.Config.ServerPort())
 	return addr
-}
-
-// Download will attempt to download the materials.tar.gz file from the
-// MCDownload site. If it downloads the file it will return the path to
-// the downloaded file. It downloads to the OS TempDir.
-func Download() (to string, err error) {
-	client := ezhttp.NewClient()
-	url := fmt.Sprintf("%s/%s", materials.Config.MCDownload(), materialsArchive)
-	to = filepath.Join(os.TempDir(), materialsArchive)
-	status, err := client.FileGet(url, to)
-	switch {
-	case err != nil:
-		return
-	case status != 200:
-		return to, fmt.Errorf("Download failed with HTTP status code %d", status)
-	default:
-		return to, nil
-	}
-}
-
-// IsNew checks if a downloaded file is newer than the current file. It does
-// this by comparing the checksum of the currently downloaded file to the
-// newly downloaded one. If they are different then it assumes the new one
-// is more recent. If there is no currently downloaded file then by default
-// the new one is more recent.
-func IsNew(downloaded string) bool {
-	currentArchivePath := filepath.Join(materials.Config.DotMaterials(), materialsArchive)
-	if !handyfile.Exists(currentArchivePath) {
-		return true
-	}
-
-	downloadedChecksum := handyfile.Checksum32(downloaded)
-	currentArchiveChecksum := handyfile.Checksum32(currentArchivePath)
-	if currentArchiveChecksum != downloadedChecksum {
-		return true
-	}
-	return false
-}
-
-// Deploy attempts to deploy the new materials website archive. It will replace
-// the current archive with newly downloaded one and unpack it.
-func Deploy(downloaded string) bool {
-	currentArchivePath := filepath.Join(materials.Config.DotMaterials(), materialsArchive)
-	os.Rename(downloaded, currentArchivePath)
-
-	tr, err := handyfile.NewTarGz(currentArchivePath)
-	if err != nil {
-		return false
-	}
-
-	if err := tr.Unpack(materials.Config.WebDir()); err != nil {
-		return false
-	}
-	return true
 }
