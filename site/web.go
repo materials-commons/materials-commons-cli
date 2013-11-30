@@ -94,6 +94,5 @@ func Deploy(downloaded string) bool {
 	if err := tr.Unpack(materials.Config.WebDir()); err != nil {
 		return false
 	}
-
 	return true
 }
