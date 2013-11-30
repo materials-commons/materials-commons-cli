@@ -1,15 +1,10 @@
 package main
 
 import (
-	"archive/tar"
-	"compress/gzip"
-	"crypto/tls"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/site"
-	"io"
-	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -47,87 +42,11 @@ func initialize() {
 	err = os.MkdirAll(dirPath, 0777)
 	checkError(err)
 
-	if newVersionOfWebsite() {
-		websiteFilepath := filepath.Join(dirPath, "website")
-		os.RemoveAll(websiteFilepath)
-		downloadWebsite(dirPath)
-	}
-}
-
-type MaterialsWebsiteInfo struct {
-	Version     string `json:"version"`
-	Description string `json:"description"`
-}
-
-func newVersionOfWebsite() bool {
-
-	/*
-		resp, _ := http.Get(mcurl + "/materials_website.json")
-		defer resp.Body.Close()
-
-		body, _ := ioutil.ReadAll(resp.Body)
-		var websiteInfo MaterialsWebsiteInfo
-		json.Unmarshal(body, &websiteInfo)
-	*/
-	return true
-}
-
-func downloadWebsite(dirPath string) {
-	getDownloadedVersionOfWebsite()
-	websiteTarPath := filepath.Join(dirPath, "materials.tar.gz")
-	out, _ := os.Create(websiteTarPath)
-	defer out.Close()
-
-	client := makeClient()
-
-	resp, _ := client.Get(materials.Config.MCUrl() + "/materials.tar.gz")
-	defer resp.Body.Close()
-	io.Copy(out, resp.Body)
-	unpackWebsite(websiteTarPath)
-}
-
-func makeClient() *http.Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	return &http.Client{Transport: tr}
-}
-
-func unpackWebsite(path string) {
-	file, _ := os.Open(path)
-	defer file.Close()
-
-	zhandle, _ := gzip.NewReader(file)
-	defer zhandle.Close()
-
-	thandle := tar.NewReader(zhandle)
-	for {
-		hdr, err := thandle.Next()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			break
-		}
-
-		if hdr.Typeflag == tar.TypeDir {
-			dirpath := filepath.Join(mcuser.DotMaterialsPath(), hdr.Name)
-			os.MkdirAll(dirpath, 0777)
-		} else if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA {
-			filepath := filepath.Join(mcuser.DotMaterialsPath(), hdr.Name)
-			out, _ := os.Create(filepath)
-			if _, err := io.Copy(out, thandle); err != nil {
-				fmt.Println(err)
-			}
-			out.Close()
+	if downloadedTo, err := site.Download(); err == nil {
+		if site.IsNew(downloadedTo) {
+			site.Deploy(downloadedTo)
 		}
 	}
-}
-
-func getDownloadedVersionOfWebsite() int {
-	//content := ioutil.ReadFile()
-	return 0
 }
 
 func checkError(err error) {
