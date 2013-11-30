@@ -2,8 +2,6 @@ package site
 
 import (
 	"fmt"
-	"archive/tar"
-	"compress/gzip"
 	"github.com/materials-commons/gohandy/ezhttp"
 	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/materials"
@@ -87,15 +85,15 @@ func IsNew(downloaded string) bool {
 func Deploy(downloaded string) bool {
 	currentArchivePath := filepath.Join(materials.Config.DotMaterials(), materialsArchive)
 	os.Rename(downloaded, currentArchivePath)
-	
+
 	tr, err := handyfile.NewTarGz(currentArchivePath)
 	if err != nil {
 		return false
 	}
-	
-	if err := tr.Unpack(materials.Config.WebDir()); err != nil  {
+
+	if err := tr.Unpack(materials.Config.WebDir()); err != nil {
 		return false
 	}
-	
+
 	return true
 }
