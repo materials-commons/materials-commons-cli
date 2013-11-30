@@ -1,12 +1,12 @@
 package site
 
 import (
-	"github.com/materials-commons/materials"
+	"fmt"
 	"github.com/materials-commons/gohandy/ezhttp"
 	"github.com/materials-commons/gohandy/handyfile"
-	"path/filepath"
-	"fmt"
+	"github.com/materials-commons/materials"
 	"os"
+	"path/filepath"
 )
 
 // Download will attempt to download the materials.tar.gz file from the
