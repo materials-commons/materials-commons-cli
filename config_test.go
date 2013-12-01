@@ -42,8 +42,8 @@ func TestNoConfigNoEnv(t *testing.T) {
 		t.Fatalf("address incorrect %s\n", Config.server.address)
 	}
 
-	if Config.server.updateInterval != 4*time.Hour {
-		t.Fatalf("address incorrect %d\n", Config.server.updateInterval)
+	if Config.server.updateCheckInterval != 4*time.Hour {
+		t.Fatalf("address incorrect %d\n", Config.server.updateCheckInterval)
 	}
 }
 

@@ -16,10 +16,10 @@ type materialscommonsConfig struct {
 }
 
 type serverConfig struct {
-	port           uint
-	address        string
-	webdir         string
-	updateInterval time.Duration
+	port                uint
+	address             string
+	webdir              string
+	updateCheckInterval time.Duration
 }
 
 type userConfig struct {
@@ -60,8 +60,8 @@ func (c *config) setConfigOverrides() {
 	configFromFile, _ := readConfigFile(c.user.DotMaterialsPath())
 	c.server.port = getConfigUint("server_port", "MATERIALS_PORT", configFromFile)
 	c.server.address = getConfigStr("server_address", "MATERIALS_ADDRESS", configFromFile)
-	updateInterval := getConfigDuration("update_check_interval", "MATERIALS_UPDATE_CHECK_INTERVAL", configFromFile)
-	c.server.updateInterval = updateInterval
+	updateCheckInterval := getConfigDuration("update_check_interval", "MATERIALS_UPDATE_CHECK_INTERVAL", configFromFile)
+	c.server.updateCheckInterval = updateCheckInterval
 	c.materialscommons.api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
 	c.materialscommons.url = getDefaultedConfigStr("MCURL", "MCURL")
 	c.materialscommons.download = getDefaultedConfigStr("MCDOWNLOADURL", "MCDOWNLOADURL")
@@ -188,7 +188,7 @@ func (c *config) SetServerAddress(address string) {
 }
 
 func (c config) UpdateCheckInterval() time.Duration {
-	return c.server.updateInterval
+	return c.server.updateCheckInterval
 }
 
 func (c config) WebDir() string {
