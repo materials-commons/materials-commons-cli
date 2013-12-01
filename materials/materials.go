@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/autoupdate"
 	"github.com/materials-commons/materials/site"
 	"os"
 	"os/user"
@@ -97,6 +98,8 @@ func main() {
 	}
 
 	if opts.Server.AsServer {
+		autoupdate.StartUpdateMonitor()
+
 		if opts.Server.Address != "" {
 			materials.Config.SetServerAddress(opts.Server.Address)
 		}
