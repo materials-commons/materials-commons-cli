@@ -79,6 +79,24 @@ func uploadProject(projectName string) {
 	}
 }
 
+func startServer(serverOpts ServerOptions) {
+	autoupdate.StartUpdateMonitor()
+
+	if serverOpts.Address != "" {
+		materials.Config.SetServerAddress(serverOpts.Address)
+	}
+
+	if serverOpts.Port != 0 {
+		materials.Config.SetServerPort(serverOpts.Port)
+	}
+
+	if serverOpts.Retry != 0 {
+		site.StartRetry(serverOpts.Retry)
+	} else {
+		site.Start()
+	}
+}
+
 func main() {
 	materials.ConfigInitialize(mcuser)
 	var opts Options
@@ -89,33 +107,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if opts.Initialize {
+	switch {
+	case opts.Initialize:
 		initialize()
-	}
-
-	if opts.Project.List {
+	case opts.Project.List:
 		listProjects()
-	}
-
-	if opts.Server.AsServer {
-		autoupdate.StartUpdateMonitor()
-
-		if opts.Server.Address != "" {
-			materials.Config.SetServerAddress(opts.Server.Address)
-		}
-
-		if opts.Server.Port != 0 {
-			materials.Config.SetServerPort(opts.Server.Port)
-		}
-
-		if opts.Server.Retry != 0 {
-			site.StartRetry(opts.Server.Retry)
-		} else {
-			site.Start()
-		}
-	}
-
-	if opts.Project.Upload {
+	case opts.Project.Upload:
 		uploadProject(opts.Project.Project)
+	case opts.Server.AsServer:
+		startServer(opts.Server)
 	}
 }
