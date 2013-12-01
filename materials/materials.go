@@ -100,12 +100,7 @@ func startServer(serverOpts ServerOptions) {
 func main() {
 	materials.ConfigInitialize(mcuser)
 	var opts Options
-	_, err := flags.Parse(&opts)
-
-	if err != nil {
-		panic(err)
-		os.Exit(1)
-	}
+	flags.Parse(&opts)
 
 	switch {
 	case opts.Initialize:
