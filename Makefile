@@ -1,4 +1,4 @@
-GODIRS = . wsmaterials materials site desktop
+GODIRS = . wsmaterials materials site desktop autoupdate
 
 all: fmt test
 	(cd materials; go build materials.go)
