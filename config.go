@@ -187,6 +187,10 @@ func (c *config) SetServerAddress(address string) {
 	c.server.address = address
 }
 
+func (c config) UpdateCheckInterval() time.Duration {
+	return c.server.updateInterval
+}
+
 func (c config) WebDir() string {
 	return c.server.webdir
 }
