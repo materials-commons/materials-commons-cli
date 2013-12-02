@@ -14,7 +14,6 @@ import (
 )
 
 var _ = fmt.Println
-var downloadedTo = ""
 
 func TestDeployingSite(t *testing.T) {
 	os.Remove(filepath.Join(os.TempDir(), "materials.tar.gz"))
