@@ -11,7 +11,7 @@ test:
 	cp test_data/.user test_data/.materials
 	mkdir -p test_data/corrupted/.materials
 	cp test_data/projects_corrupted test_data/corrupted/.materials/projects
-	go test -v
+	-for d in $(GODIRS); do (cd $$d; go test -v); done
 
 fmt:
 	-for d in $(GODIRS); do (cd $$d; go fmt); done
