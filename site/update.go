@@ -50,7 +50,11 @@ func IsNew(downloaded string) bool {
 // the current archive with newly downloaded one and unpack it.
 func Deploy(downloaded string) bool {
 	currentArchivePath := filepath.Join(materials.Config.DotMaterials(), materialsArchive)
-	os.Rename(downloaded, currentArchivePath)
+
+	err := moveFile(downloaded, currentArchivePath)
+	if err != nil {
+		return false
+	}
 
 	tr, err := handyfile.NewTarGz(currentArchivePath)
 	if err != nil {
@@ -61,4 +65,13 @@ func Deploy(downloaded string) bool {
 		return false
 	}
 	return true
+}
+
+func moveFile(src, dest string) error {
+	err := handyfile.Copy(src, dest)
+	if err != nil {
+		return err
+	}
+	os.Remove(src)
+	return nil
 }
