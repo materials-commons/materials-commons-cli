@@ -20,7 +20,6 @@ func StartUpdateMonitor() {
 // updates to the materials command and website. It checks
 // for updates every materials.Config.UpdateCheckInterval().
 func updateMonitor() {
-
 	for {
 		materials.Config.Server.LastUpdateCheck = timeStrNow()
 		materials.Config.Server.NextUpdateCheck = timeStrAfterUpdateInterval()
