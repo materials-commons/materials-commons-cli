@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 )
 
+// Name of archive file for the materials website.
+const materialsArchive = "materials.tar.gz"
+
 // Download will attempt to download the materials.tar.gz file from the
 // MCDownload site. If it downloads the file it will return the path to
 // the downloaded file. It downloads to the OS TempDir.
