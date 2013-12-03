@@ -1,6 +1,7 @@
 package autoupdate
 
 import (
+	"fmt"
 	"github.com/materials-commons/materials"
 	"time"
 )
@@ -19,10 +20,30 @@ func StartUpdateMonitor() {
 // updates to the materials command and website. It checks
 // for updates every materials.Config.UpdateCheckInterval().
 func updateMonitor() {
+	materials.Config.Server.LastUpdateCheck = timeStrNow()
+	materials.Config.Server.NextUpdateCheck = timeStrAfterUpdateInterval()
 	for {
-		time.Sleep(materials.Config.Server.UpdateCheckInterval)
 		if updater.UpdatesAvailable() {
 			updater.ApplyUpdates()
 		}
+		time.Sleep(materials.Config.Server.UpdateCheckInterval)
+		materials.Config.Server.LastUpdateCheck = timeStrNow()
+		materials.Config.Server.NextUpdateCheck = timeStrAfterUpdateInterval()
 	}
+}
+
+func timeStrNow() string {
+	n := time.Now()
+	return formatTime(n)
+}
+
+func timeStrAfterUpdateInterval() string {
+	n := time.Now()
+	n = n.Add(materials.Config.Server.UpdateCheckInterval)
+	return formatTime(n)
+}
+
+func formatTime(t time.Time) string {
+	return fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 }
