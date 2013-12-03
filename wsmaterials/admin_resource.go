@@ -14,6 +14,11 @@ type adminResource struct {
 	updater *autoupdate.Updater
 }
 
+type updateStatus struct {
+	Website bool `json:"website"`
+	Server  bool `json:"server"`
+}
+
 func newAdminResource(container *restful.Container) error {
 	adminResource := adminResource{
 		updater: autoupdate.NewUpdater(),
@@ -34,10 +39,14 @@ func (ar *adminResource) register(container *restful.Container) {
 	ws.Route(ws.GET("/update").To(ar.update).
 		Doc("If updates are available downloads, installs and restarts the server."))
 
+	ws.Route(ws.GET("/updates").Filter(JsonpFilter).To(ar.updates).
+		Doc("List services that are available for update").
+		Writes(updateStatus{}))
+
 	ws.Route(ws.GET("/stop").To(ar.stop).
 		Doc("Stops the server."))
 
-	ws.Route(ws.GET("/config").To(ar.config).
+	ws.Route(ws.GET("/config").Filter(JsonpFilter).To(ar.config).
 		Doc("Returns the configuration settings").
 		Writes(materials.ConfigSettings{}))
 
@@ -73,7 +82,21 @@ func (ar *adminResource) update(request *restful.Request, response *restful.Resp
 		sleep(1)
 		ar.updater.ApplyUpdates()
 	}()
+}
 
+func (ar *adminResource) updates(request *restful.Request, response *restful.Response) {
+	u := updateStatus{}
+	if ar.updater.UpdatesAvailable() {
+		if ar.updater.WebsiteUpdate() {
+			u.Website = true
+		}
+
+		if ar.updater.BinaryUpdate() {
+			u.Server = true
+		}
+	}
+
+	response.WriteEntity(u)
 }
 
 func (ar *adminResource) stop(request *restful.Request, response *restful.Response) {
