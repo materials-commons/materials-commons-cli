@@ -22,6 +22,8 @@ type ServerConfig struct {
 	UpdateCheckInterval time.Duration
 	LastUpdateCheck     string
 	NextUpdateCheck     string
+	LastWebsiteUpdate   string
+	LastServerUpdate    string
 }
 
 type UserConfig struct {
