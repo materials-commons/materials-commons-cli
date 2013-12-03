@@ -6,6 +6,7 @@ import (
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/autoupdate"
 	"github.com/materials-commons/materials/site"
+	"github.com/materials-commons/materials/wsmaterials"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -91,9 +92,9 @@ func startServer(serverOpts ServerOptions) {
 	}
 
 	if serverOpts.Retry != 0 {
-		site.StartRetry(serverOpts.Retry)
+		wsmaterials.StartRetry(serverOpts.Retry)
 	} else {
-		site.Start()
+		wsmaterials.Start()
 	}
 }
 
