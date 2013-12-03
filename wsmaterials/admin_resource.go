@@ -1,26 +1,32 @@
 package wsmaterials
 
 import (
+	"fmt"
 	"github.com/emicklei/go-restful"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/autoupdate"
 	"net/http"
 	"os"
 	"time"
 )
 
 type adminResource struct {
-	// empty for now
+	updater *autoupdate.Updater
 }
 
 func newAdminResource(container *restful.Container) error {
-	adminResource := adminResource{}
+	adminResource := adminResource{
+		updater: autoupdate.NewUpdater(),
+	}
 	adminResource.register(container)
 	return nil
 }
 
 func (ar *adminResource) register(container *restful.Container) {
 	ws := new(restful.WebService)
-	ws.Path("/admin")
+	ws.Path("/admin").
+		Consumes(restful.MIME_JSON).
+		Produces(restful.MIME_JSON, restful.MIME_XML)
 
 	ws.Route(ws.GET("/restart").To(ar.restart).
 		Doc("Restarts the materials service"))
@@ -30,6 +36,10 @@ func (ar *adminResource) register(container *restful.Container) {
 
 	ws.Route(ws.GET("/stop").To(ar.stop).
 		Doc("Stops the server."))
+
+	ws.Route(ws.GET("/config").To(ar.config).
+		Doc("Returns the configuration settings").
+		Writes(materials.ConfigSettings{}))
 
 	container.Add(ws)
 }
@@ -43,6 +53,26 @@ func (ar *adminResource) restart(request *restful.Request, response *restful.Res
 }
 
 func (ar *adminResource) update(request *restful.Request, response *restful.Response) {
+	websiteUpdate := "No"
+	binaryUpdate := "No"
+
+	if ar.updater.UpdatesAvailable() {
+		if ar.updater.WebsiteUpdate() {
+			websiteUpdate = "Yes"
+		}
+
+		if ar.updater.BinaryUpdate() {
+			binaryUpdate = "Yes"
+		}
+	}
+
+	msg := fmt.Sprintf("Website updated: %s/Binary updated: %s\n", websiteUpdate, binaryUpdate)
+	response.WriteErrorString(http.StatusOK, msg)
+
+	go func() {
+		sleep(1)
+		ar.updater.ApplyUpdates()
+	}()
 
 }
 
@@ -52,6 +82,10 @@ func (ar *adminResource) stop(request *restful.Request, response *restful.Respon
 		sleep(1)
 		os.Exit(0)
 	}()
+}
+
+func (ar *adminResource) config(request *restful.Request, response *restful.Response) {
+	response.WriteEntity(materials.Config)
 }
 
 func sleep(seconds time.Duration) {
