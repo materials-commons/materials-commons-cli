@@ -2,9 +2,10 @@ package autoupdate
 
 import (
 	"github.com/materials-commons/materials"
-	"github.com/materials-commons/materials/site"
 	"time"
 )
+
+var updater = NewUpdater()
 
 // StartUpdateMonitor starts a back ground task that periodically
 // checks for update to the materials command and website, downloads
@@ -20,24 +21,8 @@ func StartUpdateMonitor() {
 func updateMonitor() {
 	for {
 		time.Sleep(materials.Config.UpdateCheckInterval())
-		updateWebsite()
-		updateBinary()
-	}
-}
-
-// updateWebsite downloads and deploys new versions of the website.
-func updateWebsite() {
-	if downloaded, err := site.Download(); err == nil {
-		if site.IsNew(downloaded) {
-			site.Deploy(downloaded)
+		if updater.UpdatesAvailable() {
+			updater.ApplyUpdates()
 		}
-	}
-}
-
-// updateBinary downloads new versions of the materials server.
-// It restarts the server when there is a new version.
-func updateBinary() {
-	if materials.Update(materials.Config.MCDownload()) {
-		materials.Restart()
 	}
 }
