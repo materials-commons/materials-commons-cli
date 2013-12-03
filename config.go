@@ -2,7 +2,6 @@ package materials
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,6 +20,8 @@ type ServerConfig struct {
 	Address             string
 	Webdir              string
 	UpdateCheckInterval time.Duration
+	LastUpdateCheck     string
+	NextUpdateCheck     string
 }
 
 type UserConfig struct {
@@ -158,59 +159,6 @@ func configPath(path string) string {
 
 func writeConfigFile(config configFile, dotmaterialsPath string) error {
 	return nil
-}
-
-func (c ConfigSettings) MCUrl() string {
-	return c.Materialscommons.Url
-}
-
-func (c ConfigSettings) MCApi() string {
-	return c.Materialscommons.Api
-}
-
-func (c ConfigSettings) MCDownload() string {
-	return c.Materialscommons.Download
-}
-
-func (c ConfigSettings) ServerPort() uint {
-	return c.Server.Port
-}
-
-func (c *ConfigSettings) SetServerPort(port uint) {
-	c.Server.Port = port
-}
-
-func (c ConfigSettings) ServerAddress() string {
-	return c.Server.Address
-}
-
-func (c *ConfigSettings) SetServerAddress(address string) {
-	c.Server.Address = address
-}
-
-func (c ConfigSettings) UpdateCheckInterval() time.Duration {
-	return c.Server.UpdateCheckInterval
-}
-
-func (c ConfigSettings) WebDir() string {
-	return c.Server.Webdir
-}
-
-func (c ConfigSettings) DotMaterials() string {
-	return c.User.DotMaterialsPath()
-}
-
-func (c ConfigSettings) DefaultProject() string {
-	return c.User.DefaultProject
-}
-
-func (c ConfigSettings) Json() []byte {
-	b, err := json.MarshalIndent(&c, "", " ")
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return b
 }
 
 // Constructs the url to access an api service. Includes the

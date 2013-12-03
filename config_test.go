@@ -13,6 +13,9 @@ var _ = fmt.Printf
 
 func TestNoConfigNoEnv(t *testing.T) {
 	u, _ := NewUserFrom("test_data/noconfig")
+	os.Setenv("MCWEBDIR", "")
+	os.Setenv("MCAPIURL", "")
+	os.Setenv("MCURL", "")
 	ConfigInitialize(u)
 	if Config.Materialscommons.Api != "https://api.materialscommons.org" {
 		t.Fatalf("api value incorrect %s\n", Config.Materialscommons.Api)
@@ -60,9 +63,8 @@ func TestWithEnvSetting(t *testing.T) {
 func TestJson(t *testing.T) {
 	u, _ := NewUserFrom("test_data/noconfig")
 	ConfigInitialize(u)
-	b, err := json.MarshalIndent(Config, "", "   ")
+	_, err := json.MarshalIndent(Config, "", "   ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.Stdout.Write(b)
 }

@@ -20,7 +20,7 @@ func StartUpdateMonitor() {
 // for updates every materials.Config.UpdateCheckInterval().
 func updateMonitor() {
 	for {
-		time.Sleep(materials.Config.UpdateCheckInterval())
+		time.Sleep(materials.Config.Server.UpdateCheckInterval)
 		if updater.UpdatesAvailable() {
 			updater.ApplyUpdates()
 		}

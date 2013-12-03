@@ -30,8 +30,8 @@ func StartRetry(retryCount int) {
 func setupSite() string {
 	container := NewRegisteredServicesContainer()
 	http.Handle("/", container)
-	dir := http.Dir(materials.Config.WebDir())
+	dir := http.Dir(materials.Config.Server.Webdir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
-	addr := fmt.Sprintf("%s:%d", materials.Config.ServerAddress(), materials.Config.ServerPort())
+	addr := fmt.Sprintf("%s:%d", materials.Config.Server.Address, materials.Config.Server.Port)
 	return addr
 }

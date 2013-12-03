@@ -29,7 +29,7 @@ func (u *Updater) UpdatesAvailable() bool {
 		}
 	}
 
-	if materials.Update(materials.Config.MCDownload()) {
+	if materials.Update(materials.Config.Materialscommons.Download) {
 		updateAvailable = true
 		u.binaryUpdated = true
 	}

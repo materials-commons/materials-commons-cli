@@ -84,11 +84,11 @@ func startServer(serverOpts ServerOptions) {
 	autoupdate.StartUpdateMonitor()
 
 	if serverOpts.Address != "" {
-		materials.Config.SetServerAddress(serverOpts.Address)
+		materials.Config.Server.Address = serverOpts.Address
 	}
 
 	if serverOpts.Port != 0 {
-		materials.Config.SetServerPort(serverOpts.Port)
+		materials.Config.Server.Port = serverOpts.Port
 	}
 
 	if serverOpts.Retry != 0 {

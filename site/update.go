@@ -17,7 +17,7 @@ const materialsArchive = "materials.tar.gz"
 // the downloaded file. It downloads to the OS TempDir.
 func Download() (to string, err error) {
 	client := ezhttp.NewClient()
-	url := fmt.Sprintf("%s/%s", materials.Config.MCDownload(), materialsArchive)
+	url := fmt.Sprintf("%s/%s", materials.Config.Materialscommons.Download, materialsArchive)
 	to = filepath.Join(os.TempDir(), materialsArchive)
 	status, err := client.FileGet(url, to)
 	switch {
@@ -36,7 +36,7 @@ func Download() (to string, err error) {
 // is more recent. If there is no currently downloaded file then by default
 // the new one is more recent.
 func IsNew(downloaded string) bool {
-	currentArchivePath := filepath.Join(materials.Config.DotMaterials(), materialsArchive)
+	currentArchivePath := filepath.Join(materials.Config.User.DotMaterialsPath(), materialsArchive)
 	if !handyfile.Exists(currentArchivePath) {
 		return true
 	}
@@ -52,7 +52,7 @@ func IsNew(downloaded string) bool {
 // Deploy attempts to deploy the new materials website archive. It will replace
 // the current archive with newly downloaded one and unpack it.
 func Deploy(downloaded string) bool {
-	currentArchivePath := filepath.Join(materials.Config.DotMaterials(), materialsArchive)
+	currentArchivePath := filepath.Join(materials.Config.User.DotMaterialsPath(), materialsArchive)
 
 	err := moveFile(downloaded, currentArchivePath)
 	if err != nil {
@@ -64,7 +64,7 @@ func Deploy(downloaded string) bool {
 		return false
 	}
 
-	if err := tr.Unpack(materials.Config.WebDir()); err != nil {
+	if err := tr.Unpack(materials.Config.Server.Webdir); err != nil {
 		return false
 	}
 	return true

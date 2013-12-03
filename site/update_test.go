@@ -40,7 +40,7 @@ func TestDeployingSite(t *testing.T) {
 		t.Fatalf("Expected site to deploy")
 	}
 
-	w := materials.Config.WebDir()
+	w := materials.Config.Server.Webdir
 	checkContents(filepath.Join(w, "a"), "Hello a", 8, t)
 	checkContents(filepath.Join(w, "b"), "Hello b", 8, t)
 	checkContents(filepath.Join(w, "c"), "Hello c", 8, t)
