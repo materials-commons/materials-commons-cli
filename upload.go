@@ -1,15 +1,8 @@
 package materials
 
 import (
-	"bytes"
-	"crypto/tls"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
+	"github.com/materials-commons/gohandy/ezhttp"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,13 +13,14 @@ type Project2DatadirIds struct {
 	DatadirId string `json:"datadir_id"`
 }
 
-type McId struct {
+type MCId struct {
 	Id string `json:"id"`
 }
 
+var client = ezhttp.NewInsecureClient()
+
 func (p Project) Upload() error {
-	client := makeClient()
-	ids, err := createProject(p.Name, client)
+	ids, err := createProject(p.Name)
 	if err != nil {
 		return err
 	}
@@ -38,7 +32,7 @@ func (p Project) Upload() error {
 		if info.IsDir() {
 			if path != p.Path {
 				parentId, _ := dir2id[filepath.Dir(path)]
-				id, err := createDataDir(ids.ProjectId, p.Path, path, parentId, client)
+				id, err := createDataDir(ids.ProjectId, p.Path, path, parentId)
 				if err != nil {
 					return err
 				}
@@ -47,19 +41,18 @@ func (p Project) Upload() error {
 		} else {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
-			if !fileAlreadyUploaded(ddirid, path, client) {
+			if !fileAlreadyUploaded(ddirid, path) {
 				uri := Config.ApiUrlPath("/import")
-				resp, err := postFile(ddirid, ids.ProjectId, path, uri, client)
+				var params = map[string]string{
+					"datadir": ddirid,
+					"project": ids.ProjectId,
+				}
+				_, err := client.PostFile(uri, path, "file", params)
+				//resp, err := postFile(ddirid, ids.ProjectId, path, uri, client)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Printf("Unable to import file %s, error: %s\n", path, err.Error())
 				} else {
-					if resp.StatusCode > 299 {
-						body, _ := ioutil.ReadAll(resp.Body)
-						resp.Body.Close()
-						fmt.Printf("Unable to import file %s, error: %s\n", path, string(body))
-					} else {
-						fmt.Printf("Imported file %s\n", path)
-					}
+					fmt.Printf("Imported file %s\n", path)
 				}
 			} else {
 				fmt.Printf("File already uploaded: %s\n", path)
@@ -71,32 +64,31 @@ func (p Project) Upload() error {
 	return nil
 }
 
-func makeClient() *http.Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+func createProject(projectName string) (*Project2DatadirIds, error) {
+	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
+
+	uri := Config.ApiUrlPath("/projects")
+	var data Project2DatadirIds
+	_, err := client.JsonStr(j).JsonPost(uri, &data)
+
+	if err != nil {
+		return nil, err
 	}
-	return &http.Client{Transport: tr}
+
+	return &data, nil
 }
 
-func createDataDir(projectId, projectPath, dirPath, parentId string, client *http.Client) (string, error) {
+func createDataDir(projectId, projectPath, dirPath, parentId string) (string, error) {
 	ddirName := makeDatadirName(projectPath, dirPath)
 	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
-	b := strings.NewReader(j)
+	var data MCId
 	uri := Config.ApiUrlPath("/datadirs")
-	resp, err := client.Post(uri, "application/json", b)
+	_, err := client.JsonStr(j).JsonPost(uri, &data)
+
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
 
-	if resp.StatusCode > 299 {
-		return "", errors.New(
-			fmt.Sprintf("Unable to create datadir %s, error: %s",
-				dirPath, string(body)))
-	}
-	var data McId
-	json.Unmarshal(body, &data)
 	return data.Id, nil
 }
 
@@ -105,48 +97,26 @@ func makeDatadirName(projectPath, dirPath string) string {
 	return strings.Replace(dirPath, projectPathParent, "", 1)
 }
 
-func createProject(projectName string, client *http.Client) (*Project2DatadirIds, error) {
-	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
-	b := strings.NewReader(j)
-
-	uri := Config.ApiUrlPath("/projects")
-	resp, err := client.Post(uri, "application/json", b)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	if resp.StatusCode > 299 {
-		return nil, errors.New(
-			fmt.Sprintf("Unable to create create project %s, error: %s",
-				projectName, string(body)))
-	}
-
-	var data Project2DatadirIds
-	json.Unmarshal(body, &data)
-	return &data, nil
-}
-
-func fileAlreadyUploaded(ddirId, filename string, client *http.Client) bool {
+func fileAlreadyUploaded(ddirId, filename string) bool {
 	uri := Config.ApiUrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
-	resp, err := client.Get(uri)
-	defer resp.Body.Close()
+	var rv map[string]interface{}
+	status, err := client.JsonGet(uri, &rv)
 
 	if err != nil {
 		return false
 	}
 
-	if resp.StatusCode > 499 {
+	if status > 499 {
 		// Server error, assume it is uploaded for now
 		return true
-	} else if resp.StatusCode > 299 {
+	} else if status > 299 {
 		return false
 	}
 
 	return true
 }
 
+/*
 func postFile(ddirId, projectId, filename, uri string, client *http.Client) (*http.Response, error) {
 	body := bytes.NewBufferString("")
 	writer := multipart.NewWriter(body)
@@ -179,3 +149,4 @@ func postFile(ddirId, projectId, filename, uri string, client *http.Client) (*ht
 
 	return client.Do(req)
 }
+*/
