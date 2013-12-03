@@ -1,8 +1,10 @@
 package autoupdate
 
 import (
-	"fmt"
+	"bitbucket.org/kardianos/osext"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/util"
+	"os"
 	"time"
 )
 
@@ -13,7 +15,22 @@ var updater = NewUpdater()
 // and deploys them. If the materials command is updated then the
 // materials server is restarted.
 func StartUpdateMonitor() {
+	setLastUpdateServer()
 	go updateMonitor()
+}
+
+func setLastUpdateServer() {
+	binaryPath, err := osext.Executable()
+	if err != nil {
+		return
+	}
+
+	finfo, err := os.Stat(binaryPath)
+	if err != nil {
+		return
+	}
+
+	materials.Config.Server.LastServerUpdate = util.FormatTime(finfo.ModTime())
 }
 
 // updateMonitor is the back ground monitor that checks for
@@ -24,7 +41,7 @@ func updateMonitor() {
 		materials.Config.Server.LastUpdateCheck = timeStrNow()
 		materials.Config.Server.NextUpdateCheck = timeStrAfterUpdateInterval()
 		if updater.UpdatesAvailable() {
-			updater.ApplyUpdates()
+			applyUpdates()
 		}
 		time.Sleep(materials.Config.Server.UpdateCheckInterval)
 	}
@@ -32,16 +49,19 @@ func updateMonitor() {
 
 func timeStrNow() string {
 	n := time.Now()
-	return formatTime(n)
+	return util.FormatTime(n)
 }
 
 func timeStrAfterUpdateInterval() string {
 	n := time.Now()
 	n = n.Add(materials.Config.Server.UpdateCheckInterval)
-	return formatTime(n)
+	return util.FormatTime(n)
 }
 
-func formatTime(t time.Time) string {
-	return fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d",
-		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+func applyUpdates() {
+	if updater.WebsiteUpdate() {
+		materials.Config.Server.LastWebsiteUpdate = timeStrNow()
+	}
+
+	updater.ApplyUpdates()
 }

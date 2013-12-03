@@ -35,7 +35,6 @@ func (u *Updater) UpdatesAvailable() bool {
 	}
 
 	return updateAvailable
-
 }
 
 func (u *Updater) ApplyUpdates() {
