@@ -1,6 +1,7 @@
 package materials
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,37 +14,37 @@ var _ = fmt.Printf
 func TestNoConfigNoEnv(t *testing.T) {
 	u, _ := NewUserFrom("test_data/noconfig")
 	ConfigInitialize(u)
-	if Config.materialscommons.api != "https://api.materialscommons.org" {
-		t.Fatalf("api value incorrect %s\n", Config.materialscommons.api)
+	if Config.Materialscommons.Api != "https://api.materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.Materialscommons.Api)
 	}
 
-	if Config.materialscommons.url != "https://materialscommons.org" {
-		t.Fatalf("api value incorrect %s\n", Config.materialscommons.url)
+	if Config.Materialscommons.Url != "https://materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.Materialscommons.Url)
 	}
 
-	if Config.materialscommons.download != "https://download.materialscommons.org" {
-		t.Fatalf("api value incorrect %s\n", Config.materialscommons.download)
+	if Config.Materialscommons.Download != "https://download.materialscommons.org" {
+		t.Fatalf("api value incorrect %s\n", Config.Materialscommons.Download)
 	}
 
-	if Config.user.defaultProject != "" {
-		t.Fatalf("defaultProject incorrect %s\n", Config.user.defaultProject)
+	if Config.User.DefaultProject != "" {
+		t.Fatalf("defaultProject incorrect %s\n", Config.User.DefaultProject)
 	}
 
 	expectedWebdir := filepath.Join(u.DotMaterialsPath(), "website")
-	if Config.server.webdir != expectedWebdir {
-		t.Fatalf("webdir incorrect %s\n", Config.server.webdir)
+	if Config.Server.Webdir != expectedWebdir {
+		t.Fatalf("webdir incorrect %s\n", Config.Server.Webdir)
 	}
 
-	if Config.server.port != 8081 {
-		t.Fatalf("port incorrect %d\n", Config.server.port)
+	if Config.Server.Port != 8081 {
+		t.Fatalf("port incorrect %d\n", Config.Server.Port)
 	}
 
-	if Config.server.address != "localhost" {
-		t.Fatalf("address incorrect %s\n", Config.server.address)
+	if Config.Server.Address != "localhost" {
+		t.Fatalf("address incorrect %s\n", Config.Server.Address)
 	}
 
-	if Config.server.updateCheckInterval != 4*time.Hour {
-		t.Fatalf("address incorrect %d\n", Config.server.updateCheckInterval)
+	if Config.Server.UpdateCheckInterval != 4*time.Hour {
+		t.Fatalf("address incorrect %d\n", Config.Server.UpdateCheckInterval)
 	}
 }
 
@@ -51,7 +52,17 @@ func TestWithEnvSetting(t *testing.T) {
 	u, _ := NewUserFrom("test_data/noconfig")
 	os.Setenv("MCURL", "http://localhost")
 	ConfigInitialize(u)
-	if Config.materialscommons.url != "http://localhost" {
-		t.Fatalf("url expected http://localhost, got %s\n", Config.materialscommons.url)
+	if Config.Materialscommons.Url != "http://localhost" {
+		t.Fatalf("url expected http://localhost, got %s\n", Config.Materialscommons.Url)
 	}
+}
+
+func TestJson(t *testing.T) {
+	u, _ := NewUserFrom("test_data/noconfig")
+	ConfigInitialize(u)
+	b, err := json.MarshalIndent(Config, "", "   ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout.Write(b)
 }

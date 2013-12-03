@@ -2,6 +2,7 @@ package materials
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,28 +10,28 @@ import (
 	"time"
 )
 
-type materialscommonsConfig struct {
-	api      string
-	url      string
-	download string
+type MaterialscommonsConfig struct {
+	Api      string
+	Url      string
+	Download string
 }
 
-type serverConfig struct {
-	port                uint
-	address             string
-	webdir              string
-	updateCheckInterval time.Duration
+type ServerConfig struct {
+	Port                uint
+	Address             string
+	Webdir              string
+	UpdateCheckInterval time.Duration
 }
 
-type userConfig struct {
+type UserConfig struct {
 	*User
-	defaultProject string
+	DefaultProject string
 }
 
-type config struct {
-	materialscommons materialscommonsConfig
-	server           serverConfig
-	user             userConfig
+type ConfigSettings struct {
+	Materialscommons MaterialscommonsConfig
+	Server           ServerConfig
+	User             UserConfig
 }
 
 type configFile map[string]interface{}
@@ -44,7 +45,7 @@ var defaultSettings = map[string]interface{}{
 	"MCDOWNLOADURL":         "https://download.materialscommons.org",
 }
 
-var Config config
+var Config ConfigSettings
 
 //*********************************************************
 // Create on Initialize() for the materials package
@@ -52,31 +53,31 @@ var Config config
 // as projects, and .user
 //*********************************************************
 func ConfigInitialize(user *User) {
-	Config.user.User = user
+	Config.User.User = user
 	Config.setConfigOverrides()
 }
 
-func (c *config) setConfigOverrides() {
-	configFromFile, _ := readConfigFile(c.user.DotMaterialsPath())
-	c.server.port = getConfigUint("server_port", "MATERIALS_PORT", configFromFile)
-	c.server.address = getConfigStr("server_address", "MATERIALS_ADDRESS", configFromFile)
+func (c *ConfigSettings) setConfigOverrides() {
+	configFromFile, _ := readConfigFile(c.User.DotMaterialsPath())
+	c.Server.Port = getConfigUint("server_port", "MATERIALS_PORT", configFromFile)
+	c.Server.Address = getConfigStr("server_address", "MATERIALS_ADDRESS", configFromFile)
 	updateCheckInterval := getConfigDuration("update_check_interval", "MATERIALS_UPDATE_CHECK_INTERVAL", configFromFile)
-	c.server.updateCheckInterval = updateCheckInterval
-	c.materialscommons.api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
-	c.materialscommons.url = getDefaultedConfigStr("MCURL", "MCURL")
-	c.materialscommons.download = getDefaultedConfigStr("MCDOWNLOADURL", "MCDOWNLOADURL")
+	c.Server.UpdateCheckInterval = updateCheckInterval
+	c.Materialscommons.Api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
+	c.Materialscommons.Url = getDefaultedConfigStr("MCURL", "MCURL")
+	c.Materialscommons.Download = getDefaultedConfigStr("MCDOWNLOADURL", "MCDOWNLOADURL")
 
 	webdir := os.Getenv("MATERIALS_WEBDIR")
 	if webdir == "" {
-		webdir = filepath.Join(c.user.DotMaterialsPath(), "website")
+		webdir = filepath.Join(c.User.DotMaterialsPath(), "website")
 	}
 
-	c.server.webdir = webdir
+	c.Server.Webdir = webdir
 
 	cf := configFromFile
 	defaultProject, ok := cf["default_project"].(string)
 	if ok {
-		c.user.defaultProject = defaultProject
+		c.User.DefaultProject = defaultProject
 	}
 }
 
@@ -159,56 +160,65 @@ func writeConfigFile(config configFile, dotmaterialsPath string) error {
 	return nil
 }
 
-func (c config) MCUrl() string {
-	return c.materialscommons.url
+func (c ConfigSettings) MCUrl() string {
+	return c.Materialscommons.Url
 }
 
-func (c config) MCApi() string {
-	return c.materialscommons.api
+func (c ConfigSettings) MCApi() string {
+	return c.Materialscommons.Api
 }
 
-func (c config) MCDownload() string {
-	return c.materialscommons.download
+func (c ConfigSettings) MCDownload() string {
+	return c.Materialscommons.Download
 }
 
-func (c config) ServerPort() uint {
-	return c.server.port
+func (c ConfigSettings) ServerPort() uint {
+	return c.Server.Port
 }
 
-func (c *config) SetServerPort(port uint) {
-	c.server.port = port
+func (c *ConfigSettings) SetServerPort(port uint) {
+	c.Server.Port = port
 }
 
-func (c config) ServerAddress() string {
-	return c.server.address
+func (c ConfigSettings) ServerAddress() string {
+	return c.Server.Address
 }
 
-func (c *config) SetServerAddress(address string) {
-	c.server.address = address
+func (c *ConfigSettings) SetServerAddress(address string) {
+	c.Server.Address = address
 }
 
-func (c config) UpdateCheckInterval() time.Duration {
-	return c.server.updateCheckInterval
+func (c ConfigSettings) UpdateCheckInterval() time.Duration {
+	return c.Server.UpdateCheckInterval
 }
 
-func (c config) WebDir() string {
-	return c.server.webdir
+func (c ConfigSettings) WebDir() string {
+	return c.Server.Webdir
 }
 
-func (c config) DotMaterials() string {
-	return c.user.DotMaterialsPath()
+func (c ConfigSettings) DotMaterials() string {
+	return c.User.DotMaterialsPath()
 }
 
-func (c config) DefaultProject() string {
-	return c.user.defaultProject
+func (c ConfigSettings) DefaultProject() string {
+	return c.User.DefaultProject
+}
+
+func (c ConfigSettings) Json() []byte {
+	b, err := json.MarshalIndent(&c, "", " ")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return b
 }
 
 // Constructs the url to access an api service. Includes the
 // apikey. Prepends a "/" if needed.
-func (c config) ApiUrlPath(service string) string {
+func (c ConfigSettings) ApiUrlPath(service string) string {
 	if string(service[0]) != "/" {
 		service = "/" + service
 	}
-	uri := c.materialscommons.api + service + "?apikey=" + c.user.Apikey
+	uri := c.Materialscommons.Api + service + "?apikey=" + c.User.Apikey
 	return uri
 }
