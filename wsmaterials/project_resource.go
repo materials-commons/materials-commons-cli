@@ -2,8 +2,8 @@ package wsmaterials
 
 import (
 	"fmt"
-	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/emicklei/go-restful"
+	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/materials"
 	"net/http"
 	"os"
