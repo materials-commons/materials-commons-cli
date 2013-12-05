@@ -2,6 +2,7 @@ package wsmaterials
 
 import (
 	"fmt"
+	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/emicklei/go-restful"
 	"github.com/materials-commons/materials"
 	"net/http"
@@ -198,18 +199,22 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 	}
 
 	if found {
-		filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
-			if path == project.Path {
-				createTopLevelEntry(path)
-			} else {
-				addChild(path, info)
-			}
-			return nil
-		})
+		if handyfile.Exists(project.Path) {
 
-		response.WriteEntity(topLevelDirs)
+			filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
+				if path == project.Path {
+					createTopLevelEntry(path)
+				} else {
+					addChild(path, info)
+				}
+				return nil
+			})
+			response.WriteEntity(topLevelDirs)
+		} else {
+			response.WriteErrorString(http.StatusNotFound,
+				fmt.Sprintf("Project path does not exist: %s", project.Path))
+		}
 	} else {
-		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotFound,
 			fmt.Sprintf("Project not found: %s", projectName))
 	}
