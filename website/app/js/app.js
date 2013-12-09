@@ -1,6 +1,11 @@
-var app = angular.module('materials', ['ngRoute', 'restangular', 'ngTable', 'mcdirectives']);
+var app = angular.module('materials', ['ngRoute', 'restangular', 'ngTable', 'mcdirectives', 'btford.socket-io']);
 
-app.config(['$routeProvider', '$locationProvider', '$httpProvider', function ($routeProvider) {
+app.config(['$routeProvider', '$locationProvider', '$httpProvider', 'socketProvider', function ($routeProvider) {
+    //var mySocket = io.connect('http://localhost:8082');
+//    console.log("provider")
+//    console.dir(socketProvider)
+    //socketProvider.ioSocket(mySocket);
+
     $routeProvider.
         when('/home', {templateUrl: 'partials/home.html', controller: HomeController}).
         when('/projects', {templateUrl: 'partials/projects.html', controller: ProjectsController}).
@@ -11,7 +16,7 @@ app.config(['$routeProvider', '$locationProvider', '$httpProvider', function ($r
         otherwise({redirectTo: '/home'});
 }]);
 
-app.run(function ($rootScope) {
+app.run(function ($rootScope, socket) {
 
     $rootScope.$on('$routeChangeStart', function (event, next) {
         if (matchesPartial(next, "partials/home", "HomeController")) {
@@ -28,6 +33,9 @@ app.run(function ($rootScope) {
             setActiveMainNav('#contact-nav');
         }
     });
+
+    socket.forward('connect');
+    socket.forward('file');
 });
 
 function setActiveMainNav(nav) {

@@ -2,6 +2,7 @@ package materials
 
 import (
 	"errors"
+	"fmt"
 	"github.com/howeyc/fsnotify"
 	"log"
 	"os"
@@ -53,6 +54,7 @@ func NewRecursiveWatcherPaths(paths []string) (*RecursiveWatcher, error) {
 	for _, path := range paths {
 		folders := subfolders(path)
 		for _, folder := range folders {
+			fmt.Println("Watching:", folder)
 			rWatcher.addFolder(folder)
 		}
 	}
@@ -62,6 +64,7 @@ func NewRecursiveWatcherPaths(paths []string) (*RecursiveWatcher, error) {
 
 func (watcher *RecursiveWatcher) addFolder(folder string) {
 	err := watcher.WatchFlags(folder, fsnotify.FSN_ALL)
+	fmt.Println("Adding folder:", folder)
 	if err != nil {
 		log.Println("Error watching folder: ", folder, err)
 	}
@@ -94,25 +97,10 @@ func (watcher *RecursiveWatcher) Run() {
 					log.Println("IsModify")
 
 				case event.IsDelete():
-					finfo, err := os.Stat(event.Name)
-					// Don't do Stat because file no longer exists!
-					if err != nil {
-						log.Printf("Error on stat for %s: %s\n", event.Name, err.Error())
-					} else if finfo.IsDir() {
-						watcher.Folders <- event.Name
-					} else {
-						watcher.Files <- event.Name
-					}
+					fmt.Println("Deleted:", event.Name)
 
 				case event.IsRename():
-					finfo, err := os.Stat(event.Name)
-					if err != nil {
-						log.Printf("Error on stat for %s: %s\n", event.Name, err.Error())
-					} else if finfo.IsDir() {
-						watcher.Folders <- event.Name
-					} else {
-						watcher.Files <- event.Name
-					}
+					fmt.Println("Renamed:", event.Name)
 				}
 			case err := <-watcher.Error:
 				log.Println("error:", err)

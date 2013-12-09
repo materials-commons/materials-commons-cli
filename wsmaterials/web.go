@@ -2,6 +2,7 @@ package wsmaterials
 
 import (
 	"fmt"
+	"github.com/googollee/go-socket.io"
 	"github.com/materials-commons/materials"
 	"net/http"
 	"os"
@@ -10,8 +11,27 @@ import (
 
 // Start starts up all the webservices and the webserver.
 func Start() {
+	setupSocketIO()
 	addr := setupSite()
 	fmt.Println(http.ListenAndServe(addr, nil))
+}
+
+type Example struct {
+	Name  string
+	Stuff string
+}
+
+func setupSocketIO() {
+	sio := socketio.NewSocketIOServer(&socketio.Config{})
+	sio.On("connect", func(ns *socketio.NameSpace) {
+		fmt.Println("Connected:", ns.Id())
+		sio.Broadcast("connected", ns.Id())
+		ns.Emit("file", &Example{"Hello", "World"})
+	})
+	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		fmt.Println("func called")
+	})
+	go http.ListenAndServe(":8082", sio)
 }
 
 // StartRetry attempts a number of times to try connecting to the port address.

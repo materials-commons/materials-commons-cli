@@ -5,6 +5,22 @@ function HomeController($scope) {
 function ProjectsController($scope, Restangular, $http) {
     'use strict';
 
+    $scope.$on('socket:connect', function (ev, data) {
+        console.log("on connect");
+        //console.dir(data);
+        //console.log(data);
+    });
+
+    $scope.$on('socket:file', function(ev, data) {
+        console.log("socket:file event");
+        console.log("==ev==");
+        console.log(ev);
+        console.dir(ev);
+        console.log("==data==");
+        console.log(data);
+        console.dir(data);
+    })
+
     $scope.projectsData = [];
     var allProjects = Restangular.all('projects');
     allProjects.getList().then(function (projects) {

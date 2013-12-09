@@ -34,41 +34,9 @@ func newProjectResource(container *restful.Container) error {
 	}
 	projectResource.register(container)
 
-	if false {
-		go projectResource.monitorEventLoop()
-	}
+	//go projectResource.monitorEventLoop()
+
 	return nil
-}
-
-func (p *ProjectResource) monitorEventLoop() {
-	var projectPaths []string
-	for _, project := range p.Projects() {
-		projectPaths = append(projectPaths, project.Path)
-	}
-	watcher, err := materials.NewRecursiveWatcher("/tmp/a")
-	if err != nil {
-		return
-	}
-	watcher.Run()
-	defer watcher.Close()
-
-	//out:
-	for {
-		select {
-		case file := <-watcher.Files:
-			fmt.Printf("File changed: %s\n", file)
-			p.events[0] = ProjectFileStatus{
-				FilePath: file,
-				Status:   "File Changed",
-			}
-		case folder := <-watcher.Folders:
-			fmt.Printf("Folder changed: %s\n", folder)
-			p.events[0] = ProjectFileStatus{
-				FilePath: folder,
-				Status:   "Directory Changed",
-			}
-		}
-	}
 }
 
 func (p ProjectResource) register(container *restful.Container) {
