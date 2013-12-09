@@ -12,10 +12,15 @@ import (
 var _ = fmt.Printf
 
 func TestNoConfigNoEnv(t *testing.T) {
-	u, _ := NewUserFrom("test_data/noconfig")
-	os.Setenv("MCWEBDIR", "")
+	os.Setenv("MATERIALS_WEBDIR", "")
+	os.Setenv("MATERIALS_ADDRESS", "")
+	os.Setenv("MATERIALS_PORT", "")
+	os.Setenv("MATERIALS_UPDATE_CHECK_INTERVAL", "")
+	os.Setenv("MCDOWNLOADURL", "")
 	os.Setenv("MCAPIURL", "")
 	os.Setenv("MCURL", "")
+
+	u, _ := NewUserFrom("test_data/noconfig")
 	ConfigInitialize(u)
 	if Config.Materialscommons.Api != "https://api.materialscommons.org" {
 		t.Fatalf("api value incorrect %s\n", Config.Materialscommons.Api)
@@ -35,7 +40,7 @@ func TestNoConfigNoEnv(t *testing.T) {
 
 	expectedWebdir := filepath.Join(u.DotMaterialsPath(), "website")
 	if Config.Server.Webdir != expectedWebdir {
-		t.Fatalf("webdir incorrect %s\n", Config.Server.Webdir)
+		t.Fatalf("webdir incorrect %s, expected %s\n", Config.Server.Webdir, expectedWebdir)
 	}
 
 	if Config.Server.Port != 8081 {
