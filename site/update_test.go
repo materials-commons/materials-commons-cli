@@ -16,7 +16,6 @@ import (
 var _ = fmt.Println
 
 func TestDeployingSite(t *testing.T) {
-	os.Setenv("MATERIALS_WEBDIR", "")
 	os.Remove(filepath.Join(os.TempDir(), "materials.tar.gz"))
 	testData := filepath.Join("..", "test_data")
 	ts := httptest.NewServer(http.FileServer(http.Dir(testData)))
