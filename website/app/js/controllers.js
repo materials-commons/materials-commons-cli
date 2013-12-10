@@ -11,10 +11,10 @@ function ProjectsController($scope, Restangular, $http) {
         //console.log(data);
     });
 
-    $scope.$on('socket:file', function(ev, data) {
+    $scope.$on('socket:file', function (ev, data) {
         console.log("socket:file event");
         console.dir(data);
-    })
+    });
 
     $scope.projectsData = [];
     var allProjects = Restangular.all('projects');
