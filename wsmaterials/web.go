@@ -27,10 +27,30 @@ func setupSocketIO() {
 		fmt.Println("Connected:", ns.Id())
 		sio.Broadcast("connected", ns.Id())
 		ns.Emit("file", &Example{"Hello", "World"})
+		sio.Broadcast("file", &Example{"From", "Broadcast"})
 	})
 	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println("func called")
+
 	})
+
+	go func() {
+		watcher, err := materials.NewRecursiveWatcherPaths([]string{"/tmp/a", "/tmp/b"})
+		if err != nil {
+			return
+		}
+		watcher.Run()
+		defer watcher.Close()
+
+		for {
+			select {
+			case file := <-watcher.Files:
+				fmt.Printf("File changed: %s\n", file)
+				sio.Broadcast("file", &ProjectFileStatus{file, "File Changed"})
+			case folder := <-watcher.Folders:
+				fmt.Printf("Folder changed: %s\n", folder)
+			}
+		}
+	}()
 	go http.ListenAndServe(":8082", sio)
 }
 

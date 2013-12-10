@@ -13,11 +13,6 @@ function ProjectsController($scope, Restangular, $http) {
 
     $scope.$on('socket:file', function(ev, data) {
         console.log("socket:file event");
-        console.log("==ev==");
-        console.log(ev);
-        console.dir(ev);
-        console.log("==data==");
-        console.log(data);
         console.dir(data);
     })
 
