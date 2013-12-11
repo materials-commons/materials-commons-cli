@@ -2,7 +2,7 @@ package materials
 
 import (
 	"errors"
-	"fmt"
+	//	"fmt"
 	"github.com/howeyc/fsnotify"
 	"log"
 	"os"
@@ -94,13 +94,13 @@ func (watcher *RecursiveWatcher) Run() {
 					} else if !finfo.IsDir() {
 						watcher.Files <- event.Name
 					}
-					log.Println("IsModify")
+					//log.Println("IsModify")
 
 				case event.IsDelete():
-					fmt.Println("Deleted:", event.Name)
+					//fmt.Println("Deleted:", event.Name)
 
 				case event.IsRename():
-					fmt.Println("Renamed:", event.Name)
+					//fmt.Println("Renamed:", event.Name)
 				}
 			case err := <-watcher.Error:
 				log.Println("error:", err)
