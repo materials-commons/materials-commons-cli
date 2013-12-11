@@ -33,6 +33,17 @@ func setupSite() string {
 	http.Handle("/", container)
 	dir := http.Dir(materials.Config.Server.Webdir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
+	setupProjects()
 	addr := fmt.Sprintf("%s:%d", materials.Config.Server.Address, materials.Config.Server.Port)
 	return addr
+}
+
+func setupProjects() {
+	projects, _ := materials.CurrentUserProjects()
+	for _, project := range projects.Projects() {
+		projectUrlPath := fmt.Sprintf("/%s/", project.Name)
+		fmt.Printf("Setting up '%s' path '%s'\n", projectUrlPath, project.Path)
+		dir := http.Dir(project.Path)
+		http.Handle(projectUrlPath, http.StripPrefix(projectUrlPath, http.FileServer(dir)))
+	}
 }

@@ -99,6 +99,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 		Id          string   `json:"id"`
 		ParentId    string   `json:"parent_id"`
 		Name        string   `json:"name"`
+		HrefPath    string   `json:"hrefpath"`
 		Displayname string   `json:"displayname"`
 		Dtype       string   `json:"type"`
 		Children    []*ditem `json:"children"`
@@ -143,6 +144,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 			Id:          strconv.Itoa(nextId),
 			ParentId:    d.Id,
 			Name:        path,
+			HrefPath:    hrefPath(projectName, path),
 			Displayname: filepath.Base(path),
 			Children:    []*ditem{},
 		}
@@ -186,6 +188,11 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 		response.WriteErrorString(http.StatusNotFound,
 			fmt.Sprintf("Project not found: %s", projectName))
 	}
+}
+
+func hrefPath(projectName, path string) string {
+	i := strings.Index(path, projectName)
+	return path[i:]
 }
 
 func path2Id(path string) string {
