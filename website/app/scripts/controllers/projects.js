@@ -1,7 +1,5 @@
-
-
 angular.module('materialsApp')
-  .controller('ProjectsCtrl', function ($scope, Restangular) {
+    .controller('ProjectsCtrl', function ($scope, materials) {
         'use strict';
 
         $scope.$on('socket:connect', function (ev, data) {
@@ -16,10 +14,19 @@ angular.module('materialsApp')
         });
 
         $scope.projectsData = [];
-        var allProjects = Restangular.all('projects');
-        allProjects.getList().then(function (projects) {
-            $scope.projects = projects;
-        });
+
+        $scope.getAllProjects = function () {
+            materials('/projects')
+                .success(function (projects) {
+                    projects.forEach(function (project) {
+                        project.originalName = project.name;
+                    });
+                    $scope.projects = projects;
+                })
+                .jsonp();
+        };
+
+        $scope.getAllProjects();
 
         $scope.selected = [];
 
@@ -36,13 +43,11 @@ angular.module('materialsApp')
         };
 
         $scope.uploadProject = function (what) {
-            Restangular.one("projects", what.name).customGET("upload").then(function () {
-                allProjects.getList().then(function (projects) {
-                    $scope.projects = projects;
-                });
-            }, function () {
-                console.log("Upload failed");
-            });
+            materials('/projects/%/upload', what.name)
+                .success(function () {
+                    $scope.getAllProjects();
+                })
+                .get();
         };
 
         $scope.newProject = function () {
@@ -53,25 +58,40 @@ angular.module('materialsApp')
                 path: $scope.newProjectPath,
                 status: "Unloaded"
             };
-            allProjects.post(proj).then(function () {
-                console.log("Project created");
-                allProjects.getList().then(function (projects) {
-                    $scope.projects = projects;
-                });
-            }, function () {
-                console.log("Project creation failed!");
-            });
+            materials('/projects')
+                .success(function () {
+                    $scope.getAllProjects();
+                })
+                .post(proj);
             $scope.newProjectName = "";
             $scope.newProjectPath = "";
+        };
+
+        $scope.projectUpdate = function (project) {
+            console.log("projectUpdate");
+            console.dir(project);
+            project.$edit = false;
+            var proj = {
+                name: project.name,
+                path: project.path
+            };
+            materials('/projects/%', project.originalName)
+                .success(function (value) {
+                    console.dir(value);
+                })
+                .put(proj);
         };
 
         $scope.showProject = function (project) {
             $scope.projectName = project.name;
             $scope.projectStatus = project.status;
-            Restangular.one("projects", $scope.projectName).customGET("tree").then(function (tree) {
-                var flattened = $scope.flattenTree(tree);
-                $scope.projectTree = flattened;
-            });
+            materials('/projects/%/tree', $scope.projectName)
+                .success(function (tree) {
+                    var flattened = $scope.flattenTree(tree);
+                    $scope.projectTree = flattened;
+                    $scope.displayProject = true;
+                })
+                .jsonp();
         };
 
         $scope.action1 = function (item) {
@@ -93,5 +113,4 @@ angular.module('materialsApp')
             });
             return flatTree;
         };
-
-  });
+    });

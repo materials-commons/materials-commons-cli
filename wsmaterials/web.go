@@ -42,7 +42,6 @@ func setupProjects() {
 	projects, _ := materials.CurrentUserProjects()
 	for _, project := range projects.Projects() {
 		projectUrlPath := fmt.Sprintf("/%s/", project.Name)
-		fmt.Printf("Setting up '%s' path '%s'\n", projectUrlPath, project.Path)
 		dir := http.Dir(project.Path)
 		http.Handle(projectUrlPath, http.StripPrefix(projectUrlPath, http.FileServer(dir)))
 	}

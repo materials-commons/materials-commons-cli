@@ -4,9 +4,15 @@
 
         <div class="col-md-6">
             <table ng-table="tableParams" class="table-bordered">
-                <tr ng-repeat="project in projects" ng-click="showProject(project)">
-                    <td data-title="'Name'">{{ project.name }}</td>
-                    <td data-title="'Path'">{{ project.path }}</td>
+                <tr ng-repeat="project in projects">
+                    <td data-title="'Name'">
+                        <span ng-if="!project.$edit">{{ project.name }}</span>
+                        <div ng-if="project.$edit"><input class="form-control" type="text" ng-model="project.name"></div>
+                    </td>
+                    <td data-title="'Path'">
+                        <span ng-if="!project.$edit">{{ project.path }}</span>
+                        <div ng-if="project.$edit"><input class="form-control" type="text" ng-model="project.path"></div>
+                    </td>
                     <td data-title="'Status'">{{ project.status }}
                         <button ng-show="project.status === 'Unloaded'"
                                 ng-click="uploadProject(project);"> Upload
@@ -14,6 +20,11 @@
                         <button ng-show="project.status === 'Changed'"
                                 ng-click="uploadProject(project)">Sync
                         </button>
+                    </td>
+                    <td data-table="'Actions'">
+                        <a ng-if="!project.$edit" href="" class="btn btn-default btn-xs" ng-click="project.$edit = true">Edit</a>
+                        <a ng-if="project.$edit" href="" class="btn btn-primary btn-xs" ng-click="projectUpdate(project)">Save</a>
+                        <button ng-click="showProject(project)">View</button>
                     </td>
                 </tr>
             </table>
@@ -55,7 +66,7 @@
 
 <hr>
 
-<div class="row">
+<div ng-show="displayProject" class="row">
     <div class="col-md-10 col-md-offset-2">
         <h4>Tree for project {{projectName}}</h4>
         <!--<ngtree selected="showSelected(d)" treeview-data="projectTree" unique-id="id"-->
@@ -69,28 +80,28 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="entry in projectTree" data-tt-id={{entry.id}} data-tt-parent-id={{entry.parent_id}}
-                contextmenu="mymenu">
+            <tr ng-repeat="entry in projectTree" data-tt-id={{entry.id}} data-tt-parent-id={{entry.parent_id}}>
+                <!--contextmenu="mymenu">-->
                 <td ng-if="entry.type==='datafile'"><a href="http://localhost:8081/{{entry.hrefpath}}" target="_blank">{{ entry.displayname }}</a></td>
                 <td ng-if="entry.type==='datadir'">{{ entry.displayname }}</td>
                 <td>{{ entry.type }}</td>
-                <td>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                            Action <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a ng-click="action1(entry)">Action 1</a></li>
-                            <li><a ng-click="action2(entry)">Action 2</a></li>
-                        </ul>
-                    </div>
-                </td>
+                <!--<td>-->
+                    <!--<div class="btn-group">-->
+                        <!--<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">-->
+                            <!--Action <span class="caret"></span>-->
+                        <!--</button>-->
+                        <!--<ul class="dropdown-menu" role="menu">-->
+                            <!--<li><a ng-click="action1(entry)">Action 1</a></li>-->
+                            <!--<li><a ng-click="action2(entry)">Action 2</a></li>-->
+                        <!--</ul>-->
+                    <!--</div>-->
+                <!--</td>-->
             </tr>
             </tbody>
         </table>
-        <menu type="context" id="mymenu">
-            <menuitem label="Menu Item 1"></menuitem>
-            <menuitem label="Menu Item 2"></menuitem>
-        </menu>
+        <!--<menu type="context" id="mymenu">-->
+            <!--<menuitem label="Menu Item 1"></menuitem>-->
+            <!--<menuitem label="Menu Item 2"></menuitem>-->
+        <!--</menu>-->
     </div>
 </div>

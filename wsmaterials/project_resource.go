@@ -54,7 +54,7 @@ func (p ProjectResource) register(container *restful.Container) {
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
 		Writes(materials.Project{}))
 
-	ws.Route(ws.GET("/{project-name}/tree").To(p.getProjectTree).
+	ws.Route(ws.GET("/{project-name}/tree").Filter(JsonpFilter).To(p.getProjectTree).
 		Doc("Retrieve the directory/file tree for the project").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
 
@@ -62,9 +62,11 @@ func (p ProjectResource) register(container *restful.Container) {
 		Doc("Create a new project").
 		Reads(materials.Project{}))
 
-	ws.Route(ws.GET("/changes").Filter(JsonpFilter).To(p.projectChanges).
-		Doc("list all file system changes for all the projects").
-		Writes(ProjectFileStatus{}))
+	ws.Route(ws.PUT("/{project-name}").To(p.updateProject).
+		Doc("Updates the project").
+		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
+		Reads(materials.Project{}).
+		Writes(materials.Project{}))
 
 	ws.Route(ws.GET("/{project-name}/upload").To(p.uploadProject).
 		Doc("Uploads/imports a project to Materials Commons").
@@ -219,9 +221,35 @@ func (p *ProjectResource) newProject(request *restful.Request, response *restful
 	response.WriteEntity(project)
 }
 
-func (p *ProjectResource) projectChanges(request *restful.Request, response *restful.Response) {
-	fmt.Println(p.events[0])
-	response.WriteEntity(p.events[0])
+func (p *ProjectResource) updateProject(request *restful.Request, response *restful.Response) {
+	projectName := request.PathParameter("project-name")
+	project := new(materials.Project)
+	err := request.ReadEntity(&project)
+	fmt.Println("project-name", projectName, project)
+	if err != nil {
+		response.WriteErrorString(http.StatusNotAcceptable, err.Error())
+		return
+	}
+
+	originalProject, found := p.Find(projectName)
+	if !found {
+		response.WriteErrorString(http.StatusNotFound, fmt.Sprintf("Project not found '%s'", projectName))
+		return
+	}
+
+	if project.Name != projectName {
+		p.Remove(projectName)
+		project.Status = originalProject.Status
+		err = p.Add(*project)
+	} else {
+		err = p.Update(*project)
+	}
+
+	if err != nil {
+		response.WriteErrorString(http.StatusNotAcceptable, err.Error())
+	} else {
+		response.WriteEntity(project)
+	}
 }
 
 func (p *ProjectResource) uploadProject(request *restful.Request, response *restful.Response) {
