@@ -2,16 +2,7 @@ angular.module('materialsApp')
     .controller('ProjectsCtrl', function ($scope, materials) {
         'use strict';
 
-        $scope.$on('socket:connect', function (ev, data) {
-            console.log("on connect");
-            //console.dir(data);
-            //console.log(data);
-        });
 
-        $scope.$on('socket:file', function (ev, data) {
-            console.log("socket:file event");
-            console.dir(data);
-        });
 
         $scope.projectsData = [];
 

@@ -1,1 +1,5 @@
-<p>This is the changes view.</p>
+<div class="row">
+    <div class="col-md-10 col-md-offset-2">
+        <alert ng-repeat="alert in alerts" type="alert.type" close="closeAlert($index)">{{ alert.msg }}({{ alert.count }})</alert>
+    </div>
+</div>
