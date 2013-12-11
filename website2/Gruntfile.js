@@ -16,6 +16,7 @@ module.exports = function (grunt) {
   require('time-grunt')(grunt);
 
   grunt.loadNpmTasks('grunt-bower-install');
+  grunt.loadNpmTasks('grunt-contrib-compress');
 
   // Define the configuration for all the tasks
   grunt.initConfig({
@@ -33,6 +34,18 @@ module.exports = function (grunt) {
             ignorePath: '<%= yeoman.app %>/'
         }
     },
+
+      compress: {
+          main: {
+              options: {
+                  archive: '/tmp/materials.tar.gz',
+                  mode: 'tgz'
+              },
+              files: [
+                  { expand: true, src: "**/*", cwd: "dist/", dest: 'website/'}
+              ]
+          }
+      },
 
     // Watches files for changes and runs tasks based on the changed files
     watch: {
@@ -367,7 +380,8 @@ module.exports = function (grunt) {
     'cssmin',
     'uglify',
     'rev',
-    'usemin'
+    'usemin',
+      'compress'
   ]);
 
   grunt.registerTask('default', [
