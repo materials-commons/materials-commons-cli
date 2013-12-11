@@ -44,14 +44,14 @@ func monitorProjectChanges(sio *socketio.SocketIOServer) {
 	for {
 		select {
 		case file := <-watcher.Files:
-			fmt.Printf("File changed: %s\n", file)
+			//fmt.Printf("File changed: %s\n", file)
 			pfs := ProjectFileStatus{
 				FilePath: file,
 				Status:   "File Changed",
 			}
 			sio.Broadcast("file", &pfs)
 		case folder := <-watcher.Folders:
-			fmt.Printf("Folder changed: %s\n", folder)
+			//fmt.Printf("Folder changed: %s\n", folder)
 			pfs := ProjectFileStatus{
 				FilePath: folder,
 				Status:   "Directory Changed",

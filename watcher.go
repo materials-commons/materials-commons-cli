@@ -54,7 +54,7 @@ func NewRecursiveWatcherPaths(paths []string) (*RecursiveWatcher, error) {
 	for _, path := range paths {
 		folders := subfolders(path)
 		for _, folder := range folders {
-			fmt.Println("Watching:", folder)
+			//fmt.Println("Watching:", folder)
 			rWatcher.addFolder(folder)
 		}
 	}
@@ -64,7 +64,7 @@ func NewRecursiveWatcherPaths(paths []string) (*RecursiveWatcher, error) {
 
 func (watcher *RecursiveWatcher) addFolder(folder string) {
 	err := watcher.WatchFlags(folder, fsnotify.FSN_ALL)
-	fmt.Println("Adding folder:", folder)
+	//fmt.Println("Adding folder:", folder)
 	if err != nil {
 		log.Println("Error watching folder: ", folder, err)
 	}
