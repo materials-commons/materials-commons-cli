@@ -23,7 +23,7 @@ angular.module('materialsApp')
                     });
                     $scope.projects = projects;
                 })
-                .jsonp();
+                .getJson();
         };
 
         $scope.getAllProjects();
@@ -91,7 +91,11 @@ angular.module('materialsApp')
                     $scope.projectTree = flattened;
                     $scope.displayProject = true;
                 })
-                .jsonp();
+                .error(function() {
+                    $scope.projectTree = [];
+                    $scope.displayProject = false;
+                })
+                .getJson();
         };
 
         $scope.action1 = function (item) {

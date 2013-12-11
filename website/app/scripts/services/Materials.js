@@ -109,6 +109,32 @@ angular.module('materialsApp')
                 })
         }
 
+        MaterialsApi.prototype.getJson = function () {
+            var self = this;
+            $http.get(this.url, {
+                cache: false,
+                transformResponse: function (data) {
+                    try {
+                        var jsonObject = JSON.parse(data);
+                        return jsonObject;
+                    } catch (e) {
+                        console.log("Invalid json: " + e);
+                    }
+                    return {}
+                }
+            })
+                .success(function (data, status, headers, config) {
+                    if (self.on_success) {
+                        self.on_success(data, status, headers, config);
+                    }
+                })
+                .error(function (data, status, headers, config) {
+                    if (self.on_error) {
+                        self.on_error(data, status, headers, config);
+                    }
+                });
+        }
+
         MaterialsApi.prototype.jsonp = function (jsonpConfig) {
             var self = this;
             var jsonpurl = _add_json_callback(this.url);

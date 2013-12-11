@@ -7,8 +7,7 @@ angular.module('materialsApp', [
         'ngRoute',
         'ui.bootstrap',
         'ngTable',
-        'btford.socket-io',
-        'restangular'
+        'btford.socket-io'
     ])
     .config(function ($routeProvider) {
         $routeProvider
