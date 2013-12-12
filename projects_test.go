@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+const expectedNumber = 3
+
 func TestNonExistantUser(t *testing.T) {
 	username := "no-such-user-xxx"
 	_, err := ProjectsForUser(username)
@@ -19,8 +21,9 @@ func TestProjectsFrom(t *testing.T) {
 		t.Fatalf("TestProjectsFrom failed loading the test_data projects\n")
 	}
 
-	if len(projects.Projects()) != 2 {
-		t.Fatalf("Number of projects incorrect, it should have been 2: %d\n", len(projects.Projects()))
+	if len(projects.Projects()) != expectedNumber {
+		t.Fatalf("Number of projects incorrect, it should have been %d: %d\n",
+			expectedNumber, len(projects.Projects()))
 	}
 }
 
@@ -57,11 +60,11 @@ func TestProjectAddDuplicate(t *testing.T) {
 
 	p2, _ := ProjectsFrom("test_data")
 	l := len(p2.Projects())
-	if l != 2 {
+	if l != expectedNumber {
 		for _, p := range p2.Projects() {
 			fmt.Println(p)
 		}
-		t.Fatalf("Expected 2 projects, got %d\n", l)
+		t.Fatalf("Expected %d projects, got %d\n", expectedNumber, l)
 	}
 }
 
@@ -73,14 +76,14 @@ func TestProjectAdd(t *testing.T) {
 	}
 
 	l := len(p.Projects())
-	if l != 3 {
-		t.Fatalf("Expected number of projects to be 3, got %d\n", l)
+	if l != expectedNumber+1 {
+		t.Fatalf("Expected number of projects to be %d, got %d\n", expectedNumber+1, l)
 	}
 
 	p2, _ := ProjectsFrom("test_data")
 	l = len(p2.Projects())
-	if l != 3 {
-		t.Fatalf("Expected number of projects to be 3, got %d\n", l)
+	if l != expectedNumber+1 {
+		t.Fatalf("Expected number of projects to be %d, got %d\n", expectedNumber+1, l)
 	}
 }
 
@@ -93,8 +96,8 @@ func TestProjectRemove(t *testing.T) {
 
 	p2, _ := ProjectsFrom("test_data")
 	l := len(p2.Projects())
-	if l != 2 {
-		t.Fatalf("Expected number of projects to be 2, got %d\n", l)
+	if l != expectedNumber {
+		t.Fatalf("Expected number of projects to be %d, got %d\n", expectedNumber, l)
 	}
 }
 

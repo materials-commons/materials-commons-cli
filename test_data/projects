@@ -1,2 +1,3 @@
 proj1|/tmp|Unloaded
-proj 2|/tmp|Unloaded
+proj 2|/does-not-exist|Unloaded
+tproj|/tmp/tproj|Unloaded
