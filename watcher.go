@@ -14,7 +14,6 @@ import (
 
 type Event struct {
 	*fsnotify.FileEvent
-	os.FileInfo
 }
 
 type RecursiveWatcher struct {
@@ -66,7 +65,6 @@ func (watcher *RecursiveWatcher) Run() {
 func (watcher *RecursiveWatcher) handleEvent(event *fsnotify.FileEvent) {
 	e := Event{
 		FileEvent: event,
-		FileInfo:  nil,
 	}
 	if event.IsCreate() {
 		finfo, err := os.Stat(event.Name)
@@ -75,7 +73,6 @@ func (watcher *RecursiveWatcher) handleEvent(event *fsnotify.FileEvent) {
 		} else if finfo.IsDir() {
 			watcher.addDirectory(event.Name)
 		}
-		e.FileInfo = finfo
 	}
 	watcher.Events <- e
 }
