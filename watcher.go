@@ -1,24 +1,31 @@
+/*
+* Based on code at: https://github.com/gophertown/looper/blob/master/watch.go
+ */
+
 package materials
 
 import (
 	"errors"
-	//	"fmt"
 	"github.com/howeyc/fsnotify"
 	"log"
 	"os"
 	"path/filepath"
 )
 
+type Event struct {
+	*fsnotify.FileEvent
+	os.FileInfo
+}
+
 type RecursiveWatcher struct {
 	*fsnotify.Watcher
-	Files   chan string
-	Folders chan string
+	Events chan Event
 }
 
 func NewRecursiveWatcher(path string) (*RecursiveWatcher, error) {
-	folders := subfolders(path)
-	if len(folders) == 0 {
-		return nil, errors.New("No folders to watch")
+	directories := subdirs(path)
+	if len(directories) == 0 {
+		return nil, errors.New("No directories to watch")
 	}
 
 	watcher, err := fsnotify.NewWatcher()
@@ -27,48 +34,20 @@ func NewRecursiveWatcher(path string) (*RecursiveWatcher, error) {
 	}
 
 	rWatcher := &RecursiveWatcher{Watcher: watcher}
-	rWatcher.Files = make(chan string, 10)
-	rWatcher.Folders = make(chan string, len(folders))
+	rWatcher.Events = make(chan Event, 10)
 
-	for _, folder := range folders {
-		rWatcher.addFolder(folder)
+	for _, dir := range directories {
+		rWatcher.addDirectory(dir)
 	}
 
 	return rWatcher, nil
 }
 
-func NewRecursiveWatcherPaths(paths []string) (*RecursiveWatcher, error) {
-	if len(paths) == 0 {
-		return nil, errors.New("No paths to watch")
-	}
-
-	watcher, err := fsnotify.NewWatcher()
+func (watcher *RecursiveWatcher) addDirectory(dir string) {
+	err := watcher.WatchFlags(dir, fsnotify.FSN_ALL)
 	if err != nil {
-		return nil, err
+		log.Println("Error watching directory: ", dir, err)
 	}
-
-	rWatcher := &RecursiveWatcher{Watcher: watcher}
-	rWatcher.Files = make(chan string, 10)
-	rWatcher.Folders = make(chan string, 100)
-
-	for _, path := range paths {
-		folders := subfolders(path)
-		for _, folder := range folders {
-			//fmt.Println("Watching:", folder)
-			rWatcher.addFolder(folder)
-		}
-	}
-
-	return rWatcher, nil
-}
-
-func (watcher *RecursiveWatcher) addFolder(folder string) {
-	err := watcher.WatchFlags(folder, fsnotify.FSN_ALL)
-	//fmt.Println("Adding folder:", folder)
-	if err != nil {
-		log.Println("Error watching folder: ", folder, err)
-	}
-	watcher.Folders <- folder
 }
 
 func (watcher *RecursiveWatcher) Run() {
@@ -76,32 +55,7 @@ func (watcher *RecursiveWatcher) Run() {
 		for {
 			select {
 			case event := <-watcher.Event:
-				switch {
-				case event.IsCreate():
-					finfo, err := os.Stat(event.Name)
-					if err != nil {
-						log.Printf("Error on stat for %s: %s\n", event.Name, err.Error())
-					} else if finfo.IsDir() {
-						watcher.addFolder(event.Name)
-					} else {
-						watcher.Files <- event.Name
-					}
-
-				case event.IsModify():
-					finfo, err := os.Stat(event.Name)
-					if err != nil {
-						log.Printf("Error on stat for %s: %s\n", event.Name, err.Error())
-					} else if !finfo.IsDir() {
-						watcher.Files <- event.Name
-					}
-					//log.Println("IsModify")
-
-				case event.IsDelete():
-					//fmt.Println("Deleted:", event.Name)
-
-				case event.IsRename():
-					//fmt.Println("Renamed:", event.Name)
-				}
+				watcher.handleEvent(event)
 			case err := <-watcher.Error:
 				log.Println("error:", err)
 			}
@@ -109,7 +63,24 @@ func (watcher *RecursiveWatcher) Run() {
 	}()
 }
 
-func subfolders(path string) (paths []string) {
+func (watcher *RecursiveWatcher) handleEvent(event *fsnotify.FileEvent) {
+	e := Event{
+		FileEvent: event,
+		FileInfo:  nil,
+	}
+	if event.IsCreate() {
+		finfo, err := os.Stat(event.Name)
+		if err != nil {
+			log.Printf("Error on stat for %s: %s\n", event.Name, err.Error())
+		} else if finfo.IsDir() {
+			watcher.addDirectory(event.Name)
+		}
+		e.FileInfo = finfo
+	}
+	watcher.Events <- e
+}
+
+func subdirs(path string) (paths []string) {
 	filepath.Walk(path, func(subpath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
