@@ -6,14 +6,12 @@ angular.module('materialsApp')
         var filepathLookup = [],
             o,
             obj;
-        $scope.$on('socket:connect', function (ev, data) {
-            console.log("on connect");
-            //console.dir(data);
-            //console.log(data);
-        });
+//        $scope.$on('socket:connect', function (ev, data) {
+//
+//        });
 
         $scope.$on('socket:file', function (ev, data) {
-            console.dir(data);
+//            console.dir(data);
             if ($scope.alerts.length >= 100) {
                 $scope.alerts.splice(0, 1);
             }
@@ -21,14 +19,15 @@ angular.module('materialsApp')
                 obj = {
                     type: 'success',
                     msg: "File changed: " + data.filepath,
+                    event: data.event,
                     count: 1
                 };
                 filepathLookup[data.filepath] = obj;
                 $scope.alerts.push(obj);
             } else {
-                console.log("Already saw: " + data.filepath);
                 $scope.$apply(function () {
                     o = filepathLookup[data.filepath];
+                    o.event = data.event;
                     o.count = o.count + 1;
                 });
             }
