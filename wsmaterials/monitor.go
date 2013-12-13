@@ -62,7 +62,7 @@ func projectWatcher(project materials.Project, sio *socketio.SocketIOServer) {
 		fmt.Println(err)
 		return
 	}
-	watcher.Run()
+	watcher.Start()
 	defer watcher.Close()
 
 	for {
