@@ -7,11 +7,6 @@ import (
 	"net/http"
 )
 
-type ProjectFileStatus struct {
-	FilePath string `json:"filepath"`
-	Status   string `json:"status"`
-}
-
 type ProjectResource struct {
 	*materials.MaterialsProjects
 }
