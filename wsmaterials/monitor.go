@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+type ProjectFileStatus struct {
+	Project  string `json:"project"`
+	FilePath string `json:"filepath"`
+	Status   string `json:"status"`
+}
+
 func startMonitor() {
 	sio := socketio.NewSocketIOServer(&socketio.Config{})
 	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -32,33 +38,13 @@ func monitorProjectChanges(sio *socketio.SocketIOServer) {
 	for _, project := range p.Projects() {
 		startProjectWatcher(project, sio)
 	}
-
-	/*
-		for {
-			select {
-			case file := <-watcher.Files:
-				//fmt.Printf("File changed: %s\n", file)
-				pfs := ProjectFileStatus{
-					FilePath: file,
-					Status:   "File Changed",
-				}
-				sio.Broadcast("file", &pfs)
-			case folder := <-watcher.Folders:
-				//fmt.Printf("Folder changed: %s\n", folder)
-				pfs := ProjectFileStatus{
-					FilePath: folder,
-					Status:   "Directory Changed",
-				}
-				sio.Broadcast("dir", &pfs)
-			}
-		}
-	*/
 }
 
 func startProjectWatcher(project materials.Project, sio *socketio.SocketIOServer) {
 	go func() {
 		watcher, err := materials.NewRecursiveWatcher(project.Path)
 		if err != nil {
+			fmt.Println(err)
 			return
 		}
 		watcher.Run()
@@ -67,13 +53,28 @@ func startProjectWatcher(project materials.Project, sio *socketio.SocketIOServer
 		for {
 			select {
 			case e := <-watcher.Events:
-				pfs := ProjectFileStatus{
+				pfs := &ProjectFileStatus{
+					Project:  project.Name,
 					FilePath: e.Name,
-					Status:   "Something",
+					Status:   eventStatus(e),
 				}
-
-				sio.Broadcast("file", &pfs)
+				sio.Broadcast("file", pfs)
 			}
 		}
 	}()
+}
+
+func eventStatus(event materials.Event) string {
+	switch {
+	case event.IsCreate():
+		return "Created"
+	case event.IsDelete():
+		return "Deleted"
+	case event.IsModify():
+		return "Modified"
+	case event.IsRename():
+		return "Renamed"
+	default:
+		return "Unknown"
+	}
 }
