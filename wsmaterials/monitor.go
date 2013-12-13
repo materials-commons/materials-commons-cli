@@ -38,7 +38,8 @@ func startMonitor() {
 // the old materials service is stopping, and the new one is starting.
 func startHttp(retryCount int, sio *socketio.SocketIOServer) {
 	for i := 0; i < retryCount; i++ {
-		fmt.Println(http.ListenAndServe(":8082", sio))
+		address := fmt.Sprintf(":%d", materials.Config.Server.SocketIOPort)
+		fmt.Println(http.ListenAndServe(address, sio))
 		time.Sleep(1000 * time.Millisecond)
 	}
 	os.Exit(1)

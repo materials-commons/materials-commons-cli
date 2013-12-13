@@ -17,6 +17,7 @@ type MaterialscommonsConfig struct {
 
 type ServerConfig struct {
 	Port                uint
+	SocketIOPort        uint
 	Address             string
 	Webdir              string
 	UpdateCheckInterval time.Duration
@@ -42,6 +43,7 @@ type configFile map[string]interface{}
 var defaultSettings = map[string]interface{}{
 	"server_address":        "localhost",
 	"server_port":           uint(8081),
+	"socketio_port":         uint(8082),
 	"update_check_interval": 4 * time.Hour,
 	"MCURL":                 "https://materialscommons.org",
 	"MCAPIURL":              "https://api.materialscommons.org",
@@ -64,6 +66,7 @@ func (c *ConfigSettings) setConfigOverrides() {
 	configFromFile, _ := readConfigFile(c.User.DotMaterialsPath())
 	c.Server.Port = getConfigUint("server_port", "MATERIALS_PORT", configFromFile)
 	c.Server.Address = getConfigStr("server_address", "MATERIALS_ADDRESS", configFromFile)
+	c.Server.SocketIOPort = getConfigUint("socketio_port", "MATERIALS_SOCKETIO_PORT", configFromFile)
 	updateCheckInterval := getConfigDuration("update_check_interval", "MATERIALS_UPDATE_CHECK_INTERVAL", configFromFile)
 	c.Server.UpdateCheckInterval = updateCheckInterval
 	c.Materialscommons.Api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")

@@ -39,6 +39,10 @@ func TestNoConfigNoEnv(t *testing.T) {
 		t.Fatalf("port incorrect %d\n", Config.Server.Port)
 	}
 
+	if Config.Server.SocketIOPort != 8082 {
+		t.Fatalf("socket port incorrect %d\n", Config.Server.SocketIOPort)
+	}
+
 	if Config.Server.Address != "localhost" {
 		t.Fatalf("address incorrect %s\n", Config.Server.Address)
 	}
