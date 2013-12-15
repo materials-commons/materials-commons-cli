@@ -16,6 +16,7 @@ type projectFileInfo struct {
 	Size     int64
 	Checksum []byte
 	ModTime  time.Time
+	Id       string
 }
 
 func WalkProject(project materials.Project) {
