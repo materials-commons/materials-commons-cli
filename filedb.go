@@ -1,18 +1,18 @@
-package db
+package materials
 
 import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type FileDB struct {
+type fileDB struct {
 	*leveldb.DB
 }
 
-func OpenFileDB(path string) (*FileDB, error) {
+func openFileDB(path string) (*fileDB, error) {
 	db, err := leveldb.OpenFile(path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &FileDB{DB: db}, nil
+	return &fileDB{DB: db}, nil
 }

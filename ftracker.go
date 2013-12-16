@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"github.com/materials-commons/gohandy/handyfile"
-	"github.com/materials-commons/materials/db"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,7 +18,7 @@ type projectFileInfo struct {
 }
 
 func (project *Project) WalkProject() error {
-	db, err := db.OpenFileDB("/tmp/project.db")
+	db, err := openFileDB("/tmp/project.db")
 	if err != nil {
 		return err
 	}

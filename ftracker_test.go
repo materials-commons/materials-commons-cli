@@ -3,7 +3,6 @@ package materials
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/materials-commons/materials/db"
 	"os/user"
 	"path/filepath"
 	"testing"
@@ -29,7 +28,7 @@ func TestCreatedDb(t *testing.T) {
 		return
 	}
 
-	db, _ := db.OpenFileDB("/tmp/project.db")
+	db, _ := openFileDB("/tmp/project.db")
 	defer db.Close()
 
 	iter := db.NewIterator(nil)
