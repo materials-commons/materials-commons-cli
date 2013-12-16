@@ -37,7 +37,7 @@ var (
 )
 
 func TestBuildTree(t *testing.T) {
-	projects, _ := ProjectsFrom("test_data")
+	projects, _ := OpenProjectDB(testData)
 	tproj, _ := projects.Find("tproj")
 	tree, err := tproj.Tree()
 	if err != nil {
@@ -66,7 +66,7 @@ func TestBuildTree(t *testing.T) {
 }
 
 func TestBuildTreeBadProj(t *testing.T) {
-	projects, _ := ProjectsFrom("test_data")
+	projects, _ := OpenProjectDB(testData)
 	badProj, _ := projects.Find("proj 2")
 	tree, err := badProj.Tree()
 	if err == nil {

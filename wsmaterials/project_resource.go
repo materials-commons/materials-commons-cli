@@ -8,7 +8,7 @@ import (
 )
 
 type ProjectResource struct {
-	*materials.MaterialsProjects
+	*materials.ProjectDB
 }
 
 func newProjectResource(container *restful.Container) error {
@@ -18,7 +18,7 @@ func newProjectResource(container *restful.Container) error {
 	}
 
 	projectResource := ProjectResource{
-		MaterialsProjects: p,
+		ProjectDB: p,
 	}
 	projectResource.register(container)
 
