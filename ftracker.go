@@ -1,11 +1,10 @@
-package project
+package materials
 
 import (
 	"crypto/md5"
 	"encoding/json"
 	"github.com/materials-commons/gohandy/handyfile"
-	"github.com/materials-commons/materials"
-	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/materials-commons/materials/db"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,11 +18,15 @@ type projectFileInfo struct {
 	Id       string
 }
 
-func WalkProject(project materials.Project) {
-	db, _ := leveldb.OpenFile("/tmp/project.db", nil)
+func (project *Project) WalkProject() error {
+	db, err := db.OpenFileDB("/tmp/project.db")
+	if err != nil {
+		return err
+	}
 	defer db.Close()
+
 	hasher := md5.New()
-	filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			key := hasher.Sum([]byte(path))
 			checksum, _ := handyfile.Hash(hasher, path)
@@ -38,4 +41,6 @@ func WalkProject(project materials.Project) {
 		}
 		return nil
 	})
+
+	return nil
 }

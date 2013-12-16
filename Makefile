@@ -1,4 +1,4 @@
-GODIRS = . wsmaterials materials site autoupdate send project
+GODIRS = . wsmaterials materials site autoupdate send db
 P = github.com/materials-commons/materials
 
 all: fmt test

@@ -10,17 +10,6 @@ import (
 	"strings"
 )
 
-// Project describes the information we track about a users
-// projects. Here we keep the name of the project and the
-// directory path. The name of the project is the top level
-// directory of the project. The path is the full path to
-// the project excluding the name.
-type Project struct {
-	Name   string `json:"name" xml:"name"`
-	Path   string `json:"path" xml:"path"`
-	Status string `json:"status" xml:"status"`
-}
-
 // MaterialsProjects contains a list of user projects and information that
 // is needed by the methods to load the projects file.
 type MaterialsProjects struct {
