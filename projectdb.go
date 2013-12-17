@@ -1,12 +1,14 @@
 package materials
 
 import (
-	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"io/ioutil"
 	"strings"
+	"github.com/materials-commons/gohandy/handyfile"
 )
 
 // MaterialsProjects contains a list of user projects and information that
@@ -39,26 +41,47 @@ func (p *ProjectDB) Reload() error {
 // Reads the projects file, parses its contents and loads it into
 // the Projects struct.
 func (p *ProjectDB) loadProjects() error {
-	projectsFile, err := os.Open(p.path)
+	if !handyfile.IsDir(p.path) {
+		return fmt.Errorf("ProjectDB must be a directory: '%s'", p.path)
+	}
+
+	finfos, err := ioutil.ReadDir(p.path)
 	if err != nil {
 		return err
 	}
-	defer projectsFile.Close()
-
-	projects := []Project{}
-	scanner := bufio.NewScanner(projectsFile)
-	for scanner.Scan() {
-		splitLine := strings.Split(scanner.Text(), "|")
-		if len(splitLine) == 3 {
-			projects = append(projects, Project{
-				Name:   strings.TrimSpace(splitLine[0]),
-				Path:   strings.TrimSpace(splitLine[1]),
-				Status: strings.TrimSpace(splitLine[2]),
-			})
+	for _, finfo := range finfos {
+		if isProjectFile(finfo) {
+			proj, err := readProjectFile(filepath.Join(p.path, finfo.Name()))
+			if err != nil {
+				p.projects = append(p.projects, *proj)
+			}
 		}
 	}
-	p.projects = projects
+
 	return nil
+}
+
+func isProjectFile(finfo os.FileInfo) bool {
+	if !finfo.IsDir() {
+		if ext := filepath.Ext(finfo.Name()); ext == ".project" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func readProjectFile(filepath string) (*Project, error) {
+	b, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	var project Project
+	if err := json.Unmarshal(b, &project); err != nil {
+		return nil, err
+	}
+
+	return &project, nil
 }
 
 // Attempts to create an empty projects file.
@@ -147,6 +170,15 @@ func (p *ProjectDB) writeToProjectsFile(projects []Project) error {
 		file.WriteString(projectLine)
 	}
 	return nil
+}
+
+func (p *ProjectDB) writeProject(project Project) error {
+	b, err := json.MarshalIndent(project, "", "  ")
+	if err != nil {
+		return err
+	}
+	filename := filepath.Join(p.path, project.Name, ".project")
+	return ioutil.WriteFile(filename, b, os.ModePerm)
 }
 
 // Exists returns true if there is a project matching
