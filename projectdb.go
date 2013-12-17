@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/materials-commons/gohandy/handyfile"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"io/ioutil"
-	"strings"
-	"github.com/materials-commons/gohandy/handyfile"
 )
 
 // MaterialsProjects contains a list of user projects and information that
@@ -49,10 +48,12 @@ func (p *ProjectDB) loadProjects() error {
 	if err != nil {
 		return err
 	}
+
+	p.projects = []Project{}
 	for _, finfo := range finfos {
 		if isProjectFile(finfo) {
 			proj, err := readProjectFile(filepath.Join(p.path, finfo.Name()))
-			if err != nil {
+			if err == nil {
 				p.projects = append(p.projects, *proj)
 			}
 		}
@@ -76,22 +77,12 @@ func readProjectFile(filepath string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var project Project
 	if err := json.Unmarshal(b, &project); err != nil {
 		return nil, err
 	}
-
 	return &project, nil
-}
-
-// Attempts to create an empty projects file.
-func (p *ProjectDB) createEmptyProjectsFile() error {
-	file, err := os.Create(p.path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return nil
 }
 
 // Projects returns the list of loaded projects.
@@ -104,35 +95,39 @@ func (p *ProjectDB) Add(proj Project) error {
 	if p.Exists(proj.Name) {
 		return errors.New(fmt.Sprintf("Project already exists: %s", proj.Name))
 	}
+
+	if err := p.writeProject(proj); err != nil {
+		return err
+	}
+
 	p.projects = append(p.projects, proj)
-	return p.writeToProjectsFile(p.projects)
+	return nil
 }
 
 // Remove removes a project and updates the projects file.
 func (p *ProjectDB) Remove(projectName string) error {
-	projects, projectsUpdated := p.projectsExceptFor(projectName)
+	projects, projectFound := p.projectsExceptFor(projectName)
 
-	// We found the entry to remove. Thus we need to
-	// update the projects file.
-	if projectsUpdated {
-		err := p.writeToProjectsFile(projects)
-		if err == nil {
-			p.projects = projects
+	// We found the entry to remove, so we attempt to remove the project file.
+	if projectFound {
+		if err := os.Remove(p.projectFilePath(projectName)); err != nil {
+			return err
 		}
-		return err
-	} else {
-		// project wasn't found so we don't update anything and we return no error
-		return nil
 	}
+
+	p.projects = projects
+	return nil
 }
 
 func (p *ProjectDB) Update(proj Project) error {
-	_, index := p.find(proj.Name)
-	if index != -1 {
-		projects := p.Projects()
-		projects[index].Path = proj.Path
-		projects[index].Status = proj.Status
-		return p.writeToProjectsFile(p.Projects())
+	projects, found := p.projectsExceptFor(proj.Name)
+	if found {
+		if err := p.writeProject(proj); err != nil {
+			return err
+		}
+		projects = append(projects, proj)
+		p.projects = projects
+		return nil
 	}
 
 	return errors.New(fmt.Sprintf("Project not found: %s", proj.Name))
@@ -154,31 +149,18 @@ func (p *ProjectDB) projectsExceptFor(projectName string) ([]Project, bool) {
 	return projects, found
 }
 
-// writeToProjectsFile overwrites the projects file with the list
-// of projects.
-func (p *ProjectDB) writeToProjectsFile(projects []Project) error {
-	file, err := os.Create(p.path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	for _, project := range projects {
-		projectLine := fmt.Sprintf("%s|%s|%s\n",
-			strings.TrimSpace(project.Name),
-			strings.TrimSpace(project.Path),
-			strings.TrimSpace(project.Status))
-		file.WriteString(projectLine)
-	}
-	return nil
-}
-
 func (p *ProjectDB) writeProject(project Project) error {
 	b, err := json.MarshalIndent(project, "", "  ")
 	if err != nil {
 		return err
 	}
-	filename := filepath.Join(p.path, project.Name, ".project")
+
+	filename := p.projectFilePath(project.Name)
 	return ioutil.WriteFile(filename, b, os.ModePerm)
+}
+
+func (p *ProjectDB) projectFilePath(projectName string) string {
+	return filepath.Join(p.path, projectName+".project")
 }
 
 // Exists returns true if there is a project matching

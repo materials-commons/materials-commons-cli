@@ -1,13 +1,52 @@
 package materials
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
+	"time"
 )
 
 const expectedNumber = 3
 const testData = "test_data/.materials/projects"
 const corruptedData = "test_data/corrupted/.materials/projects"
+
+func TestWrite(t *testing.T) {
+	if true {
+		return
+	}
+	var changes = map[string]ProjectFileChange{
+		"hash1": ProjectFileChange{
+			Path: "/tmp/proj1/a.txt",
+			Type: "create",
+			When: time.Now(),
+			Hash: []byte{0, 1, 2},
+		},
+		"hash2": {
+			Path: "/tmp/proj1/b.txt",
+			Type: "modify",
+			When: time.Now(),
+			Hash: []byte{0, 1, 3},
+		},
+	}
+	p := Project{
+		Name:    "proj1",
+		Path:    "/tmp/proj1",
+		Status:  "Loaded",
+		ModTime: time.Now(),
+		MCId:    "abc123",
+		Changes: changes,
+		Ignore:  []string{"._DotFiles_.", "*.save"},
+	}
+
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	ioutil.WriteFile("/tmp/proj1.project", b, os.ModePerm)
+}
 
 func TestProjectsFrom(t *testing.T) {
 	projects, err := OpenProjectDB(testData)
@@ -32,19 +71,6 @@ func TestProjectsFromWithBadDirectory(t *testing.T) {
 	}
 }
 
-func TestReadCorruptedProjectsFile(t *testing.T) {
-	projects, err := OpenProjectDB(corruptedData)
-	length := len(projects.Projects())
-
-	if err != nil {
-		t.Fatalf("err should have been nil\n")
-	}
-
-	if length != 2 {
-		t.Fatalf("Expected corrupted projects to be 2, got %d\n", length)
-	}
-}
-
 func TestProjectAddDuplicate(t *testing.T) {
 	p, _ := OpenProjectDB(testData)
 	err := p.Add(Project{Name: "proj1", Path: "/tmp", Status: "Unloaded"})
@@ -66,7 +92,7 @@ func TestProjectAdd(t *testing.T) {
 	p, _ := OpenProjectDB(testData)
 	err := p.Add(Project{Name: "new proj", Path: "/tmp", Status: "Unloaded"})
 	if err != nil {
-		t.Fatalf("Add failed to add new project\n")
+		t.Fatalf("Add failed to add new project '%s'\n", err.Error())
 	}
 
 	l := len(p.Projects())
