@@ -20,7 +20,7 @@ func TestWalkProject(t *testing.T) {
 		Status: "Unknown",
 	}
 
-	p.WalkProject()
+	p.Walk()
 }
 
 func TestCreatedDb(t *testing.T) {

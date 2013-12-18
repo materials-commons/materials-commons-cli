@@ -61,6 +61,10 @@ func (p ProjectResource) register(container *restful.Container) {
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
 		Writes([]materials.ProjectFileChange{}))
 
+	ws.Route(ws.PUT("/{project-name}/track").To(p.updateTracking).
+		Doc("Updates the file tracking for the project").
+		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
+
 	container.Add(ws)
 }
 
@@ -175,15 +179,35 @@ func (p *ProjectResource) uploadProject(request *restful.Request, response *rest
 }
 
 func (p *ProjectResource) getProjectChanges(request *restful.Request, response *restful.Response) {
-	projectName := request.PathParameter("project-name")
-	if project, found := p.Find(projectName); found {
+	p.performProjectOperation(request, response, func(project *materials.Project) {
 		changes := []materials.ProjectFileChange{}
 		for _, change := range project.Changes {
 			changes = append(changes, change)
 		}
 		response.WriteEntity(changes)
+	})
+}
+
+func (p *ProjectResource) updateTracking(request *restful.Request, response *restful.Response) {
+	p.performProjectOperation(request, response, func(project *materials.Project) {
+		go func() {
+			if err := project.Walk(); err != nil {
+				msg := fmt.Sprintf("Error updating tracking for project %s: %s\n", project.Name, err.Error())
+				response.WriteErrorString(http.StatusInternalServerError, msg)
+			}
+		}()
+
+		msg := fmt.Sprintf("Updating tracking for project %s\n", project.Name)
+		response.WriteErrorString(http.StatusOK, msg)
+	})
+}
+
+func (p *ProjectResource) performProjectOperation(request *restful.Request, response *restful.Response, f func(project *materials.Project)) {
+	projectName := request.PathParameter("project-name")
+	if project, found := p.Find(projectName); found {
+		f(project)
 	} else {
 		response.WriteErrorString(http.StatusNotFound,
-			fmt.Sprintf("Project not found: %s", projectName))
+			fmt.Sprintf("Project not found: %s\n", projectName))
 	}
 }

@@ -17,8 +17,9 @@ type projectFileInfo struct {
 	Id       string
 }
 
-func (project *Project) WalkProject() error {
-	db, err := openFileDB("/tmp/project.db")
+func (project *Project) Walk() error {
+	dbpath := filepath.Join(Config.User.DotMaterialsPath(), "project_tracker.db")
+	db, err := openFileDB(dbpath)
 	if err != nil {
 		return err
 	}
