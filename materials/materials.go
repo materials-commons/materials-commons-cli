@@ -7,9 +7,13 @@ import (
 	"github.com/materials-commons/materials/autoupdate"
 	"github.com/materials-commons/materials/site"
 	"github.com/materials-commons/materials/wsmaterials"
+	"bufio"
+	"strings"
 	"os"
 	"os/user"
 	"path/filepath"
+	"encoding/json"
+	"io/ioutil"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
@@ -28,6 +32,7 @@ type ProjectOptions struct {
 	Delete    bool   `long:"delete" description:"Delete the project from the project config file"`
 	List      bool   `long:"list" description:"List all known projects and their locations"`
 	Upload    bool   `long:"upload" description:"Uploads a new project. Cannot be used on existing projects"`
+	Convert bool `long:"convert" description:"Converts projects to new layout"`
 }
 
 type Options struct {
@@ -65,6 +70,49 @@ func listProjects() {
 	}
 	for _, p := range projects.Projects() {
 		fmt.Printf("%s, %s\n", p.Name, p.Path)
+	}
+}
+
+func convertProjects() {
+	oldProjectsFiles := setupProjectsDir()
+	convertProjectsFile(oldProjectsFiles)
+}
+
+func setupProjectsDir() (oldProjectsFile string) {
+	projectsPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projects")
+	oldProjectsFile = projectsPath + ".old"
+	err := os.Rename(projectsPath, oldProjectsFile)
+	checkError(err)
+	err = os.MkdirAll(projectsPath, os.ModePerm)
+	checkError(err)
+	return
+}
+
+func convertProjectsFile(oldProjectsFile string) {
+	projectsFile, err := os.Open(oldProjectsFile)
+	projectsPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projects")
+	checkError(err)
+	defer projectsFile.Close()
+
+	scanner := bufio.NewScanner(projectsFile)
+	for scanner.Scan() {
+		splitLine := strings.Split(scanner.Text(), "|")
+		if len(splitLine) == 3 {
+			project := materials.Project{
+				Name: strings.TrimSpace(splitLine[0]),
+				Path: strings.TrimSpace(splitLine[1]),
+				Status: strings.TrimSpace(splitLine[2]),
+			}
+			b, err := json.MarshalIndent(&project, "", "  ")
+			if err != nil {
+				fmt.Printf("Could not convert '%s' to new project format\n", scanner.Text())
+				continue
+			}
+			path := filepath.Join(projectsPath, project.Name + ".project")
+			if err := ioutil.WriteFile(path, b, os.ModePerm); err != nil {
+				fmt.Printf("Unable to write project file %s\n", path)
+			}
+		}
 	}
 }
 
@@ -108,6 +156,8 @@ func main() {
 		initialize()
 	case opts.Project.List:
 		listProjects()
+	case opts.Project.Convert:
+		convertProjects()
 	case opts.Project.Upload:
 		uploadProject(opts.Project.Project)
 	case opts.Server.AsServer:
