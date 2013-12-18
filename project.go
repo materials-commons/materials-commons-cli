@@ -17,7 +17,7 @@ type ProjectFileChange struct {
 // projects. Here we keep the name of the project and the
 // directory path. The name of the project is the top level
 // directory of the project. The path is the full path to
-// the project excluding the name.
+// the project including the name (top level directory).
 type Project struct {
 	Name    string
 	Path    string
