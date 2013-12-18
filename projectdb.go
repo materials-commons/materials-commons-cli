@@ -17,12 +17,15 @@ type ProjectDB struct {
 	projects []Project
 }
 
+// CurrentUserProjects opens the project database for a user contained in
+// $HOME/.materials/projects
 func CurrentUserProjects() (*ProjectDB, error) {
 	projectsPath := filepath.Join(Config.User.DotMaterialsPath(), "projects")
 	return OpenProjectDB(projectsPath)
 }
 
-// Load projects from the database file.
+// Load projects from the database directory at path. Project files are
+// JSON files ending with a .project extension.
 func OpenProjectDB(path string) (*ProjectDB, error) {
 	projectDB := ProjectDB{path: path}
 	err := projectDB.loadProjects()
@@ -37,8 +40,7 @@ func (p *ProjectDB) Reload() error {
 	return p.loadProjects()
 }
 
-// Reads the projects file, parses its contents and loads it into
-// the Projects struct.
+// loadProjects reads the projects directory, and loads each *.project file found in it.
 func (p *ProjectDB) loadProjects() error {
 	if !handyfile.IsDir(p.path) {
 		return fmt.Errorf("ProjectDB must be a directory: '%s'", p.path)
@@ -62,6 +64,7 @@ func (p *ProjectDB) loadProjects() error {
 	return nil
 }
 
+// isProjectFile tests if a FileInfo project points to a project file.
 func isProjectFile(finfo os.FileInfo) bool {
 	if !finfo.IsDir() {
 		if ext := filepath.Ext(finfo.Name()); ext == ".project" {
@@ -72,6 +75,7 @@ func isProjectFile(finfo os.FileInfo) bool {
 	return false
 }
 
+// readProjectFile reads a a project file, parses the JSON in a Project.
 func readProjectFile(filepath string) (*Project, error) {
 	b, err := ioutil.ReadFile(filepath)
 	if err != nil {
@@ -90,7 +94,7 @@ func (p *ProjectDB) Projects() []Project {
 	return p.projects
 }
 
-// Add adds a new project and updates the projects file.
+// Add adds a new project to and writes the corresponding project file.
 func (p *ProjectDB) Add(proj Project) error {
 	if p.Exists(proj.Name) {
 		return errors.New(fmt.Sprintf("Project already exists: %s", proj.Name))
@@ -104,7 +108,7 @@ func (p *ProjectDB) Add(proj Project) error {
 	return nil
 }
 
-// Remove removes a project and updates the projects file.
+// Remove removes a project and its file.
 func (p *ProjectDB) Remove(projectName string) error {
 	projects, projectFound := p.projectsExceptFor(projectName)
 
@@ -119,6 +123,7 @@ func (p *ProjectDB) Remove(projectName string) error {
 	return nil
 }
 
+// Update updates an existing project and its file.
 func (p *ProjectDB) Update(proj Project) error {
 	projects, found := p.projectsExceptFor(proj.Name)
 	if found {
@@ -149,6 +154,7 @@ func (p *ProjectDB) projectsExceptFor(projectName string) ([]Project, bool) {
 	return projects, found
 }
 
+// writeProject writes a project to a project file.
 func (p *ProjectDB) writeProject(project Project) error {
 	b, err := json.MarshalIndent(project, "", "  ")
 	if err != nil {
@@ -159,6 +165,7 @@ func (p *ProjectDB) writeProject(project Project) error {
 	return ioutil.WriteFile(filename, b, os.ModePerm)
 }
 
+// projectFilePath creates the path to a projects file.
 func (p *ProjectDB) projectFilePath(projectName string) string {
 	return filepath.Join(p.path, projectName+".project")
 }
@@ -171,7 +178,7 @@ func (p *ProjectDB) Exists(projectName string) bool {
 }
 
 // Find returns (Project, true) if the project is found otherwise
-// it returns (Project{}, false)
+// it returns (Project{}, false).
 func (p *ProjectDB) Find(projectName string) (Project, bool) {
 	project, index := p.find(projectName)
 	return project, index != -1
