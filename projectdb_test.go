@@ -10,8 +10,8 @@ import (
 )
 
 const expectedNumber = 3
-const testData = "test_data/.materials/projects"
-const corruptedData = "test_data/corrupted/.materials/projects"
+const testData = "test_data/.materials/projectdb"
+const corruptedData = "test_data/corrupted/.materials/projectdb"
 
 func TestWrite(t *testing.T) {
 	if true {

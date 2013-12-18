@@ -20,7 +20,7 @@ type ProjectDB struct {
 // CurrentUserProjects opens the project database for a user contained in
 // $HOME/.materials/projects
 func CurrentUserProjects() (*ProjectDB, error) {
-	projectsPath := filepath.Join(Config.User.DotMaterialsPath(), "projects")
+	projectsPath := filepath.Join(Config.User.DotMaterialsPath(), "projectdb")
 	return OpenProjectDB(projectsPath)
 }
 
