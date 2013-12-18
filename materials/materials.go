@@ -1,19 +1,20 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/autoupdate"
 	"github.com/materials-commons/materials/site"
 	"github.com/materials-commons/materials/wsmaterials"
-	"bufio"
-	"strings"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
-	"encoding/json"
-	"io/ioutil"
+	"strings"
+	"time"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
@@ -32,7 +33,7 @@ type ProjectOptions struct {
 	Delete    bool   `long:"delete" description:"Delete the project from the project config file"`
 	List      bool   `long:"list" description:"List all known projects and their locations"`
 	Upload    bool   `long:"upload" description:"Uploads a new project. Cannot be used on existing projects"`
-	Convert bool `long:"convert" description:"Converts projects to new layout"`
+	Convert   bool   `long:"convert" description:"Converts projects to new layout"`
 }
 
 type Options struct {
@@ -74,23 +75,20 @@ func listProjects() {
 }
 
 func convertProjects() {
-	oldProjectsFiles := setupProjectsDir()
-	convertProjectsFile(oldProjectsFiles)
+	setupProjectsDir()
+	convertProjectsFile()
 }
 
-func setupProjectsDir() (oldProjectsFile string) {
-	projectsPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projects")
-	oldProjectsFile = projectsPath + ".old"
-	err := os.Rename(projectsPath, oldProjectsFile)
+func setupProjectsDir() {
+	projectDB := filepath.Join(materials.Config.User.DotMaterialsPath(), "projectdb")
+	err := os.MkdirAll(projectDB, os.ModePerm)
 	checkError(err)
-	err = os.MkdirAll(projectsPath, os.ModePerm)
-	checkError(err)
-	return
 }
 
-func convertProjectsFile(oldProjectsFile string) {
-	projectsFile, err := os.Open(oldProjectsFile)
+func convertProjectsFile() {
 	projectsPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projects")
+	projectsFile, err := os.Open(projectsPath)
+	projectdbPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projectdb")
 	checkError(err)
 	defer projectsFile.Close()
 
@@ -99,16 +97,19 @@ func convertProjectsFile(oldProjectsFile string) {
 		splitLine := strings.Split(scanner.Text(), "|")
 		if len(splitLine) == 3 {
 			project := materials.Project{
-				Name: strings.TrimSpace(splitLine[0]),
-				Path: strings.TrimSpace(splitLine[1]),
-				Status: strings.TrimSpace(splitLine[2]),
+				Name:    strings.TrimSpace(splitLine[0]),
+				Path:    strings.TrimSpace(splitLine[1]),
+				Status:  strings.TrimSpace(splitLine[2]),
+				ModTime: time.Now(),
+				Changes: map[string]materials.ProjectFileChange{},
+				Ignore:  []string{},
 			}
 			b, err := json.MarshalIndent(&project, "", "  ")
 			if err != nil {
 				fmt.Printf("Could not convert '%s' to new project format\n", scanner.Text())
 				continue
 			}
-			path := filepath.Join(projectsPath, project.Name + ".project")
+			path := filepath.Join(projectdbPath, project.Name+".project")
 			if err := ioutil.WriteFile(path, b, os.ModePerm); err != nil {
 				fmt.Printf("Unable to write project file %s\n", path)
 			}
