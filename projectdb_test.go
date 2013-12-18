@@ -22,13 +22,11 @@ func TestWrite(t *testing.T) {
 			Path: "/tmp/proj1/a.txt",
 			Type: "create",
 			When: time.Now(),
-			Hash: []byte{0, 1, 2},
 		},
 		"hash2": {
 			Path: "/tmp/proj1/b.txt",
 			Type: "modify",
 			When: time.Now(),
-			Hash: []byte{0, 1, 3},
 		},
 	}
 	p := Project{
@@ -161,8 +159,11 @@ func TestProjectFind(t *testing.T) {
 func TestProjectUpdate(t *testing.T) {
 	p, _ := OpenProjectDB(testData)
 	proj, _ := p.Find("proj1")
-	proj.Status = "Loaded"
-	p.Update(proj)
+
+	p.Update(func() *Project {
+		proj.Status = "Loaded"
+		return proj
+	})
 	proj, _ = p.Find("proj1")
 	if proj.Status != "Loaded" {
 		t.Fatalf("proj1 status is %s, should have been 'Loaded'", proj.Status)

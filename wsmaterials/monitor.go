@@ -50,14 +50,14 @@ func monitorProjectChanges(sio *socketio.SocketIOServer) {
 	p := materials.CurrentUserProjectDB()
 
 	for _, project := range p.Projects() {
-		go projectWatcher(project, sio)
+		go projectWatcher(project, p, sio)
 	}
 }
 
 // projectWatcher starts the file system monitor. It watches for file system
 // events and then communicates them along the SocketIOServer. It sends events
 // to the front end as projectFileStatus messages encoded in JSON.
-func projectWatcher(project materials.Project, sio *socketio.SocketIOServer) {
+func projectWatcher(project *materials.Project, projectdb *materials.ProjectDB, sio *socketio.SocketIOServer) {
 	watcher, err := fs.NewRecursiveWatcher(project.Path)
 	if err != nil {
 		fmt.Println(err)
@@ -68,18 +68,39 @@ func projectWatcher(project materials.Project, sio *socketio.SocketIOServer) {
 
 	for {
 		event := <-watcher.Events
-		pfs := &projectFileStatus{
-			Project:  project.Name,
-			FilePath: event.Name,
-			Event:    eventType(event),
+		broadcastEvent(event, project.Name, sio)
+		trackEvent(event, project, projectdb)
+	}
+}
+
+func broadcastEvent(event fs.Event, projectName string, sio *socketio.SocketIOServer) {
+	eventType := eventType2String(event)
+	pfs := &projectFileStatus{
+		Project:  projectName,
+		FilePath: event.Name,
+		Event:    eventType,
+	}
+	sio.Broadcast("file", pfs)
+}
+
+func trackEvent(event fs.Event, project *materials.Project, projectdb *materials.ProjectDB) {
+	if event.IsCreate() || event.IsModify() || event.IsDelete() {
+		eventType := eventType2String(event)
+		fileChange := materials.ProjectFileChange{
+			Path: event.Name,
+			Type: eventType,
+			When: time.Now(),
 		}
-		sio.Broadcast("file", pfs)
+		projectdb.Update(func() *materials.Project {
+			project.AddFileChange(fileChange)
+			return project
+		})
 	}
 }
 
 // eventType takes an event determines what type of event occurred and
 // returns the corresponding string.
-func eventType(event fs.Event) string {
+func eventType2String(event fs.Event) string {
 	switch {
 	case event.IsCreate():
 		return "Created"

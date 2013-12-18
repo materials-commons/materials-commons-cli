@@ -121,8 +121,10 @@ func uploadProject(projectName string) {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		project.Status = "Loaded"
-		projects.Update(project)
+		projects.Update(func() *materials.Project {
+			project.Status = "Loaded"
+			return project
+		})
 	}
 }
 

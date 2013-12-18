@@ -29,7 +29,7 @@ func TestConvertProjects(t *testing.T) {
 	}
 }
 
-func verify(project materials.Project, path, status string, t *testing.T) {
+func verify(project *materials.Project, path, status string, t *testing.T) {
 	if project.Path != path {
 		t.Fatalf("Paths don't match, expected %s, got %s\n", project.Path, path)
 	}

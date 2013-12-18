@@ -56,6 +56,11 @@ func (p ProjectResource) register(container *restful.Container) {
 		Doc("Uploads/imports a project to Materials Commons").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
 
+	ws.Route(ws.GET("/{project-name}/changes").To(p.getProjectChanges).
+		Doc("Lists all the file system changes for a project").
+		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
+		Writes([]materials.ProjectFileChange{}))
+
 	container.Add(ws)
 }
 
@@ -134,7 +139,11 @@ func (p *ProjectResource) updateProject(request *restful.Request, response *rest
 		project.Status = originalProject.Status
 		err = p.Add(*project)
 	} else {
-		err = p.Update(*project)
+		err = p.Update(func() *materials.Project {
+			originalProject.Name = project.Name
+			originalProject.Path = project.Path
+			return originalProject
+		})
 	}
 
 	if err != nil {
@@ -152,12 +161,28 @@ func (p *ProjectResource) uploadProject(request *restful.Request, response *rest
 		if err != nil {
 			response.WriteErrorString(http.StatusServiceUnavailable, "Unable to upload project")
 		} else {
-			project.Status = "Loaded"
-			p.Update(project)
+			p.Update(func() *materials.Project {
+				project.Status = "Loaded"
+				return project
+			})
 			response.WriteErrorString(http.StatusCreated, "Project uploaded")
 		}
 	} else {
 		response.AddHeader("Content-Type", "text/plain")
+		response.WriteErrorString(http.StatusNotFound,
+			fmt.Sprintf("Project not found: %s", projectName))
+	}
+}
+
+func (p *ProjectResource) getProjectChanges(request *restful.Request, response *restful.Response) {
+	projectName := request.PathParameter("project-name")
+	if project, found := p.Find(projectName); found {
+		changes := []materials.ProjectFileChange{}
+		for _, change := range project.Changes {
+			changes = append(changes, change)
+		}
+		response.WriteEntity(changes)
+	} else {
 		response.WriteErrorString(http.StatusNotFound,
 			fmt.Sprintf("Project not found: %s", projectName))
 	}

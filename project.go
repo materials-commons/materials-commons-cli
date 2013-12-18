@@ -10,7 +10,6 @@ type ProjectFileChange struct {
 	Path string
 	Type string
 	When time.Time
-	Hash []byte
 }
 
 // Project describes the information we track about a users
@@ -26,4 +25,20 @@ type Project struct {
 	MCId    string
 	Changes map[string]ProjectFileChange
 	Ignore  []string
+}
+
+func (p *Project) AddFileChange(fileChange ProjectFileChange) {
+	entry, found := p.Changes[fileChange.Path]
+	switch {
+	case found:
+		entry.Type = fileChange.Type
+		entry.When = fileChange.When
+		p.Changes[entry.Path] = entry
+	case !found:
+		p.Changes[fileChange.Path] = fileChange
+	}
+}
+
+func (p *Project) RemoveFileChange(path string) {
+	delete(p.Changes, path)
 }

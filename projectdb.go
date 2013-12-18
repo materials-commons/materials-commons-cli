@@ -15,7 +15,7 @@ import (
 // is needed by the methods to load the projects file.
 type ProjectDB struct {
 	path     string
-	projects []Project
+	projects []*Project
 	mutex    sync.RWMutex
 }
 
@@ -66,12 +66,12 @@ func (p *ProjectDB) loadProjects() error {
 		return err
 	}
 
-	p.projects = []Project{}
+	p.projects = []*Project{}
 	for _, finfo := range finfos {
 		if isProjectFile(finfo) {
 			proj, err := readProjectFile(filepath.Join(p.path, finfo.Name()))
 			if err == nil {
-				p.projects = append(p.projects, *proj)
+				p.projects = append(p.projects, proj)
 			}
 		}
 	}
@@ -105,7 +105,7 @@ func readProjectFile(filepath string) (*Project, error) {
 }
 
 // Projects returns the list of loaded projects.
-func (p *ProjectDB) Projects() []Project {
+func (p *ProjectDB) Projects() []*Project {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
@@ -131,7 +131,7 @@ func (p *ProjectDB) Add(proj Project) error {
 		return err
 	}
 
-	p.projects = append(p.projects, proj)
+	p.projects = append(p.projects, &proj)
 	return nil
 }
 
@@ -154,17 +154,32 @@ func (p *ProjectDB) Remove(projectName string) error {
 }
 
 // Update updates an existing project and its file.
-func (p *ProjectDB) Update(proj Project) error {
+func (p *ProjectDB) Update2(proj Project) error {
 	p.mutex.Lock()
-	p.mutex.Unlock()
+	defer p.mutex.Unlock()
 
 	projects, found := p.projectsExceptFor(proj.Name)
 	if found {
 		if err := p.writeProject(proj); err != nil {
 			return err
 		}
-		projects = append(projects, proj)
+		projects = append(projects, &proj)
 		p.projects = projects
+		return nil
+	}
+
+	return errors.New(fmt.Sprintf("Project not found: %s", proj.Name))
+}
+
+func (p *ProjectDB) Update(f func() *Project) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	proj := f()
+	if _, index := p.find(proj.Name); index != -1 {
+		if err := p.writeProject(*proj); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -174,8 +189,8 @@ func (p *ProjectDB) Update(proj Project) error {
 // projectsExceptFor returns a new list of projects except for the project
 // matching projectName. It returns true if it found a project matching
 // projectName.
-func (p *ProjectDB) projectsExceptFor(projectName string) ([]Project, bool) {
-	projects := []Project{}
+func (p *ProjectDB) projectsExceptFor(projectName string) ([]*Project, bool) {
+	projects := []*Project{}
 	found := false
 	for _, project := range p.projects {
 		if project.Name != projectName {
@@ -212,7 +227,7 @@ func (p *ProjectDB) Exists(projectName string) bool {
 
 // Find returns (Project, true) if the project is found otherwise
 // it returns (Project{}, false).
-func (p *ProjectDB) Find(projectName string) (Project, bool) {
+func (p *ProjectDB) Find(projectName string) (*Project, bool) {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
@@ -223,7 +238,7 @@ func (p *ProjectDB) Find(projectName string) (Project, bool) {
 // find returns (Project, index) where index is -1 if
 // the project wasn't found, otherwise it is the index
 // in the Projects array.
-func (p *ProjectDB) find(projectName string) (Project, int) {
+func (p *ProjectDB) find(projectName string) (*Project, int) {
 	// Never put a lock in this routine.
 	for index, project := range p.projects {
 		if project.Name == projectName {
@@ -231,5 +246,5 @@ func (p *ProjectDB) find(projectName string) (Project, int) {
 		}
 	}
 
-	return Project{}, -1
+	return nil, -1
 }
