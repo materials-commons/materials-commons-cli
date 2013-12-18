@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 // MaterialsProjects contains a list of user projects and information that
@@ -15,13 +16,25 @@ import (
 type ProjectDB struct {
 	path     string
 	projects []Project
+	mutex    sync.RWMutex
 }
 
-// CurrentUserProjects opens the project database for a user contained in
-// $HOME/.materials/projects
-func CurrentUserProjects() (*ProjectDB, error) {
-	projectsPath := filepath.Join(Config.User.DotMaterialsPath(), "projectdb")
-	return OpenProjectDB(projectsPath)
+var currentUserDB *ProjectDB
+var currentUserDBOnce sync.Once
+
+// CurrentUserProjectDB opens the project database for a user contained in
+// $HOME/.materials/projectdb. Only opens the database once per process,
+// regardless of how many times it is called.
+func CurrentUserProjectDB() *ProjectDB {
+	currentUserDBOnce.Do(func() {
+		projectsPath := filepath.Join(Config.User.DotMaterialsPath(), "projectdb")
+		var err error
+		currentUserDB, err = OpenProjectDB(projectsPath)
+		if err != nil {
+			panic(fmt.Sprintf("Unable to open current users projectsdb: %s", projectsPath))
+		}
+	})
+	return currentUserDB
 }
 
 // Load projects from the database directory at path. Project files are
@@ -37,6 +50,8 @@ func OpenProjectDB(path string) (*ProjectDB, error) {
 
 // Reload re-reads and loads the projects file.
 func (p *ProjectDB) Reload() error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	return p.loadProjects()
 }
 
@@ -91,12 +106,24 @@ func readProjectFile(filepath string) (*Project, error) {
 
 // Projects returns the list of loaded projects.
 func (p *ProjectDB) Projects() []Project {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
 	return p.projects
 }
 
+/*********************************************************************
+ * Add, Remove and Update should only call low level routines, never
+ * public routes since the public routines will take out a lock and
+ * you will end up in a deadlock situation.
+ *********************************************************************/
+
 // Add adds a new project to and writes the corresponding project file.
 func (p *ProjectDB) Add(proj Project) error {
-	if p.Exists(proj.Name) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	if _, index := p.find(proj.Name); index != -1 {
 		return errors.New(fmt.Sprintf("Project already exists: %s", proj.Name))
 	}
 
@@ -110,6 +137,9 @@ func (p *ProjectDB) Add(proj Project) error {
 
 // Remove removes a project and its file.
 func (p *ProjectDB) Remove(projectName string) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	projects, projectFound := p.projectsExceptFor(projectName)
 
 	// We found the entry to remove, so we attempt to remove the project file.
@@ -125,6 +155,9 @@ func (p *ProjectDB) Remove(projectName string) error {
 
 // Update updates an existing project and its file.
 func (p *ProjectDB) Update(proj Project) error {
+	p.mutex.Lock()
+	p.mutex.Unlock()
+
 	projects, found := p.projectsExceptFor(proj.Name)
 	if found {
 		if err := p.writeProject(proj); err != nil {
@@ -180,6 +213,9 @@ func (p *ProjectDB) Exists(projectName string) bool {
 // Find returns (Project, true) if the project is found otherwise
 // it returns (Project{}, false).
 func (p *ProjectDB) Find(projectName string) (Project, bool) {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
 	project, index := p.find(projectName)
 	return project, index != -1
 }
@@ -188,6 +224,7 @@ func (p *ProjectDB) Find(projectName string) (Project, bool) {
 // the project wasn't found, otherwise it is the index
 // in the Projects array.
 func (p *ProjectDB) find(projectName string) (Project, int) {
+	// Never put a lock in this routine.
 	for index, project := range p.projects {
 		if project.Name == projectName {
 			return project, index

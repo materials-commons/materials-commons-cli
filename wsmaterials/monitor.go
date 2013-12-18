@@ -47,7 +47,7 @@ func startHttp(retryCount int, sio *socketio.SocketIOServer) {
 
 // monitorProjectChanges starts a separate go thread for each project to monitor.
 func monitorProjectChanges(sio *socketio.SocketIOServer) {
-	p, _ := materials.CurrentUserProjects()
+	p := materials.CurrentUserProjectDB()
 
 	for _, project := range p.Projects() {
 		go projectWatcher(project, sio)

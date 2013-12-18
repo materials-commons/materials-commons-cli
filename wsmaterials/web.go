@@ -39,7 +39,7 @@ func setupSite() string {
 }
 
 func setupProjects() {
-	projects, _ := materials.CurrentUserProjects()
+	projects := materials.CurrentUserProjectDB()
 	for _, project := range projects.Projects() {
 		projectUrlPath := fmt.Sprintf("/%s/", project.Name)
 		dir := http.Dir(project.Path)

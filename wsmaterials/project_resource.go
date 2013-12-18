@@ -12,10 +12,7 @@ type ProjectResource struct {
 }
 
 func newProjectResource(container *restful.Container) error {
-	p, err := materials.CurrentUserProjects()
-	if err != nil {
-		return err
-	}
+	p := materials.CurrentUserProjectDB()
 
 	projectResource := ProjectResource{
 		ProjectDB: p,

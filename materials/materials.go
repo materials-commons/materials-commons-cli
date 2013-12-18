@@ -65,10 +65,7 @@ func checkError(err error) {
 }
 
 func listProjects() {
-	projects, err := materials.CurrentUserProjects()
-	if err != nil {
-		return
-	}
+	projects := materials.CurrentUserProjectDB()
 	for _, p := range projects.Projects() {
 		fmt.Printf("%s, %s\n", p.Name, p.Path)
 	}
@@ -118,7 +115,7 @@ func convertProjectsFile() {
 }
 
 func uploadProject(projectName string) {
-	projects, _ := materials.CurrentUserProjects()
+	projects := materials.CurrentUserProjectDB()
 	project, _ := projects.Find(projectName)
 	err := project.Upload()
 	if err != nil {
