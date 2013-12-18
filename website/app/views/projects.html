@@ -6,14 +6,14 @@
             <table ng-table="tableParams" class="table-bordered">
                 <tr ng-repeat="project in projects">
                     <td data-title="'Name'">
-                        <span ng-if="!project.$edit">{{ project.name }}</span>
+                        <span ng-if="!project.$edit">{{ project.Name }}</span>
                         <div ng-if="project.$edit"><input class="form-control" type="text" ng-model="project.name"></div>
                     </td>
                     <td data-title="'Path'">
-                        <span ng-if="!project.$edit">{{ project.path }}</span>
+                        <span ng-if="!project.$edit">{{ project.Path }}</span>
                         <div ng-if="project.$edit"><input class="form-control" type="text" ng-model="project.path"></div>
                     </td>
-                    <td data-title="'Status'">{{ project.status }}
+                    <td data-title="'Status'">{{ project.Status }}
                         <button ng-show="project.status === 'Unloaded'"
                                 ng-click="uploadProject(project);"> Upload
                         </button>

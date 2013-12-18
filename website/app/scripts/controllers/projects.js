@@ -10,7 +10,7 @@ angular.module('materialsApp')
             materials('/projects')
                 .success(function (projects) {
                     projects.forEach(function (project) {
-                        project.originalName = project.name;
+                        project.originalName = project.Name;
                     });
                     $scope.projects = projects;
                 })
@@ -45,9 +45,9 @@ angular.module('materialsApp')
             console.log("Creating project: " + $scope.newProjectName);
             console.log("  Located at: " + $scope.newProjectPath);
             var proj = {
-                name: $scope.newProjectName,
-                path: $scope.newProjectPath,
-                status: "Unloaded"
+                Name: $scope.newProjectName,
+                Path: $scope.newProjectPath,
+                Status: "Unloaded"
             };
             materials('/projects')
                 .success(function () {
@@ -63,8 +63,8 @@ angular.module('materialsApp')
             console.dir(project);
             project.$edit = false;
             var proj = {
-                name: project.name,
-                path: project.path
+                Name: project.name,
+                Path: project.path
             };
             materials('/projects/%', project.originalName)
                 .success(function (value) {
@@ -74,8 +74,8 @@ angular.module('materialsApp')
         };
 
         $scope.showProject = function (project) {
-            $scope.projectName = project.name;
-            $scope.projectStatus = project.status;
+            $scope.projectName = project.Name;
+            $scope.projectStatus = project.Status;
             materials('/projects/%/tree', $scope.projectName)
                 .success(function (tree) {
                     var flattened = $scope.flattenTree(tree);
