@@ -52,6 +52,12 @@ var defaultSettings = map[string]interface{}{
 
 var Config ConfigSettings
 
+var EnvironmentVariables = []string{
+	"MATERIALS_PORT", "MATERIALS_ADDRESS", "MATERIALS_SOCKETIO_PORT",
+	"MATERIALS_UPDATE_CHECK_INTERVAL", "MATERIALS_WEBDIR", "MCAPIURL",
+	"MCURL", "MCDOWNLOADURL",
+}
+
 //*********************************************************
 // Create on Initialize() for the materials package
 // that encompasses all the other initialization, such

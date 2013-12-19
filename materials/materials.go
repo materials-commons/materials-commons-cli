@@ -40,6 +40,7 @@ type Options struct {
 	Server     ServerOptions  `group:"Server Options"`
 	Project    ProjectOptions `group:"Project Options"`
 	Initialize bool           `long:"init" description:"Create configuration"`
+	Config     bool           `long:"config" description:"Show server configuration"`
 }
 
 func initialize() {
@@ -146,6 +147,26 @@ func startServer(serverOpts ServerOptions) {
 	}
 }
 
+func showConfig() {
+	fmt.Println("Configuration:")
+	if b, err := json.MarshalIndent(&materials.Config, "", "  "); err != nil {
+		fmt.Printf("Unable to display configuration: %s\n", err)
+	} else {
+		fmt.Println(string(b))
+	}
+
+	fmt.Printf("\nEnvironment Variables:\n")
+	for _, envVarName := range materials.EnvironmentVariables {
+		value := os.Getenv(envVarName)
+		if value == "" {
+			value = "Not Set"
+		}
+		fmt.Println("  ", envVarName+":", value)
+	}
+
+	fmt.Printf("\nPath to .materials: %s\n\n", materials.Config.User.DotMaterialsPath())
+}
+
 func main() {
 	materials.ConfigInitialize(mcuser)
 	var opts Options
@@ -162,5 +183,7 @@ func main() {
 		uploadProject(opts.Project.Project)
 	case opts.Server.AsServer:
 		startServer(opts.Server)
+	case opts.Config:
+		showConfig()
 	}
 }
