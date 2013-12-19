@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
@@ -27,13 +28,15 @@ type ServerOptions struct {
 }
 
 type ProjectOptions struct {
-	Project   string `long:"project" description:"Specify the project"`
-	Directory string `long:"directory" description:"The directory path to the project"`
-	Add       bool   `long:"add" description:"Add the project to the project config file"`
-	Delete    bool   `long:"delete" description:"Delete the project from the project config file"`
-	List      bool   `long:"list" description:"List all known projects and their locations"`
-	Upload    bool   `long:"upload" description:"Uploads a new project. Cannot be used on existing projects"`
-	Convert   bool   `long:"convert" description:"Converts projects to new layout"`
+	Project   string   `long:"project" description:"Specify the project"`
+	Directory string   `long:"directory" description:"The directory path to the project"`
+	Add       bool     `long:"add" description:"Add the project to the project config file"`
+	Delete    bool     `long:"delete" description:"Delete the project from the project config file"`
+	List      bool     `long:"list" description:"List all known projects and their locations"`
+	Upload    bool     `long:"upload" description:"Uploads a new project. Cannot be used on existing projects"`
+	Convert   bool     `long:"convert" description:"Converts projects to new layout"`
+	Files     []string `long:"file" description:"comma separated list of files to operate on"`
+	Tracking  bool     `long:"tracking" description:"Display tracking information for specified files"`
 }
 
 type Options struct {
@@ -167,6 +170,33 @@ func showConfig() {
 	fmt.Printf("\nPath to .materials: %s\n\n", materials.Config.User.DotMaterialsPath())
 }
 
+func showTracking(projectName string, files []string) {
+	projects := materials.CurrentUserProjectDB()
+	project, found := projects.Find(projectName)
+	if !found {
+		fmt.Printf("Unknown project %s\n", projectName)
+		return
+	}
+
+	for _, filename := range files {
+		fullpath := filepath.Join(project.Path, filename)
+		key := md5.New().Sum([]byte(fullpath))
+		data, err := project.Get(key, nil)
+		if err != nil {
+			fmt.Println("")
+			fmt.Println("Unknown file:", fullpath)
+			continue
+		}
+
+		var p materials.ProjectFileInfo
+		json.Unmarshal(data, &p)
+		b, _ := json.MarshalIndent(&p, "", "  ")
+		fmt.Println("")
+		fmt.Println("Tracking information for", fullpath, ":")
+		fmt.Println(string(b))
+	}
+}
+
 func main() {
 	materials.ConfigInitialize(mcuser)
 	var opts Options
@@ -185,5 +215,7 @@ func main() {
 		startServer(opts.Server)
 	case opts.Config:
 		showConfig()
+	case opts.Project.Tracking:
+		showTracking(opts.Project.Project, opts.Project.Files)
 	}
 }
