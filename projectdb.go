@@ -71,6 +71,7 @@ func (p *ProjectDB) loadProjects() error {
 		if isProjectFile(finfo) {
 			proj, err := readProjectFile(filepath.Join(p.path, finfo.Name()))
 			if err == nil {
+				proj.OpenDB()
 				p.projects = append(p.projects, proj)
 			}
 		}
