@@ -155,23 +155,6 @@ func (p *ProjectDB) Remove(projectName string) error {
 }
 
 // Update updates an existing project and its file.
-func (p *ProjectDB) Update2(proj Project) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	projects, found := p.projectsExceptFor(proj.Name)
-	if found {
-		if err := p.writeProject(proj); err != nil {
-			return err
-		}
-		projects = append(projects, &proj)
-		p.projects = projects
-		return nil
-	}
-
-	return errors.New(fmt.Sprintf("Project not found: %s", proj.Name))
-}
-
 func (p *ProjectDB) Update(f func() *Project) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
