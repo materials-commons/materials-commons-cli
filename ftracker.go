@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type projectFileInfo struct {
+type ProjectFileInfo struct {
 	Path     string
 	Size     int64
 	Checksum []byte
@@ -18,26 +18,19 @@ type projectFileInfo struct {
 }
 
 func (project *Project) Walk() error {
-	dbpath := filepath.Join(Config.User.DotMaterialsPath(), "project_tracker.db")
-	db, err := openFileDB(dbpath)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
 	hasher := md5.New()
-	err = filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			key := hasher.Sum([]byte(path))
 			checksum, _ := handyfile.Hash(hasher, path)
-			pinfo := &projectFileInfo{
+			pinfo := &ProjectFileInfo{
 				Path:     path,
 				Size:     info.Size(),
 				Checksum: checksum,
 				ModTime:  info.ModTime(),
 			}
 			value, _ := json.Marshal(pinfo)
-			db.Put(key, value, nil)
+			project.Put(key, value, nil)
 		}
 		return nil
 	})

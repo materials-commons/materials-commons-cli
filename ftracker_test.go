@@ -37,7 +37,7 @@ func TestCreatedDb(t *testing.T) {
 	for iter.Next() {
 		key := iter.Key()
 		value := iter.Value()
-		var p projectFileInfo
+		var p ProjectFileInfo
 		json.Unmarshal(value, &p)
 		fmt.Println(key)
 		fmt.Println(p)
