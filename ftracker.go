@@ -59,12 +59,12 @@ func (pfl ProjectFileLocation) String() string {
 }
 
 type ProjectFileInfo struct {
-	Path    string
-	Size    int64
-	Hash    string
-	ModTime time.Time
-	Id      string
-	Status  ProjectFileStatus
+	Path     string
+	Size     int64
+	Hash     string
+	ModTime  time.Time
+	Id       string
+	Status   ProjectFileStatus
 	Location ProjectFileLocation
 }
 
