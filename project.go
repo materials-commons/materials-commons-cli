@@ -67,5 +67,8 @@ func (p *Project) OpenDB() error {
 	path := filepath.Join(Config.User.DotMaterialsPath(), "projectdb", p.Name+".db")
 	var err error
 	p.DB, err = leveldb.OpenFile(path, nil)
+	if err == nil {
+		p.CompactRange(leveldb.Range{nil, nil})
+	}
 	return err
 }
