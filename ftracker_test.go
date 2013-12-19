@@ -3,6 +3,7 @@ package materials
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/syndtr/goleveldb/leveldb"
 	"os/user"
 	"path/filepath"
 	"testing"
@@ -27,20 +28,24 @@ func TestCreatedDb(t *testing.T) {
 	if true {
 		return
 	}
-
-	db, _ := openFileDB("/tmp/project.db")
+	db, _ := leveldb.OpenFile("/home/gtarcea/.materials/projectdb/Synthetic Tooth.db", nil)
 	defer db.Close()
+
+	db.CompactRange(leveldb.Range{nil, nil})
+	if true {
+		return
+	}
 
 	iter := db.NewIterator(nil)
 	defer iter.Release()
 
 	for iter.Next() {
-		key := iter.Key()
+		//key := iter.Key()
 		value := iter.Value()
 		var p ProjectFileInfo
 		json.Unmarshal(value, &p)
-		fmt.Println(key)
-		fmt.Println(p)
+		//fmt.Println(key)
+		fmt.Printf("%#v\n", p)
 		fmt.Println("================")
 	}
 }
