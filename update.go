@@ -20,10 +20,20 @@ var executable = map[string]string{
 	"linux":   "materials",
 }
 
+/*
 var bgcommands = map[string][]string{
 	"windows": []string{"start", "/min"},
 	"darwin":  []string{"nohup"},
 	"linux":   []string{"nohup"},
+}
+*/
+
+type restartFunction func(commandPath string)
+
+var restartFunc = map[string]restartFunction{
+	"windows": restartWindows,
+	"darwin":  restartDarwin,
+	"linux":   restartLinux,
 }
 
 // Restart restarts the materials command. It starts a new command
@@ -38,14 +48,21 @@ func Restart() {
 		return
 	}
 
-	run, ok := bgcommands[runtime.GOOS]
+	f, ok := restartFunc[runtime.GOOS]
 	if !ok {
-		panic(fmt.Sprintf("Don't know what the background command is on %s platform", runtime.GOOS))
+		panic(fmt.Sprintf("Don't know what the restart command is on %s platform", runtime.GOOS))
 	}
-	run = append(run, commandPath, "--server", "--retry=10")
-	command := exec.Command(run[0], run[1:]...)
-	command.Start()
-	os.Exit(0)
+	f(commandPath)
+	/*
+		run, ok := bgcommands[runtime.GOOS]
+		if !ok {
+			panic(fmt.Sprintf("Don't know what the background command is on %s platform", runtime.GOOS))
+		}
+		run = append(run, commandPath, "--server", "--retry=10")
+		command := exec.Command(run[0], run[1:]...)
+		command.Start()
+		os.Exit(0)
+	*/
 }
 
 // Update replaces the current binary with a new one if they are different.
@@ -124,4 +141,24 @@ func downloadNewBinary(url string) (string, error) {
 // Replaces current binary with the downloaded one.
 func replaceMe(mypath, downloadedPath string) error {
 	return os.Rename(downloadedPath, mypath)
+}
+
+func restartWindows(commandPath string) {
+	run := []string{"start", "/min", commandPath, "--server", "--retry=10"}
+	command := exec.Command(run[0], run[1:]...)
+	command.Start()
+	os.Exit(0)
+}
+
+func restartDarwin(commandPath string) {
+	restartCommand := filepath.Join(filepath.Dir(commandPath), "materials-restart-darwin")
+	command := exec.Command("nohup", restartCommand)
+	command.Start()
+}
+
+func restartLinux(commandPath string) {
+	run := []string{"nohup", commandPath, "--server", "--retry=10"}
+	command := exec.Command(run[0], run[1:]...)
+	command.Start()
+	os.Exit(0)
 }
