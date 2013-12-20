@@ -17,25 +17,30 @@ var (
 
 type ProjectFileStatus int
 
+const UnsetOption = 0
+
 const (
 	Synchronized ProjectFileStatus = iota
 	Unsynchronized
 	New
 	Deleted
+	UnknownFileStatus
 )
 
 var pfs2Strings = map[ProjectFileStatus]string{
-	Synchronized:   "Synchronized",
-	Unsynchronized: "Unsynchronized",
-	New:            "New",
-	Deleted:        "Deleted",
+	Synchronized:      "Synchronized",
+	Unsynchronized:    "Unsynchronized",
+	New:               "New",
+	Deleted:           "Deleted",
+	UnknownFileStatus: "UnknownFileStatus",
 }
 
 var pfsString2Value = map[string]ProjectFileStatus{
-	"Synchronized":   Synchronized,
-	"Unsynchronized": Unsynchronized,
-	"New":            New,
-	"Deleted":        Deleted,
+	"Synchronized":      Synchronized,
+	"Unsynchronized":    Unsynchronized,
+	"New":               New,
+	"Deleted":           Deleted,
+	"UnknownFileStatus": UnknownFileStatus,
 }
 
 func (pfs ProjectFileStatus) String() string {
@@ -111,16 +116,36 @@ type ProjectFileInfo struct {
 	Location ProjectFileLocation
 }
 
-func (project *Project) Walk() error {
+type TrackingOptions struct {
+	FileStatus   ProjectFileStatus
+	FileLocation ProjectFileLocation
+}
+
+func (project *Project) Walk(options *TrackingOptions) error {
+	fileStatus := Unsynchronized
+	fileLocation := LocalOnly
+
+	if options != nil {
+		if options.FileStatus != UnsetOption {
+			fileStatus = options.FileStatus
+		}
+
+		if options.FileLocation != UnsetOption {
+			fileLocation = options.FileLocation
+		}
+	}
+
 	filepath.Walk(project.Path, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			key := md5.New().Sum([]byte(path))
 			checksum, _ := handyfile.Hash(md5.New(), path)
 			pinfo := &ProjectFileInfo{
-				Path:    path,
-				Size:    info.Size(),
-				Hash:    fmt.Sprintf("%x", checksum),
-				ModTime: info.ModTime(),
+				Path:     path,
+				Size:     info.Size(),
+				Hash:     fmt.Sprintf("%x", checksum),
+				ModTime:  info.ModTime(),
+				Status:   fileStatus,
+				Location: fileLocation,
 			}
 			value, _ := json.Marshal(pinfo)
 			project.Put(key, value, nil)

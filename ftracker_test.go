@@ -21,7 +21,7 @@ func TestWalkProject(t *testing.T) {
 		Status: "Unknown",
 	}
 
-	p.Walk()
+	p.Walk(nil)
 }
 
 func TestCreatedDb(t *testing.T) {

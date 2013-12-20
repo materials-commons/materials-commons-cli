@@ -63,6 +63,7 @@ func (p ProjectResource) register(container *restful.Container) {
 
 	ws.Route(ws.PUT("/{project-name}/track").To(p.updateTracking).
 		Doc("Updates the file tracking for the project").
+		Reads(materials.TrackingOptions{}).
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
 
 	container.Add(ws)
@@ -189,9 +190,12 @@ func (p *ProjectResource) getProjectChanges(request *restful.Request, response *
 }
 
 func (p *ProjectResource) updateTracking(request *restful.Request, response *restful.Response) {
+	trackingOptions := materials.TrackingOptions{}
+	request.ReadEntity(&trackingOptions)
+
 	p.performProjectOperation(request, response, func(project *materials.Project) {
 		go func() {
-			if err := project.Walk(); err != nil {
+			if err := project.Walk(&trackingOptions); err != nil {
 				msg := fmt.Sprintf("Error updating tracking for project %s: %s\n", project.Name, err.Error())
 				response.WriteErrorString(http.StatusInternalServerError, msg)
 			}

@@ -37,6 +37,7 @@ type ProjectOptions struct {
 	Convert   bool     `long:"convert" description:"Converts projects to new layout"`
 	Files     []string `long:"file" description:"comma separated list of files to operate on"`
 	Tracking  bool     `long:"tracking" description:"Display tracking information for specified files"`
+	Options   []string `long:"option" description:"Options for tracking"`
 }
 
 type Options struct {
