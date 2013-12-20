@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+var (
+	BadProjectFileStatusString   = fmt.Errorf("Unknown string value for ProjectFileStatus")
+	BadProjectFileLocationString = fmt.Errorf("Unknown string value for ProjectFileLocation")
+)
+
 type ProjectFileStatus int
 
 const (
@@ -19,18 +24,37 @@ const (
 	Deleted
 )
 
+var pfs2Strings = map[ProjectFileStatus]string{
+	Synchronized:   "Synchronized",
+	Unsynchronized: "Unsynchronized",
+	New:            "New",
+	Deleted:        "Deleted",
+}
+
+var pfsString2Value = map[string]ProjectFileStatus{
+	"Synchronized":   Synchronized,
+	"Unsynchronized": Unsynchronized,
+	"New":            New,
+	"Deleted":        Deleted,
+}
+
 func (pfs ProjectFileStatus) String() string {
-	switch {
-	case pfs&Synchronized == Synchronized:
-		return "Synchronized"
-	case pfs&Unsynchronized == Unsynchronized:
-		return "Unsynchronized"
-	case pfs&New == New:
-		return "New"
-	case pfs&Deleted == Deleted:
-		return "Deleted"
+	str, found := pfs2Strings[pfs]
+	switch found {
+	case true:
+		return str
 	default:
 		return "Unknown"
+	}
+}
+
+func String2ProjectFileStatus(pfs string) (ProjectFileStatus, error) {
+	val, found := pfsString2Value[pfs]
+	switch found {
+	case true:
+		return val, nil
+	default:
+		return -1, BadProjectFileStatusString
 	}
 }
 
@@ -43,18 +67,37 @@ const (
 	LocalAndRemoteUnknown
 )
 
+var pfl2Strings = map[ProjectFileLocation]string{
+	LocalOnly:             "LocalOnly",
+	RemoteOnly:            "RemoteOnly",
+	LocalAndRemote:        "LocalAndRemote",
+	LocalAndRemoteUnknown: "LocalAndRemoteUnknown",
+}
+
+var pflString2Value = map[string]ProjectFileLocation{
+	"LocalOnly":             LocalOnly,
+	"RemoteOnly":            RemoteOnly,
+	"LocalAndRemote":        LocalAndRemote,
+	"LocalAndRemoteUnknown": LocalAndRemoteUnknown,
+}
+
 func (pfl ProjectFileLocation) String() string {
-	switch {
-	case pfl&LocalOnly == LocalOnly:
-		return "LocalOnly"
-	case pfl&RemoteOnly == RemoteOnly:
-		return "RemoteOnly"
-	case pfl&LocalAndRemote == LocalAndRemote:
-		return "LocalAndRemote"
-	case pfl&LocalAndRemoteUnknown == LocalAndRemoteUnknown:
-		return "LocalAndRemoteUnknown"
+	str, found := pfl2Strings[pfl]
+	switch found {
+	case true:
+		return str
 	default:
 		return "Unknown"
+	}
+}
+
+func String2ProjectFileLocation(pfl string) (p ProjectFileLocation, err error) {
+	val, found := pflString2Value[pfl]
+	switch found {
+	case true:
+		return val, nil
+	default:
+		return -1, BadProjectFileLocationString
 	}
 }
 

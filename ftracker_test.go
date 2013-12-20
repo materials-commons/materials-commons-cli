@@ -49,3 +49,11 @@ func TestCreatedDb(t *testing.T) {
 		fmt.Println("================")
 	}
 }
+
+func TestProjectFileLocationString(t *testing.T) {
+
+}
+
+func TestProjectFileStatusString(t *testing.T) {
+
+}
