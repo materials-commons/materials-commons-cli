@@ -151,9 +151,12 @@ func restartWindows(commandPath string) {
 }
 
 func restartDarwin(commandPath string) {
-	restartCommand := filepath.Join(filepath.Dir(commandPath), "materials-restart-darwin")
-	command := exec.Command("nohup", restartCommand)
-	command.Start()
+	/*
+		restartCommand := filepath.Join(filepath.Dir(commandPath), "materials-restart-darwin")
+		command := exec.Command("nohup", restartCommand)
+		command.Start()
+	*/
+	os.Exit(0)
 }
 
 func restartLinux(commandPath string) {
