@@ -58,18 +58,20 @@ func monitorProjectChanges(sio *socketio.SocketIOServer) {
 // events and then communicates them along the SocketIOServer. It sends events
 // to the front end as projectFileStatus messages encoded in JSON.
 func projectWatcher(project *materials.Project, projectdb *materials.ProjectDB, sio *socketio.SocketIOServer) {
-	watcher, err := fs.NewRecursiveWatcher(project.Path)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	watcher.Start()
-	defer watcher.Close()
-
 	for {
-		event := <-watcher.Events
-		broadcastEvent(event, project.Name, sio)
-		trackEvent(event, project, projectdb)
+		watcher, err := fs.NewRecursiveWatcher(project.Path)
+		if err != nil {
+			time.Sleep(time.Minute)
+			continue
+		}
+		watcher.Start()
+		defer watcher.Close()
+
+		for {
+			event := <-watcher.Events
+			broadcastEvent(event, project.Name, sio)
+			trackEvent(event, project, projectdb)
+		}
 	}
 }
 
