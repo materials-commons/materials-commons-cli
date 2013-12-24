@@ -1,8 +1,9 @@
-GODIRS = . wsmaterials materials site autoupdate send
+GODIRS = . wsmaterials materials site autoupdate send mcfs
 P = github.com/materials-commons/materials
 
 all: fmt test
 	(cd materials; go build materials.go)
+	(cd mcfs; go build mcfs.go)
 
 test:
 	rm -rf test_data/.materials
