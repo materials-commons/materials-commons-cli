@@ -168,7 +168,11 @@ func (h *commandHandler) upload() {
 
 func (h *commandHandler) uploadExisting() {
 	datafile, err := h.db.Get("users", h.DataFile.ID)
-	if err != nil || !h.hasAccess(datafile["owner"].(string)) {
+	if err != nil {
+		return
+	}
+	owner := datafile["owner"].(string)
+	if err != nil || !ownerGaveAccessTo(h.Header.User, owner, h.db.Session) {
 		return
 	}
 
@@ -181,15 +185,15 @@ func (h *commandHandler) uploadExisting() {
 //    For each user in the user group see if teh requesting user
 //    is included. If so then return true (has access).
 // 3. None of the above matched - return false (no access)
-func (h *commandHandler) hasAccess(owner string) bool {
+func ownerGaveAccessTo(owner, user string, session *r.Session) bool {
 	// Check if user and file owner are the same
-	if h.Header.User == owner {
+	if user == owner {
 		return true
 	}
 
 	// Get the file owners usergroups
 	rql := r.Table("usergroups").Filter(r.Row.Field("owner").Eq(owner))
-	groups, err := model.MatchingUserGroups(rql, h.db.Session)
+	groups, err := model.MatchingUserGroups(rql, session)
 	if err != nil {
 		return false
 	}
@@ -198,8 +202,8 @@ func (h *commandHandler) hasAccess(owner string) bool {
 	// and see if they match the requesting user
 	for _, group := range groups {
 		users := group.Users
-		for _, user := range users {
-			if h.Header.User == user {
+		for _, u := range users {
+			if u == user {
 				return true
 			}
 		}

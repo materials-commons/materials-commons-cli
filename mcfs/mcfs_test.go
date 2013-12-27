@@ -51,14 +51,16 @@ func TestValidApiKey(t *testing.T) {
 }
 
 func TestHasAccess(t *testing.T) {
-	ch.Header.User = "gtarcea@umich.edu"
+	user := "gtarcea@umich.edu"
+	owner := "mcfada@umich.edu"
+	session := ch.db.Session
 	// Test empty table different user
-	if ch.hasAccess("someuser@umich.edu") {
+	if ownerGaveAccessTo(owner, "someuser@umich.edu", session) {
 		t.Fatalf("Access passed should have failed with empty usergroups table")
 	}
 
 	//Test empty table same user
-	if !ch.hasAccess("gtarcea@umich.edu") {
+	if !ownerGaveAccessTo("gtarcea@umich.edu", "gtarcea@umich.edu", session) {
 		t.Fatalf("Access failed when user is also the user")
 	}
 
@@ -71,8 +73,14 @@ func TestHasAccess(t *testing.T) {
 	id := rv.GeneratedKeys[0]
 	defer deleteItem(id, "usergroups", ch.db.Session)
 
-	if !ch.hasAccess("mcfada@umich.edu") {
+	// Test user who should have access
+	if !ownerGaveAccessTo(owner, user, session) {
 		t.Fatalf("gtarcea@umich.edu should have had access")
+	}
+
+	// Test user who doesn't have access
+	if ownerGaveAccessTo(owner, "nouser@umich.edu", session) {
+		t.Fatalf("nouser@umich.edu should not have access")
 	}
 }
 
