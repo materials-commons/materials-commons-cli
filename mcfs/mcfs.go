@@ -149,8 +149,12 @@ func (h *commandHandler) queryUser() (string, error) {
 		return "", fmt.Errorf("Unknown user '%s'", h.Header.User)
 	}
 
-	apikey := result["apikey"].(string)
-	return apikey, nil
+	apikey, found := result["apikey"]
+	if found {
+		return apikey.(string), nil
+	} else {
+		return "", nil
+	}
 }
 
 func (h *commandHandler) upload() {
