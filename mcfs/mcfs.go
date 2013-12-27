@@ -32,6 +32,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/gohandy/rethink"
 	"github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
@@ -68,51 +69,66 @@ type FileTransferHeader2 struct {
 type commandHandler struct {
 	*transfer.Command
 	net.Conn
-	session *r.Session
+	db *rethink.DB
 }
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	decoder := gob.NewDecoder(conn)
-	command := &transfer.Command{}
-	decoder.Decode(command)
 
+	command := getCommand(conn)
+	if !transfer.ValidType(command.Type) {
+		return
+	}
+
+	handler, err := createHandler(command, conn)
+
+	switch {
+	case err != nil:
+		fmt.Println("Unable to connect to database")
+	default:
+		handler.doCommand()
+	}
+}
+
+func getCommand(conn net.Conn) *transfer.Command {
+	command := &transfer.Command{}
+	gob.NewDecoder(conn).Decode(command)
+	return command
+}
+
+func createHandler(c *transfer.Command, conn net.Conn) (*commandHandler, error) {
 	session, err := r.Connect(map[string]interface{}{
 		"address":  "localhost:30815",
 		"database": "materialscommons",
 	})
 
-	if err != nil {
-		fmt.Println("Unable to connect to database")
+	handler := &commandHandler{
+		Command: c,
+		Conn:    conn,
+		db:      rethink.NewDB(session),
+	}
+
+	return handler, err
+}
+
+func (h *commandHandler) doCommand() {
+	if !h.validApiKey() {
+		fmt.Printf("Invalid apikey '%s' for user '%s'\n", h.Header.ApiKey, h.Header.User)
 		return
 	}
 
-	handler := &commandHandler{
-		Command: command,
-		Conn:    conn,
-		session: session,
+	switch h.Type {
+	case transfer.Upload:
+		h.upload()
+	case transfer.Download:
+		h.download()
+	case transfer.Move:
+		h.move()
+	case transfer.Delete:
+		h.delete()
+	default:
+		fmt.Println("Unknown command type: %d", h.Type)
 	}
-
-	if handler.validApiKey() {
-		switch command.Type {
-		case transfer.Upload:
-			handler.upload()
-		case transfer.Download:
-			handler.download()
-		case transfer.Move:
-			handler.move()
-		case transfer.Delete:
-			handler.delete()
-		default:
-			fmt.Println("Unknown command type: %d", command.Type)
-		}
-	}
-	/*
-		fth := &FileTransferHeader2{}
-		decoder.Decode(fth)
-		fmt.Printf("Received %#v\n", fth)
-		fmt.Println(string(fth.Bytes))
-	*/
 }
 
 func (h *commandHandler) validApiKey() bool {
@@ -128,18 +144,64 @@ func (h *commandHandler) validApiKey() bool {
 }
 
 func (h *commandHandler) queryUser() (string, error) {
-	result, err := r.Table("users").Get(h.Header.Owner).RunRow(h.session)
-	if err != nil || result.IsNil() {
-		return "", fmt.Errorf("Unknown user '%s'", h.Header.Owner)
+	result, err := h.db.Get("users", h.Header.User)
+	if err != nil {
+		return "", fmt.Errorf("Unknown user '%s'", h.Header.User)
 	}
 
-	var response map[string]interface{}
-	result.Scan(&response)
-	apikey := response["apikey"].(string)
+	apikey := result["apikey"].(string)
 	return apikey, nil
 }
 
 func (h *commandHandler) upload() {
+	if h.DataFile.ID != "" {
+		h.uploadExisting()
+	} else {
+		h.uploadNew()
+	}
+}
+
+func (h *commandHandler) uploadExisting() {
+	datafile, err := h.db.Get("users", h.DataFile.ID)
+	if err != nil || !h.hasAccess(datafile["owner"].(string)) {
+		return
+	}
+
+}
+
+// hasAccess checks to see if the user making the request has access to the
+// particular datafile. Access is determined as follows:
+// 1. if the user and the owner of the file are the same return true (has access).
+// 2. Get a list of all the users groups for the file owner.
+//    For each user in the user group see if teh requesting user
+//    is included. If so then return true (has access).
+// 3. None of the above matched - return false (no access)
+func (h *commandHandler) hasAccess(owner string) bool {
+	// Check if user and file owner are the same
+	if h.Header.User == owner {
+		return true
+	}
+
+	// Get the file owners usergroups
+	rql := r.Table("usergroups").Filter(r.Row.Field("owner").Eq(owner))
+	groups, err := h.db.GetAll(rql)
+	if err != nil {
+		return false
+	}
+	// For each usergroup go through its list of users
+	// and see if they match the requesting user
+	for _, group := range groups {
+		users := group["users"].([]string)
+		for _, user := range users {
+			if h.Header.User == user {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (h *commandHandler) uploadNew() {
 
 }
 

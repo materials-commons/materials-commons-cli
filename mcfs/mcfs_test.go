@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/gohandy/rethink"
 	"github.com/materials-commons/materials/transfer"
 	"testing"
 )
@@ -20,7 +21,7 @@ func TestValidApiKey(t *testing.T) {
 
 	h := transfer.StartHeader{
 		ProjectID: "abc123",
-		Owner:     "gtarcea@umich.edu",
+		User:      "gtarcea@umich.edu",
 		ApiKey:    "472abe203cd411e3a280ac162d80f1bf",
 	}
 
@@ -30,19 +31,19 @@ func TestValidApiKey(t *testing.T) {
 
 	ch := &commandHandler{
 		Command: &c,
-		session: session,
+		db:      rethink.NewDB(session),
 	}
 
 	if !ch.validApiKey() {
 		t.Fatalf("Apikey invalid, should have been valid: %s\n", ch.Header.ApiKey)
 	}
 
-	ch.Header.Owner = "doesnot-exist@nosuch.com"
+	ch.Header.User = "doesnot-exist@nosuch.com"
 	if ch.validApiKey() {
-		t.Fatalf("Apikey check passed for invalid user: %s\n", ch.Header.Owner)
+		t.Fatalf("Apikey check passed for invalid user: %s\n", ch.Header.User)
 	}
 
-	ch.Header.Owner = "gtarcea@umich.edu"
+	ch.Header.User = "gtarcea@umich.edu"
 	ch.Header.ApiKey = "abc123"
 	if ch.validApiKey() {
 		t.Fatalf("Apikey check should have failed: %s\n", ch.Header.ApiKey)

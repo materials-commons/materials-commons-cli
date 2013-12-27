@@ -1,17 +1,28 @@
 package transfer
 
-type TransferType int
+type Type int
 
 const (
-	Upload TransferType = iota
+	Upload Type = iota
 	Download
 	Move
 	Delete
 )
 
+var commandTypes = map[Type]bool{
+	Upload:   true,
+	Download: true,
+	Move:     true,
+	Delete:   true,
+}
+
+func ValidType(t Type) bool {
+	return commandTypes[t]
+}
+
 type StartHeader struct {
 	ProjectID string
-	Owner     string
+	User      string
 	ApiKey    string
 }
 
@@ -31,7 +42,7 @@ type DataFile struct {
 type Command struct {
 	Header   StartHeader
 	DataFile DataFile
-	Type     TransferType
+	Type     Type
 }
 
 type SendStartResponse struct {
