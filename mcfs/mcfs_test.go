@@ -4,36 +4,36 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/gohandy/rethink"
+	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
 	"testing"
 )
 
-func TestValidApiKey(t *testing.T) {
-	session, err := r.Connect(map[string]interface{}{
+var _ = fmt.Println
+
+var (
+	session, _ = r.Connect(map[string]interface{}{
 		"address":  "localhost:30815",
 		"database": "materialscommons",
 	})
 
-	if err != nil {
-		fmt.Println(err)
-		t.Fatalf("Could not connect to database")
-	}
-
-	h := transfer.StartHeader{
+	h = transfer.StartHeader{
 		ProjectID: "abc123",
 		User:      "gtarcea@umich.edu",
 		ApiKey:    "472abe203cd411e3a280ac162d80f1bf",
 	}
 
-	c := transfer.Command{
+	c = transfer.Command{
 		Header: h,
 	}
 
-	ch := &commandHandler{
+	ch = &commandHandler{
 		Command: &c,
 		db:      rethink.NewDB(session),
 	}
+)
 
+func TestValidApiKey(t *testing.T) {
 	if !ch.validApiKey() {
 		t.Fatalf("Apikey invalid, should have been valid: %s\n", ch.Header.ApiKey)
 	}
@@ -48,4 +48,35 @@ func TestValidApiKey(t *testing.T) {
 	if ch.validApiKey() {
 		t.Fatalf("Apikey check should have failed: %s\n", ch.Header.ApiKey)
 	}
+}
+
+func TestHasAccess(t *testing.T) {
+	ch.Header.User = "gtarcea@umich.edu"
+	// Test empty table different user
+	if ch.hasAccess("someuser@umich.edu") {
+		t.Fatalf("Access passed should have failed with empty usergroups table")
+	}
+
+	//Test empty table same user
+	if !ch.hasAccess("gtarcea@umich.edu") {
+		t.Fatalf("Access failed when user is also the user")
+	}
+
+	ug := model.NewUserGroup("mcfada@umich.edu", "tgroup1")
+	ug.Users = append(ug.Users, "gtarcea@umich.edu")
+	rv, err := r.Table("usergroups").Insert(ug).RunWrite(ch.db.Session)
+	if err != nil {
+		t.Fatalf("Unable to create new usergroup")
+	}
+	id := rv.GeneratedKeys[0]
+	defer deleteItem(id, "usergroups", ch.db.Session)
+
+	if !ch.hasAccess("mcfada@umich.edu") {
+		t.Fatalf("gtarcea@umich.edu should have had access")
+	}
+}
+
+func deleteItem(id, table string, session *r.Session) {
+	fmt.Printf("Deleting id %s from table %s\n", id, table)
+	r.Table(table).Get(id).Delete().RunWrite(session)
 }

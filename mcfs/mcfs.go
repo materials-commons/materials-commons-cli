@@ -33,6 +33,7 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/gohandy/rethink"
+	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
@@ -77,14 +78,14 @@ func handleConnection(conn net.Conn) {
 
 	command := getCommand(conn)
 	if !transfer.ValidType(command.Type) {
+		fmt.Println("Invalid command:", command.Type)
 		return
 	}
 
 	handler, err := createHandler(command, conn)
-
 	switch {
 	case err != nil:
-		fmt.Println("Unable to connect to database")
+		fmt.Println("Error creating connection handler", err)
 	default:
 		handler.doCommand()
 	}
@@ -188,20 +189,22 @@ func (h *commandHandler) hasAccess(owner string) bool {
 
 	// Get the file owners usergroups
 	rql := r.Table("usergroups").Filter(r.Row.Field("owner").Eq(owner))
-	groups, err := h.db.GetAll(rql)
+	groups, err := model.MatchingUserGroups(rql, h.db.Session)
 	if err != nil {
 		return false
 	}
+
 	// For each usergroup go through its list of users
 	// and see if they match the requesting user
 	for _, group := range groups {
-		users := group["users"].([]string)
+		users := group.Users
 		for _, user := range users {
 			if h.Header.User == user {
 				return true
 			}
 		}
 	}
+
 	return false
 }
 
