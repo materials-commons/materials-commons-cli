@@ -37,6 +37,8 @@ import (
 	"github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 const Port = "35862"
@@ -69,8 +71,8 @@ type FileTransferHeader2 struct {
 
 type commandHandler struct {
 	*transfer.Command
-	net.Conn
-	db *rethink.DB
+	conn net.Conn
+	db   *rethink.DB
 }
 
 func handleConnection(conn net.Conn) {
@@ -105,7 +107,7 @@ func createHandler(c *transfer.Command, conn net.Conn) (*commandHandler, error) 
 
 	handler := &commandHandler{
 		Command: c,
-		Conn:    conn,
+		conn:    conn,
 		db:      rethink.NewDB(session),
 	}
 
@@ -167,15 +169,56 @@ func (h *commandHandler) upload() {
 }
 
 func (h *commandHandler) uploadExisting() {
-	datafile, err := h.db.Get("users", h.DataFile.ID)
-	if err != nil {
-		return
+	response := transfer.SendStartResponse{
+		Offset:     0,
+		DataFileID: h.DataFile.ID,
 	}
-	owner := datafile["owner"].(string)
-	if err != nil || !ownerGaveAccessTo(h.Header.User, owner, h.db.Session) {
+	datafile, err := model.GetDataFile(h.DataFile.ID, h.db.Session)
+
+	if err != nil || !ownerGaveAccessTo(datafile.Owner, h.Header.User, h.db.Session) {
 		return
 	}
 
+	if h.DataFile.Checksum == datafile.Checksum && h.DataFile.Size != datafile.Size {
+		response.Offset = datafile.Size
+	}
+
+	encoder := gob.NewEncoder(h.conn)
+	encoder.Encode(&response)
+	decoder := gob.NewDecoder(h.conn)
+	/*
+	* Need to open file and write to it.
+	 */
+	filename := createPath(h.DataFile.ID)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	for {
+		buf := &transfer.FileBlock{}
+		decoder.Decode(buf)
+		if n, err := f.Write(buf.Bytes); err != nil {
+			// Do something, check n vs bytes
+			fmt.Println(n)
+		}
+		if buf.Done {
+			break
+		}
+	}
+
+	/*
+	* Set the size in rethinkdb to the number of bytes we have written
+	* plus the size of the file that is already on the isilon.
+	 */
+}
+
+func createPath(datafileId string) string {
+	pieces := strings.Split(datafileId, "-")
+	dirpath := filepath.Join("/mcfs/data/materialscommons", pieces[1][0:2], pieces[1][2:4])
+	os.MkdirAll(dirpath, 0600)
+	return filepath.Join(dirpath, datafileId)
 }
 
 // hasAccess checks to see if the user making the request has access to the

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	r "github.com/dancannon/gorethink"
 	"time"
 )
@@ -81,5 +82,19 @@ func NewDataFile(name, access, owner string) DataFile {
 		Birthtime:   now,
 		MTime:       now,
 		ATime:       now,
+	}
+}
+
+func GetDataFile(id string, session *r.Session) (DataFile, error) {
+	var df DataFile
+	result, err := r.Table("datafiles").Get(id).RunRow(session)
+	switch {
+	case err != nil:
+		return df, err
+	case result.IsNil():
+		return df, fmt.Errorf("Unknown DataFile Id: %s", id)
+	default:
+		err := result.Scan(&df)
+		return df, err
 	}
 }

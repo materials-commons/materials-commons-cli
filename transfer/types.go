@@ -29,6 +29,7 @@ type StartHeader struct {
 type FileBlock struct {
 	DataFileID string
 	Bytes      []byte
+	Done       bool
 }
 
 type DataFile struct {
