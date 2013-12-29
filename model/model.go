@@ -98,3 +98,52 @@ func GetDataFile(id string, session *r.Session) (DataFile, error) {
 		return df, err
 	}
 }
+
+type User struct {
+	Id          string    `gorethink:"id,omitempty"`
+	Name        string    `gorethink:"name"`
+	Email       string    `gorethink:"email"`
+	Fullname    string    `gorethink:"fullname"`
+	Password    string    `gorethink:"password"`
+	ApiKey      string    `gorethink:"apikey"`
+	Birthtime   time.Time `gorethink:"birthtime"`
+	MTime       time.Time `gorethink:"mtime"`
+	Avatar      string    `gorethink:"avatar"`
+	Description string    `gorethink:"description"`
+	Affiliation string    `gorethink:"affiliation"`
+	HomePage    string    `gorethink:"homepage"`
+	Notes       []string  `gorethink:"notes"`
+}
+
+func NewUser(name, email, password, apikey string) User {
+	now := time.Now()
+	return User{
+		Name:      name,
+		Email:     email,
+		Password:  password,
+		ApiKey:    apikey,
+		Birthtime: now,
+		MTime:     now,
+	}
+}
+
+func GetUser(id string, session *r.Session) (*User, error) {
+	var u User
+	if err := GetItem(id, "users", session, &u); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func GetItem(id, table string, session *r.Session, obj interface{}) error {
+	result, err := r.Table(table).Get(id).RunRow(session)
+	switch {
+	case err != nil:
+		return err
+	case result.IsNil():
+		return fmt.Errorf("Unknown User Id: %s", id)
+	default:
+		err := result.Scan(obj)
+		return err
+	}
+}
