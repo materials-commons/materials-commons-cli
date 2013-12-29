@@ -26,38 +26,48 @@ func NewReqHandler(conn net.Conn, session *r.Session) *ReqHandler {
 }
 
 func (r *ReqHandler) Run() {
-	for reqStateFN := r.StartState; reqStateFN != nil; {
+	for reqStateFN := r.startState; reqStateFN != nil; {
 		reqStateFN = reqStateFN()
 	}
 }
 
-func (r *ReqHandler) StartState() ReqStateFN {
+func (r *ReqHandler) req() transfer.Request {
 	req := transfer.Request{}
-	r.Decode(&req)
+	if err := r.Decode(&req); err != nil {
+		// Bad Request create request that will jump to the end.
+		return transfer.Request{
+			Type: transfer.Error,
+		}
+	}
+	return req
+}
+
+func (r *ReqHandler) startState() ReqStateFN {
+	req := r.req()
 	switch req.Type {
 	case transfer.Login:
-		return r.Login(req)
+		return r.login(req)
 	default:
-		r.BadRequest(fmt.Errorf("Bad state change %d\n", req.Type))
+		r.badRequest(fmt.Errorf("Bad state change %d\n", req.Type))
 		return nil
 	}
 }
 
-func (r *ReqHandler) Login(req transfer.Request) ReqStateFN {
+func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
 	switch t := req.Req.(type) {
 	case transfer.LoginReq:
 		if r.validLogin(t.User, t.ApiKey) {
-			r.Continue()
-			return r.NextCommand()
+			r.respContinue()
+			return r.nextCommand()
 		} else {
-			return r.BadRequest(fmt.Errorf("Bad login %s/%s", t.User, t.ApiKey))
+			return r.badRequest(fmt.Errorf("Bad login %s/%s", t.User, t.ApiKey))
 		}
 	default:
-		return r.BadRequest(fmt.Errorf("Bad request data for type %d", req.Type))
+		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
 	}
 }
 
-func (r *ReqHandler) BadRequest(err error) ReqStateFN {
+func (r *ReqHandler) badRequest(err error) ReqStateFN {
 	resp := &transfer.Response{
 		Type: transfer.RError,
 		Status: err,
@@ -70,7 +80,7 @@ func (r *ReqHandler) validLogin(user, apikey string) bool {
 	return false
 }
 
-func (r *ReqHandler) Continue() {
+func (r *ReqHandler) respContinue() {
 	resp := &transfer.Response{
 		Type: transfer.RContinue,
 		Status: nil,
@@ -78,7 +88,7 @@ func (r *ReqHandler) Continue() {
 	r.Encode(resp)
 }
 
-func (r *ReqHandler) NextCommand() ReqStateFN {
+func (r *ReqHandler) nextCommand() ReqStateFN {
 	req := transfer.Request{}
 	r.Decode(&req)
 	switch req.Type {
@@ -88,6 +98,6 @@ func (r *ReqHandler) NextCommand() ReqStateFN {
 	case transfer.Delete:
 	case transfer.Stat:
 	default:
-		return r.BadRequest(fmt.Errorf("Bad request in NextCommand: %d", req.Type))
+		return r.badRequest(fmt.Errorf("Bad request in NextCommand: %d", req.Type))
 	}
 }
