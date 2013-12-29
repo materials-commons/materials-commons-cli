@@ -107,7 +107,19 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.Move:
 	case transfer.Delete:
 	case transfer.Stat:
+		return r.stat(req)
 	default:
 		return r.badRequest(fmt.Errorf("Bad request in NextCommand: %d", req.Type))
 	}
+}
+
+func (r *ReqHandler) stat(req transfer.Request) ReqStateFN {
+	switch t := req.Req.(type) {
+	case transfer.StatReq:
+		return r.nextCommand()
+	default:
+		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
+	}
+
+	return nil
 }
