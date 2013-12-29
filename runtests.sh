@@ -9,4 +9,4 @@ export MCDOWNLOADURL=""
 export MCAPIURL=""
 export MCURL=""
 
-go test -v $P $P/site $P/materials $P/mcfs
+go test -v $P $P/site $P/materials $P/mcfs $P/model

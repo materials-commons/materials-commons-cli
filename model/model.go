@@ -85,18 +85,12 @@ func NewDataFile(name, access, owner string) DataFile {
 	}
 }
 
-func GetDataFile(id string, session *r.Session) (DataFile, error) {
+func GetDataFile(id string, session *r.Session) (*DataFile, error) {
 	var df DataFile
-	result, err := r.Table("datafiles").Get(id).RunRow(session)
-	switch {
-	case err != nil:
-		return df, err
-	case result.IsNil():
-		return df, fmt.Errorf("Unknown DataFile Id: %s", id)
-	default:
-		err := result.Scan(&df)
-		return df, err
+	if err := GetItem(id, "datafiles", session, &df); err != nil {
+		return nil, err
 	}
+	return &df, nil
 }
 
 type User struct {
