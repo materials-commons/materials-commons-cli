@@ -1,25 +1,30 @@
 package request
 
 import (
-	r "github.com/dancannon/gorethink"
-	"net"
-	"github.com/materials-commons/materials/transfer"
 	"encoding/gob"
 	"fmt"
+	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/materials/transfer"
+	"net"
 )
 
 type ReqStateFN func() ReqStateFN
 
+type db struct {
+	session *r.Session
+}
+
 type ReqHandler struct {
 	conn net.Conn
-	session *r.Session
+	db
 	*gob.Decoder
 	*gob.Encoder
 }
 
 func NewReqHandler(conn net.Conn, session *r.Session) *ReqHandler {
 	return &ReqHandler{
-		session: session,
+		db:      db{session: session},
 		Decoder: gob.NewDecoder(conn),
 		Encoder: gob.NewEncoder(conn),
 	}
@@ -33,11 +38,9 @@ func (r *ReqHandler) Run() {
 
 func (r *ReqHandler) req() transfer.Request {
 	req := transfer.Request{}
-	if err := r.Decode(&req); err != nil {
-		// Bad Request create request that will jump to the end.
-		return transfer.Request{
-			Type: transfer.Error,
-		}
+	if err := r.Decode(&req); err != nil || !transfer.ValidType(req.Type) {
+		// Return type that will cause state machine to abort with error
+		req.Type = transfer.Error
 	}
 	return req
 }
@@ -48,15 +51,14 @@ func (r *ReqHandler) startState() ReqStateFN {
 	case transfer.Login:
 		return r.login(req)
 	default:
-		r.badRequest(fmt.Errorf("Bad state change %d\n", req.Type))
-		return nil
+		return r.badRequest(fmt.Errorf("Bad state change %d\n", req.Type))
 	}
 }
 
 func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
 	switch t := req.Req.(type) {
 	case transfer.LoginReq:
-		if r.validLogin(t.User, t.ApiKey) {
+		if r.db.validLogin(t.User, t.ApiKey) {
 			r.respContinue()
 			return r.nextCommand()
 		} else {
@@ -69,20 +71,28 @@ func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
 
 func (r *ReqHandler) badRequest(err error) ReqStateFN {
 	resp := &transfer.Response{
-		Type: transfer.RError,
+		Type:   transfer.RError,
 		Status: err,
 	}
 	r.Encode(resp)
 	return nil
 }
 
-func (r *ReqHandler) validLogin(user, apikey string) bool {
-	return false
+func (db db) validLogin(user, apikey string) bool {
+	u, err := model.GetUser(user, db.session)
+	switch {
+	case err != nil:
+		return false
+	case u.ApiKey != apikey:
+		return false
+	default:
+		return true
+	}
 }
 
 func (r *ReqHandler) respContinue() {
 	resp := &transfer.Response{
-		Type: transfer.RContinue,
+		Type:   transfer.RContinue,
 		Status: nil,
 	}
 	r.Encode(resp)
