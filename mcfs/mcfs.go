@@ -32,9 +32,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/gohandy/rethink"
 	"github.com/materials-commons/materials/model"
-	"github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
 	"path/filepath"
@@ -70,7 +68,7 @@ type FileTransferHeader2 struct {
 }
 
 type reqHandler struct {
-	conn net.Conn
+	conn    net.Conn
 	session *r.Session
 }
 
@@ -85,120 +83,7 @@ func handleConnection(conn net.Conn) {
 		// send error response
 	}
 
-	handler := &reqHandler{
-		conn: conn,
-		session: session,
-	}
-
-	decoder := gob.NewDecoder(conn)
-	firstRequest := true
-	for {
-		req := &transfer.Request{}
-		decoder.Decode(req)
-		switch req.Type {
-		case transfer.Upload:
-			uploadReq := req.Req.(transfer.UploadReq)
-		case transfer.Download:
-			downloadReq := req.Req.(transfer.DownloadReq)
-		case transfer.Move:
-			moveReq := req.Req.(transfer.MoveReq)
-		case transfer.Send:
-			sendReq := req.Req.(transfer.SendReq)
-		case transfer.Stat:
-			statReq := req.Req.(transfer.StatReq)
-		case transfer.Start:
-			startReq := req.Req.(transfer.StartReq)
-		case transfer.End:
-			endReq := req.Req.(transfer.EndReq)
-		case transfer.Create:
-			createReq := req.Req.(transfer.CreateReq)
-		case transfer.Error:
-			// Error request?
-		default:
-			// Invalid request
-			
-		}
-	}
-}
-
-func (h *commandHandler) validApiKey() bool {
-	apikey, err := h.queryUser()
-	switch {
-	case err != nil:
-		return false
-	case apikey != h.Header.ApiKey:
-		return false
-	default:
-		return true
-	}
-}
-
-func (h *commandHandler) queryUser() (string, error) {
-	result, err := h.db.Get("users", h.Header.User)
-	if err != nil {
-		return "", fmt.Errorf("Unknown user '%s'", h.Header.User)
-	}
-
-	apikey, found := result["apikey"]
-	if found {
-		return apikey.(string), nil
-	} else {
-		return "", nil
-	}
-}
-
-func (h *commandHandler) upload() {
-	if h.DataFile.ID != "" {
-		h.uploadExisting()
-	} else {
-		h.uploadNew()
-	}
-}
-
-func (h *commandHandler) uploadExisting() {
-	response := transfer.SendStartResponse{
-		Offset:     0,
-		DataFileID: h.DataFile.ID,
-	}
-	datafile, err := model.GetDataFile(h.DataFile.ID, h.db.Session)
-
-	if err != nil || !ownerGaveAccessTo(datafile.Owner, h.Header.User, h.db.Session) {
-		return
-	}
-
-	if h.DataFile.Checksum == datafile.Checksum && h.DataFile.Size != datafile.Size {
-		response.Offset = datafile.Size
-	}
-
-	encoder := gob.NewEncoder(h.conn)
-	encoder.Encode(&response)
-	decoder := gob.NewDecoder(h.conn)
-	/*
-	* Need to open file and write to it.
-	 */
-	filename := createPath(h.DataFile.ID)
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	for {
-		buf := &transfer.FileBlock{}
-		decoder.Decode(buf)
-		if n, err := f.Write(buf.Bytes); err != nil {
-			// Do something, check n vs bytes
-			fmt.Println(n)
-		}
-		if buf.Done {
-			break
-		}
-	}
-
-	/*
-	* Set the size in rethinkdb to the number of bytes we have written
-	* plus the size of the file that is already on the isilon.
-	 */
+	var _ = session
 }
 
 func createPath(datafileId string) string {
@@ -240,22 +125,6 @@ func ownerGaveAccessTo(owner, user string, session *r.Session) bool {
 	}
 
 	return false
-}
-
-func (h *commandHandler) uploadNew() {
-
-}
-
-func (h *commandHandler) download() {
-
-}
-
-func (h *commandHandler) move() {
-
-}
-
-func (h *commandHandler) delete() {
-
 }
 
 func client() {
