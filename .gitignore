@@ -23,5 +23,3 @@ _testmain.go
 *.test
 .idea
 package.txt
-mcfs
-materials

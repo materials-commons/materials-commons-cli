@@ -69,68 +69,55 @@ type FileTransferHeader2 struct {
 	Bytes []byte
 }
 
-type commandHandler struct {
-	*transfer.Command
+type reqHandler struct {
 	conn net.Conn
-	db   *rethink.DB
+	session *r.Session
 }
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-
-	command := getCommand(conn)
-	if !transfer.ValidType(command.Type) {
-		fmt.Println("Invalid command:", command.Type)
-		return
-	}
-
-	handler, err := createHandler(command, conn)
-	switch {
-	case err != nil:
-		fmt.Println("Error creating connection handler", err)
-	default:
-		handler.doCommand()
-	}
-}
-
-func getCommand(conn net.Conn) *transfer.Command {
-	command := &transfer.Command{}
-	gob.NewDecoder(conn).Decode(command)
-	return command
-}
-
-func createHandler(c *transfer.Command, conn net.Conn) (*commandHandler, error) {
 	session, err := r.Connect(map[string]interface{}{
 		"address":  "localhost:30815",
 		"database": "materialscommons",
 	})
 
-	handler := &commandHandler{
-		Command: c,
-		conn:    conn,
-		db:      rethink.NewDB(session),
+	if err != nil {
+		// send error response
 	}
 
-	return handler, err
-}
-
-func (h *commandHandler) doCommand() {
-	if !h.validApiKey() {
-		fmt.Printf("Invalid apikey '%s' for user '%s'\n", h.Header.ApiKey, h.Header.User)
-		return
+	handler := &reqHandler{
+		conn: conn,
+		session: session,
 	}
 
-	switch h.Type {
-	case transfer.Upload:
-		h.upload()
-	case transfer.Download:
-		h.download()
-	case transfer.Move:
-		h.move()
-	case transfer.Delete:
-		h.delete()
-	default:
-		fmt.Println("Unknown command type: %d", h.Type)
+	decoder := gob.NewDecoder(conn)
+	firstRequest := true
+	for {
+		req := &transfer.Request{}
+		decoder.Decode(req)
+		switch req.Type {
+		case transfer.Upload:
+			uploadReq := req.Req.(transfer.UploadReq)
+		case transfer.Download:
+			downloadReq := req.Req.(transfer.DownloadReq)
+		case transfer.Move:
+			moveReq := req.Req.(transfer.MoveReq)
+		case transfer.Send:
+			sendReq := req.Req.(transfer.SendReq)
+		case transfer.Stat:
+			statReq := req.Req.(transfer.StatReq)
+		case transfer.Start:
+			startReq := req.Req.(transfer.StartReq)
+		case transfer.End:
+			endReq := req.Req.(transfer.EndReq)
+		case transfer.Create:
+			createReq := req.Req.(transfer.CreateReq)
+		case transfer.Error:
+			// Error request?
+		default:
+			// Invalid request
+			
+		}
 	}
 }
 
@@ -221,7 +208,7 @@ func createPath(datafileId string) string {
 	return filepath.Join(dirpath, datafileId)
 }
 
-// hasAccess checks to see if the user making the request has access to the
+// ownerGaveAccessTo checks to see if the user making the request has access to the
 // particular datafile. Access is determined as follows:
 // 1. if the user and the owner of the file are the same return true (has access).
 // 2. Get a list of all the users groups for the file owner.
