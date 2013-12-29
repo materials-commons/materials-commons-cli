@@ -1,4 +1,4 @@
-GODIRS = . wsmaterials materials site autoupdate send mcfs transfer model
+GODIRS = . wsmaterials materials site autoupdate send mcfs transfer model mcfs/request
 P = github.com/materials-commons/materials
 
 all: fmt test
