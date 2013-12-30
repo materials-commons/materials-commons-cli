@@ -1,5 +1,9 @@
 package transfer
 
+import (
+	"time"
+)
+
 type ResponseType int
 
 const (
@@ -122,6 +126,8 @@ type StatResp struct {
 	DataFileID string
 	Checksum   string
 	Size       int64
+	Birthtime  time.Time
+	MTime      time.Time
 }
 
 type EndReq struct {
