@@ -15,6 +15,7 @@ type RequestType int
 
 const (
 	Upload RequestType = iota
+	RestartUpload
 	Download
 	Move
 	Delete
@@ -28,17 +29,18 @@ const (
 )
 
 var types = map[RequestType]bool{
-	Upload:   true,
-	Download: true,
-	Move:     true,
-	Delete:   true,
-	Send:     true,
-	Stat:     true,
-	Login:    true,
-	Done:     true,
-	Create:   true,
-	Error:    true,
-	Logout:   true,
+	Upload:        true,
+	RestartUpload: true,
+	Download:      true,
+	Move:          true,
+	Delete:        true,
+	Send:          true,
+	Stat:          true,
+	Login:         true,
+	Done:          true,
+	Create:        true,
+	Error:         true,
+	Logout:        true,
 }
 
 func ValidType(t RequestType) bool {
@@ -77,10 +79,13 @@ type Response struct {
 }
 
 type UploadReq struct {
+	DataDirID string
+	ProjectID string
+	Checksum  string
+	Size      int64
 }
 
 type UploadResp struct {
-	Offset     int64
 	DataFileID string
 }
 

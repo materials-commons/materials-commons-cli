@@ -7,6 +7,7 @@ import (
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
 	"net"
+	"os"
 )
 
 type ReqStateFN func() ReqStateFN
@@ -103,6 +104,9 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	r.Decode(&req)
 	switch req.Type {
 	case transfer.Upload:
+		return r.upload(req)
+	case transfer.RestartUpload:
+	case transfer.Create:
 	case transfer.Download:
 	case transfer.Move:
 	case transfer.Delete:
@@ -113,6 +117,82 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	default:
 		return r.badRequest(fmt.Errorf("Bad request in NextCommand: %d", req.Type))
 	}
+}
+
+func (r *ReqHandler) upload(req transfer.Request) ReqStateFN {
+	switch t := req.Req.(type) {
+	case transfer.UploadReq:
+		dfid, err := r.validateUploadReq(t)
+		if err != nil {
+			return r.badRequest(err)
+		}
+		r.respUpload(dfid)
+		return r.uploadLoop(dfid)
+	default:
+		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
+	}
+}
+
+func (r *ReqHandler) validateUploadReq(req transfer.UploadReq) (dfid string, err error) {
+	return "", nil
+}
+
+func (r *ReqHandler) respUpload(dfid string) {
+
+}
+
+type uploadHandler struct {
+	file       *os.File
+	dataFileID string
+	nbytes     int64
+	*ReqHandler
+}
+
+func (r *ReqHandler) uploadLoop(dfid string) ReqStateFN {
+	f, err := openDataFile(dfid)
+	if err != nil {
+		return nil // return something else
+	}
+	uh := &uploadHandler{
+		file:       f,
+		dataFileID: dfid,
+		nbytes:     0,
+		ReqHandler: r,
+	}
+
+	return uh.upload()
+}
+
+func (h *uploadHandler) upload() ReqStateFN {
+	req := transfer.Request{}
+	h.Decode(&req)
+	switch req.Type {
+	case transfer.Send:
+		switch t := req.Req.(type) {
+		case transfer.SendReq:
+			if t.DataFileID != h.dataFileID {
+				// bad send - error out?
+			}
+			n, err := h.file.Write(t.Bytes)
+			if err != nil {
+				// error writing, do something...
+			}
+			h.nbytes = h.nbytes + int64(n)
+		default:
+		}
+	case transfer.Error:
+	case transfer.Logout:
+	case transfer.Done:
+		h.file.Close()
+		// Update datafile in db
+	default:
+		// close file, update datafile in db, return badRequest()
+	}
+	return h.upload()
+}
+
+func openDataFile(dfid string) (*os.File, error) {
+	return nil, nil
 }
 
 func (r *ReqHandler) logout(req transfer.Request) ReqStateFN {
@@ -131,8 +211,6 @@ func (r *ReqHandler) stat(req transfer.Request) ReqStateFN {
 	default:
 		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
 	}
-
-	return nil
 }
 
 func (r *ReqHandler) respStat(df *model.DataFile) {
