@@ -106,11 +106,17 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.Download:
 	case transfer.Move:
 	case transfer.Delete:
+	case transfer.Logout:
+		return r.logout(req)
 	case transfer.Stat:
 		return r.stat(req)
 	default:
 		return r.badRequest(fmt.Errorf("Bad request in NextCommand: %d", req.Type))
 	}
+}
+
+func (r *ReqHandler) logout(req transfer.Request) ReqStateFN {
+	return nil
 }
 
 func (r *ReqHandler) stat(req transfer.Request) ReqStateFN {
