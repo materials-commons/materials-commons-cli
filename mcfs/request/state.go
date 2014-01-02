@@ -6,8 +6,11 @@ import (
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
+	"io"
 	"net"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type ReqStateFN func() ReqStateFN
@@ -142,25 +145,56 @@ func (r *ReqHandler) respUpload(dfid string) {
 }
 
 type uploadHandler struct {
-	file       *os.File
+	w          io.WriteCloser
 	dataFileID string
 	nbytes     int64
 	*ReqHandler
 }
 
+func datafileWrite(w io.Writer, bytes []byte) (int, error) {
+	return w.Write(bytes)
+}
+
+func datafileClose(w io.WriteCloser, dataFileID string, session *r.Session) error {
+	// Update datafile in db
+	w.Close()
+	return nil
+}
+
+func datafileOpen(dfid string) (io.WriteCloser, error) {
+	path, err := createDataFilePath(dfid)
+	if err != nil {
+		return nil, err
+	}
+	return os.Create(path)
+}
+
+/*
+The following variables define functions for interacting with the datafile. They also
+allow these functions to be replaced during testing when the test doesn't really
+need to do anything with the datafile.
+
+TODO: Think about creating a type and interface that defines all operations on a
+data file, Then pass this interface in to the request handler. That way we can
+always replace it for testing or other purposes.
+*/
+var dfWrite = datafileWrite
+var dfClose = datafileClose
+var dfOpen = datafileOpen
+
 func (r *ReqHandler) uploadLoop(dfid string) ReqStateFN {
-	f, err := openDataFile(dfid)
+	f, err := dfOpen(dfid)
 	if err != nil {
 		return nil // return something else
 	}
-	uh := &uploadHandler{
-		file:       f,
+	h := &uploadHandler{
+		w:          f,
 		dataFileID: dfid,
 		nbytes:     0,
 		ReqHandler: r,
 	}
 
-	return uh.upload()
+	return h.upload()
 }
 
 func (h *uploadHandler) upload() ReqStateFN {
@@ -173,26 +207,34 @@ func (h *uploadHandler) upload() ReqStateFN {
 			if t.DataFileID != h.dataFileID {
 				// bad send - error out?
 			}
-			n, err := h.file.Write(t.Bytes)
+			n, err := dfWrite(h.w, t.Bytes)
 			if err != nil {
 				// error writing, do something...
 			}
 			h.nbytes = h.nbytes + int64(n)
 		default:
+			// What to do here? Probably assume an error and close
+			// the connection.
+			dfClose(h.w, h.dataFileID, h.db.session)
+			return h.badRequest(fmt.Errorf("Bad Request"))
 		}
 	case transfer.Error:
 	case transfer.Logout:
 	case transfer.Done:
-		h.file.Close()
-		// Update datafile in db
+		dfClose(h.w, h.dataFileID, h.db.session)
+		return h.nextCommand()
 	default:
-		// close file, update datafile in db, return badRequest()
+		dfClose(h.w, h.dataFileID, h.db.session)
+		return h.badRequest(fmt.Errorf("Unknown Request Type"))
 	}
 	return h.upload()
 }
 
-func openDataFile(dfid string) (*os.File, error) {
-	return nil, nil
+func createDataFilePath(dataFileID string) (string, error) {
+	pieces := strings.Split(dataFileID, "-")
+	dirpath := filepath.Join("/mcfs/data/materialscommons", pieces[1][0:2], pieces[1][2:4])
+	os.MkdirAll(dirpath, 0600)
+	return filepath.Join(dirpath, dataFileID), nil
 }
 
 func (r *ReqHandler) logout(req transfer.Request) ReqStateFN {
