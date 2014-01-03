@@ -22,6 +22,7 @@ type db struct {
 type ReqHandler struct {
 	conn net.Conn
 	db
+	user string
 	*gob.Decoder
 	*gob.Encoder
 }
@@ -63,6 +64,7 @@ func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
 	switch t := req.Req.(type) {
 	case transfer.LoginReq:
 		if r.db.validLogin(t.User, t.ApiKey) {
+			r.user = t.User
 			r.respContinue()
 			return r.nextCommand()
 		} else {
@@ -108,8 +110,11 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	switch req.Type {
 	case transfer.Upload:
 		return r.upload(req)
-	case transfer.RestartUpload:
-	case transfer.Create:
+	case transfer.CreateFile:
+		return r.createFile(req)
+	case transfer.CreateDir:
+		return r.createDir(req)
+	case transfer.CreateProject:
 	case transfer.Download:
 	case transfer.Move:
 	case transfer.Delete:
@@ -120,27 +125,41 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	default:
 		return r.badRequest(fmt.Errorf("Bad request in NextCommand: %d", req.Type))
 	}
+	return nil
 }
 
 func (r *ReqHandler) upload(req transfer.Request) ReqStateFN {
 	switch t := req.Req.(type) {
 	case transfer.UploadReq:
-		dfid, err := r.validateUploadReq(t)
+		offset, err := r.validateUploadReq(t)
 		if err != nil {
 			return r.badRequest(err)
 		}
-		r.respUpload(dfid)
-		return r.uploadLoop(dfid)
+		r.respUpload(offset, t.DataFileID)
+		return r.uploadLoop(t.DataFileID)
 	default:
 		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
 	}
 }
 
-func (r *ReqHandler) validateUploadReq(req transfer.UploadReq) (dfid string, err error) {
-	return "", nil
+func (r *ReqHandler) validateUploadReq(req transfer.UploadReq) (offset int64, err error) {
+	offset = -1
+	df, err := model.GetDataFile(req.DataFileID, r.db.session)
+	switch {
+	case err != nil:
+		return offset, err
+	case req.Checksum != df.Checksum:
+		return offset, fmt.Errorf("Checksums don't match")
+	default:
+		sinfo, err := os.Stat(datafilePath(req.DataFileID))
+		if err == nil && sinfo.Size() < df.Size {
+			offset = sinfo.Size()
+		}
+	}
+	return offset, err
 }
 
-func (r *ReqHandler) respUpload(dfid string) {
+func (r *ReqHandler) respUpload(offset int64, dfid string) {
 
 }
 
@@ -151,7 +170,7 @@ type uploadHandler struct {
 	*ReqHandler
 }
 
-func datafileWrite(w io.Writer, bytes []byte) (int, error) {
+func datafileWrite(w io.WriteCloser, bytes []byte) (int, error) {
 	return w.Write(bytes)
 }
 
@@ -162,11 +181,11 @@ func datafileClose(w io.WriteCloser, dataFileID string, session *r.Session) erro
 }
 
 func datafileOpen(dfid string) (io.WriteCloser, error) {
-	path, err := createDataFilePath(dfid)
+	err := createDataFileDir(dfid)
 	if err != nil {
 		return nil, err
 	}
-	return os.Create(path)
+	return os.Create(datafilePath(dfid))
 }
 
 /*
@@ -230,11 +249,75 @@ func (h *uploadHandler) upload() ReqStateFN {
 	return h.upload()
 }
 
-func createDataFilePath(dataFileID string) (string, error) {
+func (r *ReqHandler) createFile(req transfer.Request) ReqStateFN {
+	switch t := req.Req.(type) {
+	case transfer.CreateFileReq:
+		var _ = t
+		return nil
+	default:
+		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
+	}
+}
+
+func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
+	switch t := req.Req.(type) {
+	case transfer.CreateDirReq:
+		if r.db.verifyProject(t.ProjectID) {
+			return r.createDataDir(t)
+		}
+		return r.badRequest(fmt.Errorf("Invalid project: %s", t.ProjectID))
+	default:
+		return r.badRequest(fmt.Errorf("Bad request data for type %d", req.Type))
+	}
+}
+
+func (db db) verifyProject(projectID string) bool {
+	return false
+}
+
+func (rh *ReqHandler) createDataDir(req transfer.CreateDirReq) ReqStateFN {
+	proj, err := model.GetProject(req.ProjectID, rh.db.session)
+	switch {
+	case err != nil:
+		err = fmt.Errorf("Bad projectID %s", req.ProjectID)
+	case proj.Owner != rh.user:
+		err = fmt.Errorf("Access to project not allowed")
+	default:
+		var parent string
+		if parent, err = rh.db.getParent(req.Path); err == nil {
+			datadir := model.NewDataDir(req.Path, "private", rh.user, parent)
+			_, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
+		}
+	}
+
+	if err != nil {
+		rh.respError(err)
+	} else {
+		rh.respContinue()
+	}
+	return rh.nextCommand()
+}
+
+func (db db) getParent(ddirPath string) (string, error) {
+	query := r.Table("datadirs").GetAllByIndex("name", ddirPath)
+	var d model.DataDir
+	err := model.GetRow(query, db.session, &d)
+	return d.Id, err
+}
+
+func createDataFileDir(dataFileID string) error {
 	pieces := strings.Split(dataFileID, "-")
 	dirpath := filepath.Join("/mcfs/data/materialscommons", pieces[1][0:2], pieces[1][2:4])
-	os.MkdirAll(dirpath, 0600)
-	return filepath.Join(dirpath, dataFileID), nil
+	return os.MkdirAll(dirpath, 0600)
+}
+
+func datafileDir(dataFileID string) string {
+	pieces := strings.Split(dataFileID, "-")
+	return filepath.Join("/mcfs/data/materialscommons", pieces[1][0:2], pieces[1][2:4])
+}
+
+func datafilePath(dataFileID string) string {
+	return filepath.Join(datafileDir(dataFileID), dataFileID)
 }
 
 func (r *ReqHandler) logout(req transfer.Request) ReqStateFN {
@@ -267,6 +350,14 @@ func (r *ReqHandler) respStat(df *model.DataFile) {
 		Type:   transfer.RContinue,
 		Status: nil,
 		Resp:   statResp,
+	}
+	r.Encode(resp)
+}
+
+func (r *ReqHandler) respError(err error) {
+	resp := &transfer.Response{
+		Type:   transfer.RContinue,
+		Status: err,
 	}
 	r.Encode(resp)
 }
