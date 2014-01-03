@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"strings"
 	"time"
 )
 
@@ -135,9 +136,94 @@ func GetItem(id, table string, session *r.Session, obj interface{}) error {
 	case err != nil:
 		return err
 	case result.IsNil():
-		return fmt.Errorf("Unknown User Id: %s", id)
+		return fmt.Errorf("Unknown Id: %s", id)
 	default:
 		err := result.Scan(obj)
 		return err
 	}
+}
+
+func GetRow(query r.RqlTerm, session *r.Session, obj interface{}) error {
+	result, err := query.RunRow(session)
+	switch {
+	case err != nil:
+		return err
+	case result.IsNil():
+		return fmt.Errorf("Bad query")
+	default:
+		err := result.Scan(obj)
+		return err
+	}
+}
+
+type Project struct {
+	Id          string    `gorethink:"id,omitempty"`
+	Name        string    `gorethink:"name"`
+	Description string    `gorethink:"description"`
+	DataDir     string    `gorethink:"datadir"`
+	Owner       string    `gorethink:"owner"`
+	Birthtime   time.Time `gorethink:"birthtime"`
+	MTime       time.Time `gorethink:"mtime"`
+	Notes       []string  `gorethink:"notes"`
+	Tags        []string  `gorethink:"tags"`
+	Reviews     []string  `gorethink:"reviews"`
+	MyTags      []string  `gorethink:"mytags"`
+}
+
+func NewProject(name, datadir, owner string) Project {
+	now := time.Now()
+	return Project{
+		Name:      name,
+		DataDir:   datadir,
+		Owner:     owner,
+		Birthtime: now,
+		MTime:     now,
+	}
+}
+
+func GetProject(id string, session *r.Session) (*Project, error) {
+	var p Project
+	if err := GetItem(id, "projects", session, &p); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+type DataDir struct {
+	Id              string    `gorethink:"id,omitempty"`
+	Access          string    `gorethink:"access"`
+	Owner           string    `gorethink:"owner"`
+	MarkedForReview bool      `gorethink:"marked_for_review"`
+	Name            string    `gorethink:"name"`
+	DataFiles       []string  `gorethink:"datafiles"`
+	DataParams      []string  `gorethink:"dataparams"`
+	Users           []string  `gorethink:"users"`
+	Tags            []string  `gorethink:"tags"`
+	MyTags          []string  `gorethink:"mytags"`
+	Parent          string    `gorethink:"parent"`
+	Reviews         []string  `gorethink:"reviews"`
+	Birthtime       time.Time `gorethink:"birthtime"`
+	MTime           time.Time `gorethink:"mtime"`
+	ATime           time.Time `gorethink:"atime"`
+}
+
+func NewDataDir(name, access, owner, parent string) DataDir {
+	now := time.Now()
+	return DataDir{
+		Id:        owner + "$" + strings.Replace(name, "/", "_", -1),
+		Owner:     owner,
+		Name:      name,
+		Users:     []string{owner},
+		Birthtime: now,
+		MTime:     now,
+		ATime:     now,
+	}
+}
+
+func GetDataDir(id string, session *r.Session) (*DataDir, error) {
+	var d DataDir
+	if err := GetItem(id, "datadirs", session, &d); err != nil {
+		return nil, err
+	}
+	return &d, nil
 }
