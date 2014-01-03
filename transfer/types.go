@@ -23,7 +23,9 @@ const (
 	Stat
 	Login
 	Done
-	Create
+	CreateFile
+	CreateDir
+	CreateProject
 	Error
 	Logout
 )
@@ -38,7 +40,9 @@ var types = map[RequestType]bool{
 	Stat:          true,
 	Login:         true,
 	Done:          true,
-	Create:        true,
+	CreateFile:    true,
+	CreateDir:     true,
+	CreateProject: true,
 	Error:         true,
 	Logout:        true,
 }
@@ -79,10 +83,9 @@ type Response struct {
 }
 
 type UploadReq struct {
-	DataDirID string
-	ProjectID string
-	Checksum  string
-	Size      int64
+	DataFileID string
+	Checksum   string
+	Size       int64
 }
 
 type UploadResp struct {
@@ -142,13 +145,21 @@ type EndResp struct {
 	Ok bool
 }
 
-type CreateReq struct {
+type CreateFileReq struct {
 	ProjectID string
 	DataDirID string
 	Path      string
-	IsDir     bool
 	Checksum  string
 	Size      int64
+}
+
+type CreateDirReq struct {
+	ProjectID string
+	Path      string
+}
+
+type CreateProjectReq struct {
+	Path string
 }
 
 type CreateResp struct {
