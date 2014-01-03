@@ -1,6 +1,5 @@
 #!/bin/sh
 
-P=github.com/materials-commons/materials
 export MATERIALS_WEBDIR=""
 export MATERIALS_ADDRESS=""
 export MATERIALS_PORT=""
@@ -9,4 +8,4 @@ export MCDOWNLOADURL=""
 export MCAPIURL=""
 export MCURL=""
 
-go test -v $P $P/site $P/materials $P/mcfs $P/model
+go test -v ./...
