@@ -33,6 +33,8 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/materials/mcfs/request"
+	_ "github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
 	"path/filepath"
@@ -54,11 +56,18 @@ func main() {
 		os.Exit(1)
 	}
 	for {
+		session, _ := r.Connect(map[string]interface{}{
+			"address":  "localhost:30815",
+			"database": "materialscommons",
+		})
+		fmt.Println("waiting on accept")
 		conn, err := listener.Accept()
+		fmt.Println("got connection")
 		if err != nil {
 			continue
 		}
-		go handleConnection(conn)
+		r := request.NewReqHandler(conn, session)
+		go r.Run()
 	}
 }
 
