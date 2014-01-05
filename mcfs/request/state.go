@@ -76,6 +76,7 @@ func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
 }
 
 func (r *ReqHandler) badRequest(err error) ReqStateFN {
+	fmt.Println(err)
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err,
@@ -97,6 +98,7 @@ func (db db) validLogin(user, apikey string) bool {
 }
 
 func (r *ReqHandler) respContinue() {
+	fmt.Println("respContinue")
 	resp := &transfer.Response{
 		Type:   transfer.RContinue,
 		Status: nil,
