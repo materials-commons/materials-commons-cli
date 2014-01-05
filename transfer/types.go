@@ -2,7 +2,44 @@ package transfer
 
 import (
 	"time"
+	"encoding/gob"
 )
+
+func init() {
+	gob.Register(Request{})
+	gob.Register(Response{})
+
+	gob.Register(UploadReq{})
+	gob.Register(UploadResp{})
+
+	gob.Register(DownloadReq{})
+	gob.Register(DownloadResp{})
+
+	gob.Register(MoveReq{})
+	gob.Register(MoveResp{})
+
+	gob.Register(DeleteReq{})
+	gob.Register(DeleteResp{})
+
+	gob.Register(SendReq{})
+	gob.Register(SendResp{})
+
+	gob.Register(StatReq{})
+	gob.Register(StatResp{})
+
+	gob.Register(EndReq{})
+	gob.Register(EndResp{})
+
+	gob.Register(CreateFileReq{})
+	gob.Register(CreateDirReq{})
+	gob.Register(CreateProjectReq{})
+
+	gob.Register(CreateResp{})
+
+	gob.Register(LoginReq{})
+
+	gob.Register(StartResp{})
+}
 
 type ResponseType int
 
