@@ -12,7 +12,7 @@ func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
 	case transfer.LoginReq:
 		if r.db.validLogin(t.User, t.ApiKey) {
 			r.user = t.User
-			r.respContinue()
+			r.respOk(nil)
 			return r.nextCommand()
 		} else {
 			return r.badRequest(fmt.Errorf("Bad login %s/%s", t.User, t.ApiKey))
@@ -35,6 +35,6 @@ func (db db) validLogin(user, apikey string) bool {
 }
 
 func (r *ReqHandler) logout(req transfer.Request) ReqStateFN {
-	r.respContinue()
+	r.respOk(nil)
 	return r.startState
 }
