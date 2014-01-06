@@ -213,6 +213,8 @@ func NewDataDir(name, access, owner, parent string) DataDir {
 		Id:        owner + "$" + strings.Replace(name, "/", "_", -1),
 		Owner:     owner,
 		Name:      name,
+		Parent:    parent,
+		Access:    access,
 		Users:     []string{owner},
 		Birthtime: now,
 		MTime:     now,
@@ -226,4 +228,9 @@ func GetDataDir(id string, session *r.Session) (*DataDir, error) {
 		return nil, err
 	}
 	return &d, nil
+}
+
+func Delete(table, id string, session *r.Session) error {
+	_, err := r.Table(table).Get(id).Delete().RunWrite(session)
+	return err
 }
