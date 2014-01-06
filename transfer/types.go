@@ -3,6 +3,7 @@ package transfer
 import (
 	"encoding/gob"
 	"time"
+	"fmt"
 )
 
 func init() {
@@ -106,7 +107,12 @@ var requestTypeString = map[RequestType]string{
 }
 
 func (t RequestType) String() string {
-	return requestTypeString[t]
+	s := requestTypeString[t]
+	if s == "" {
+		return "Unknown"
+	}
+
+	return s
 }
 
 func ValidType(t RequestType) bool {
