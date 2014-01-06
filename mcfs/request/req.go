@@ -56,12 +56,12 @@ func (r *ReqHandler) startState() ReqStateFN {
 	case transfer.Close:
 		return nil
 	default:
-		return r.badRequest(fmt.Errorf("Bad state change %d\n", req.Type))
+		return r.badRequestRestart(fmt.Errorf("Bad state change %d\n", req.Type))
 	}
 }
 
-func (r *ReqHandler) badRequest(err error) ReqStateFN {
-	fmt.Println(err)
+func (r *ReqHandler) badRequestRestart(err error) ReqStateFN {
+	fmt.Println("badRequestRestart:", err)
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),
@@ -70,8 +70,17 @@ func (r *ReqHandler) badRequest(err error) ReqStateFN {
 	return r.startState
 }
 
+func (r *ReqHandler) badRequestNext(err error) ReqStateFN {
+	fmt.Println("badRequestNext:", err)
+	resp := &transfer.Response{
+		Type:   transfer.RError,
+		Status: err.Error(),
+	}
+	r.Encode(resp)
+	return r.nextCommand
+}
+
 func (r *ReqHandler) respOk(respData interface{}) {
-	fmt.Println("respOk")
 	resp := &transfer.Response{
 		Type: transfer.ROk,
 		Resp: respData,
@@ -99,12 +108,13 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.Close:
 		return nil
 	default:
-		return r.badRequest(fmt.Errorf("2 Bad request in NextCommand: %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("2 Bad request in NextCommand: %d", req.Type))
 	}
 	return nil
 }
 
 func (r *ReqHandler) respError(err error) {
+	fmt.Println("respError:", err)
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),

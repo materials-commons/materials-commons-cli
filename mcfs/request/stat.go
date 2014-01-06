@@ -11,12 +11,12 @@ func (r *ReqHandler) stat(req transfer.Request) ReqStateFN {
 	case transfer.StatReq:
 		df, err := model.GetDataFile(t.DataFileID, r.db.session)
 		if err != nil {
-			r.badRequest(fmt.Errorf("Unknown id %s", t.DataFileID))
+			return r.badRequestNext(fmt.Errorf("Unknown id %s", t.DataFileID))
 		}
 		r.respStat(df)
 		return r.nextCommand()
 	default:
-		return r.badRequest(fmt.Errorf("5 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("5 Bad request data for type %d", req.Type))
 	}
 }
 

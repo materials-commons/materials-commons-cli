@@ -16,12 +16,12 @@ func (r *ReqHandler) upload(req transfer.Request) ReqStateFN {
 	case transfer.UploadReq:
 		offset, err := r.validateUploadReq(t)
 		if err != nil {
-			return r.badRequest(err)
+			return r.badRequestNext(err)
 		}
 		r.respUpload(offset, t.DataFileID)
 		return r.uploadLoop(t.DataFileID)
 	default:
-		return r.badRequest(fmt.Errorf("6 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("6 Bad request data for type %d", req.Type))
 	}
 }
 
@@ -117,7 +117,7 @@ func (h *uploadHandler) upload() ReqStateFN {
 			// What to do here? Probably assume an error and close
 			// the connection.
 			dfClose(h.w, h.dataFileID, h.db.session)
-			return h.badRequest(fmt.Errorf("Bad Request"))
+			return h.badRequestNext(fmt.Errorf("Bad Request"))
 		}
 	case transfer.Error:
 	case transfer.Logout:
@@ -131,7 +131,7 @@ func (h *uploadHandler) upload() ReqStateFN {
 		return h.nextCommand()
 	default:
 		dfClose(h.w, h.dataFileID, h.db.session)
-		return h.badRequest(fmt.Errorf("Unknown Request Type"))
+		return h.badRequestNext(fmt.Errorf("Unknown Request Type"))
 	}
 	return h.upload()
 }
