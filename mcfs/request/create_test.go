@@ -79,7 +79,7 @@ func TestCreateDir(t *testing.T) {
 
 	request.Req = createDirReq
 	resp = transfer.Response{}
-	
+
 	client.Encode(&request)
 	client.Decode(&resp)
 	if resp.Type != transfer.RError {
