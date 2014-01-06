@@ -44,8 +44,9 @@ func init() {
 type ResponseType int
 
 const (
-	RError ResponseType = iota
-	RContinue
+	ROk ResponseType = iota
+	RError
+	RFatal
 )
 
 type RequestType int
