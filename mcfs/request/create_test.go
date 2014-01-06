@@ -57,11 +57,33 @@ func TestCreateDir(t *testing.T) {
 	client.Encode(&request)
 	client.Decode(&resp)
 	if resp.Type != transfer.RError {
-		t.Fatalf("Create dir outside of project failed %#v", resp)
+		t.Fatalf("Create dir outside of project succeeded %#v", resp)
 	}
 
-	// Test invalid project
+	// Test invalid project id
+	createDirReq.ProjectID = "abc123"
+	createDirReq.Path = "WE43 Heat Treatments/tdir2"
+	request.Req = createDirReq
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Create dir with bad project succeeded %#v", resp)
+	}
 
-	// Test all children paths are created
+	// Test that fails if subdirs don't exist
 
+	createDirReq = transfer.CreateDirReq{
+		ProjectID: "904886a7-ea57-4de7-8125-6e18c9736fd0",
+		Path:      "WE43 Heat Treatments/tdir1/tdir2",
+	}
+
+	request.Req = createDirReq
+	resp = transfer.Response{}
+	
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Create dir with missing subdirs succeeded %#v", resp)
+	}
+	fmt.Println(resp)
 }

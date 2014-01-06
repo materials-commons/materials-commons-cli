@@ -15,7 +15,7 @@ func (r *ReqHandler) createFile(req transfer.Request) ReqStateFN {
 		var _ = t
 		return nil
 	default:
-		return r.badRequest(fmt.Errorf("3 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("3 Bad request data for type %d", req.Type))
 	}
 }
 
@@ -25,9 +25,9 @@ func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
 		if r.db.verifyProject(t.ProjectID, r.user) {
 			return r.createDataDir(t)
 		}
-		return r.badRequest(fmt.Errorf("Invalid project: %s", t.ProjectID))
+		return r.badRequestNext(fmt.Errorf("Invalid project: %s", t.ProjectID))
 	default:
-		return r.badRequest(fmt.Errorf("4 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("4 Bad request data for type %d", req.Type))
 	}
 }
 
@@ -58,7 +58,6 @@ func (rh *ReqHandler) createDataDir(req transfer.CreateDirReq) ReqStateFN {
 		if parent, err = rh.db.getParent(req.Path); err == nil {
 			datadir = model.NewDataDir(req.Path, "private", rh.user, parent)
 			_, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
-			fmt.Println(err)
 		}
 	}
 
@@ -90,5 +89,8 @@ func (db db) getParent(ddirPath string) (string, error) {
 	query := r.Table("datadirs").GetAllByIndex("name", parent)
 	var d model.DataDir
 	err := model.GetRow(query, db.session, &d)
-	return d.Id, err
+	if err != nil {
+		return "", fmt.Errorf("No parent for %s", ddirPath)
+	}
+	return d.Id, nil
 }
