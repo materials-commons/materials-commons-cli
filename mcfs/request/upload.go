@@ -100,8 +100,7 @@ func (r *ReqHandler) uploadLoop(dfid string) ReqStateFN {
 }
 
 func (h *uploadHandler) upload() ReqStateFN {
-	req := transfer.Request{}
-	h.Decode(&req)
+	req := h.req()
 	switch req.Type {
 	case transfer.Send:
 		switch t := req.Req.(type) {
