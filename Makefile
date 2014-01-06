@@ -1,7 +1,10 @@
 GODIRS = . wsmaterials materials site autoupdate send mcfs transfer model mcfs/request
-P = github.com/materials-commons/materials
 
-all: fmt test
+.PHONY: bin test all fmt
+
+all: fmt test bin
+
+bin:
 	(cd materials; go build materials.go)
 	(cd mcfs; go build mcfs.go)
 
