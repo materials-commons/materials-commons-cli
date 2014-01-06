@@ -39,10 +39,8 @@ func (r *ReqHandler) Run() {
 func (r *ReqHandler) req() transfer.Request {
 	var req transfer.Request
 	err := r.Decode(&req)
-	fmt.Printf("Got request %#v\n", req)
 	switch {
 	case err != nil:
-		fmt.Println("   Error:", err)
 		req.Type = transfer.Close
 	case !transfer.ValidType(req.Type):
 		req.Type = transfer.Error
@@ -58,7 +56,6 @@ func (r *ReqHandler) startState() ReqStateFN {
 	case transfer.Close:
 		return nil
 	default:
-		r.respError(fmt.Errorf("Bad state"))
 		return r.badRequest(fmt.Errorf("Bad state change %d\n", req.Type))
 	}
 }
@@ -73,18 +70,17 @@ func (r *ReqHandler) badRequest(err error) ReqStateFN {
 	return r.startState
 }
 
-func (r *ReqHandler) respContinue() {
-	fmt.Println("respContinue")
+func (r *ReqHandler) respOk(respData interface{}) {
+	fmt.Println("respOk")
 	resp := &transfer.Response{
-		Type: transfer.RContinue,
+		Type: transfer.ROk,
+		Resp: respData,
 	}
 	r.Encode(resp)
 }
 
 func (r *ReqHandler) nextCommand() ReqStateFN {
-	req := transfer.Request{}
-	r.Decode(&req)
-	fmt.Printf("req = %#v\n", req)
+	req := r.req()
 	switch req.Type {
 	case transfer.Upload:
 		return r.upload(req)
@@ -110,7 +106,15 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 
 func (r *ReqHandler) respError(err error) {
 	resp := &transfer.Response{
-		Type:   transfer.RContinue,
+		Type:   transfer.RError,
+		Status: err.Error(),
+	}
+	r.Encode(resp)
+}
+
+func (r *ReqHandler) respFatal(err error) {
+	resp := &transfer.Response{
+		Type:   transfer.RFatal,
 		Status: err.Error(),
 	}
 	r.Encode(resp)
