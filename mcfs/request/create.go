@@ -5,6 +5,8 @@ import (
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
+	"path/filepath"
+	"strings"
 )
 
 func (r *ReqHandler) createFile(req transfer.Request) ReqStateFN {
@@ -20,7 +22,7 @@ func (r *ReqHandler) createFile(req transfer.Request) ReqStateFN {
 func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
 	switch t := req.Req.(type) {
 	case transfer.CreateDirReq:
-		if r.db.verifyProject(t.ProjectID) {
+		if r.db.verifyProject(t.ProjectID, r.user) {
 			return r.createDataDir(t)
 		}
 		return r.badRequest(fmt.Errorf("Invalid project: %s", t.ProjectID))
@@ -29,35 +31,63 @@ func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
 	}
 }
 
-func (db db) verifyProject(projectID string) bool {
-	return false
+func (db db) verifyProject(projectID, user string) bool {
+	project, err := model.GetProject(projectID, db.session)
+	switch {
+	case err != nil:
+		return false
+	case project.Owner != user:
+		return false
+	default:
+		return true
+	}
 }
 
 func (rh *ReqHandler) createDataDir(req transfer.CreateDirReq) ReqStateFN {
+	var datadir model.DataDir
 	proj, err := model.GetProject(req.ProjectID, rh.db.session)
 	switch {
 	case err != nil:
 		err = fmt.Errorf("Bad projectID %s", req.ProjectID)
 	case proj.Owner != rh.user:
 		err = fmt.Errorf("Access to project not allowed")
+	case !rh.db.validDirPath(proj.Name, req.Path):
+		err = fmt.Errorf("Invalid directory path %s", req.Path)
 	default:
 		var parent string
 		if parent, err = rh.db.getParent(req.Path); err == nil {
-			datadir := model.NewDataDir(req.Path, "private", rh.user, parent)
+			datadir = model.NewDataDir(req.Path, "private", rh.user, parent)
 			_, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
+			fmt.Println(err)
 		}
 	}
 
 	if err != nil {
 		rh.respError(err)
 	} else {
-		rh.respContinue()
+		resp := transfer.CreateResp{
+			ID: datadir.Id,
+		}
+		rh.respOk(resp)
 	}
 	return rh.nextCommand()
 }
 
+func (db db) validDirPath(projName, dirPath string) bool {
+	slash := strings.Index(dirPath, "/")
+	switch {
+	case slash == -1:
+		return false
+	case projName != dirPath[:slash]:
+		return false
+	default:
+		return true
+	}
+}
+
 func (db db) getParent(ddirPath string) (string, error) {
-	query := r.Table("datadirs").GetAllByIndex("name", ddirPath)
+	parent := filepath.Dir(ddirPath)
+	query := r.Table("datadirs").GetAllByIndex("name", parent)
 	var d model.DataDir
 	err := model.GetRow(query, db.session, &d)
 	return d.Id, err
