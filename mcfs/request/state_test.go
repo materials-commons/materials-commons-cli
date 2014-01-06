@@ -5,7 +5,6 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/transfer"
-	"io"
 	"net"
 	"os"
 	"testing"
@@ -41,22 +40,8 @@ func newClient() *client {
 	}
 }
 
-func tdatafileOpen(dfid string) (io.WriteCloser, error) {
-	return nil, nil
-}
-
-func tdatafileClose(w io.WriteCloser, dataFileID string, session *r.Session) error {
-	return nil
-}
-
-func tdatafileWrite(w io.WriteCloser, bytes []byte) (int, error) {
-	return len(bytes), nil
-}
-
 func TestLoginLogout(t *testing.T) {
 	client := newClient()
-	fmt.Println("got client")
-
 	loginReq := transfer.LoginReq{
 		ProjectID: "abc123",
 		User:      "gtarcea@umich.edu",
@@ -67,15 +52,36 @@ func TestLoginLogout(t *testing.T) {
 		Req:  loginReq,
 	}
 
-	fmt.Println("sending req")
-	err := client.Encode(&req)
-	fmt.Println(err)
-	fmt.Println("req sent")
+	client.Encode(&req)
 	resp := transfer.Response{}
-	fmt.Println("getting resp")
-	err = client.Decode(&resp)
-	fmt.Println(err)
-	fmt.Printf("%#v", resp)
+	err := client.Decode(&resp)
+	if err != nil {
+		t.Fatalf("Unable to decode response")
+	}
+
+	if resp.Type != transfer.RContinue {
+		t.Fatalf("Unexpected return %d expected %d", resp.Type, transfer.RContinue)
+	}
+	req.Type = transfer.Logout
+	client.Encode(&req)
+	client.Decode(&resp)
+	if resp.Type != transfer.RContinue {
+		t.Fatalf("Unexpected return %d expected %d", resp.Type, transfer.RContinue)
+	}
+	loginReq.ApiKey = "abc12356"
+	req.Req = loginReq
+	req.Type = transfer.Login
+	client.Encode(&req)
+	fmt.Println("sent login waiting on decode")
+	client.Decode(&resp)
+	if resp.Type != transfer.RContinue {
+		t.Fatalf("Unexpected return %d expected %d", resp.Type, transfer.RContinue)
+	}
+
+	if resp.Status == "" {
+		t.Fatalf("Status should have contained a message")
+	}
+	fmt.Println(resp)
 }
 
 func TestCreate(t *testing.T) {

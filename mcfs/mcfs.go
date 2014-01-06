@@ -29,77 +29,62 @@
 package main
 
 import (
-	"encoding/gob"
 	"fmt"
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/mcfs/request"
+	"github.com/materials-commons/materials/model"
 	_ "github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 const Port = "35862"
 
 func main() {
+	listener, err := createListener()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	acceptConnections(listener)
+}
+
+func createListener() (*net.TCPListener, error) {
 	service := "0.0.0.0:" + Port
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
 	if err != nil {
 		fmt.Println("Resolve error:", err)
-		os.Exit(1)
+		return nil, err
 	}
+
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
 		fmt.Println("Listen error:", err)
-		os.Exit(1)
+		return nil, err
 	}
+
+	return listener, nil
+}
+
+func acceptConnections(listener *net.TCPListener) {
 	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
+		}
 		session, _ := r.Connect(map[string]interface{}{
 			"address":  "localhost:30815",
 			"database": "materialscommons",
 		})
-		fmt.Println("waiting on accept")
-		conn, err := listener.Accept()
-		fmt.Println("got connection")
-		if err != nil {
-			continue
-		}
 		r := request.NewReqHandler(conn, session)
-		go r.Run()
+		go handleConnection(r, conn, session)
 	}
 }
 
-type FileTransferHeader2 struct {
-	Size  int
-	Bytes []byte
-}
-
-type reqHandler struct {
-	conn    net.Conn
-	session *r.Session
-}
-
-func handleConnection(conn net.Conn) {
+func handleConnection(reqHandler *request.ReqHandler, conn net.Conn, session *r.Session) {
 	defer conn.Close()
-	session, err := r.Connect(map[string]interface{}{
-		"address":  "localhost:30815",
-		"database": "materialscommons",
-	})
-
-	if err != nil {
-		// send error response
-	}
-
-	var _ = session
-}
-
-func createPath(datafileId string) string {
-	pieces := strings.Split(datafileId, "-")
-	dirpath := filepath.Join("/mcfs/data/materialscommons", pieces[1][0:2], pieces[1][2:4])
-	os.MkdirAll(dirpath, 0600)
-	return filepath.Join(dirpath, datafileId)
+	defer session.Close()
+	reqHandler.Run()
 }
 
 // ownerGaveAccessTo checks to see if the user making the request has access to the
@@ -134,17 +119,4 @@ func ownerGaveAccessTo(owner, user string, session *r.Session) bool {
 	}
 
 	return false
-}
-
-func client() {
-	conn, err := net.Dial("tcp", "localhost"+Port)
-	if err != nil {
-		fmt.Println("Error on client connect", err)
-		os.Exit(1)
-	}
-	encoder := gob.NewEncoder(conn)
-	fth := &FileTransferHeader2{1, []byte("Hello World")}
-	encoder.Encode(fth)
-	b := "Hello world Bytes"
-	encoder.Encode([]byte(b))
 }

@@ -1,8 +1,8 @@
 package transfer
 
 import (
-	"time"
 	"encoding/gob"
+	"time"
 )
 
 func init() {
@@ -65,6 +65,7 @@ const (
 	CreateProject
 	Error
 	Logout
+	Close
 )
 
 var types = map[RequestType]bool{
@@ -82,6 +83,7 @@ var types = map[RequestType]bool{
 	CreateProject: true,
 	Error:         true,
 	Logout:        true,
+	Close:         true,
 }
 
 func ValidType(t RequestType) bool {
@@ -115,7 +117,7 @@ type Request struct {
 
 type Response struct {
 	Type   ResponseType
-	Status error
+	Status string
 	Resp   interface{}
 }
 
