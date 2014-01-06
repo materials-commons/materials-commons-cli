@@ -87,6 +87,28 @@ var types = map[RequestType]bool{
 	Close:         true,
 }
 
+var requestTypeString = map[RequestType]string{
+	Upload:        "Upload",
+	RestartUpload: "RestartUpload",
+	Download:      "Download",
+	Move:          "Move",
+	Delete:        "Delete",
+	Send:          "Send",
+	Stat:          "Stat",
+	Login:         "Login",
+	Done:          "Done",
+	CreateFile:    "CreateFile",
+	CreateDir:     "CreateDir",
+	CreateProject: "CreateProject",
+	Error:         "Error",
+	Logout:        "Logout",
+	Close:         "Close",
+}
+
+func (t RequestType) String() string {
+	return requestTypeString[t]
+}
+
 func ValidType(t RequestType) bool {
 	return types[t]
 }
