@@ -28,9 +28,5 @@ func (r *ReqHandler) respStat(df *model.DataFile) {
 		Birthtime:  df.Birthtime,
 		MTime:      df.MTime,
 	}
-	resp := &transfer.Response{
-		Type: transfer.RContinue,
-		Resp: statResp,
-	}
-	r.Encode(resp)
+	r.respOk(statResp)
 }
