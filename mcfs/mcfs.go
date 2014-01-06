@@ -84,6 +84,7 @@ func acceptConnections(listener *net.TCPListener) {
 func handleConnection(reqHandler *request.ReqHandler, conn net.Conn, session *r.Session) {
 	defer conn.Close()
 	defer session.Close()
+
 	reqHandler.Run()
 }
 
