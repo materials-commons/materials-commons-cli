@@ -2,8 +2,8 @@ package transfer
 
 import (
 	"encoding/gob"
-	"time"
 	"fmt"
+	"time"
 )
 
 func init() {
