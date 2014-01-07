@@ -128,7 +128,7 @@ func TestCreateProject(t *testing.T) {
 
 	model.Delete("datadirs", datadirId, session)
 	model.Delete("projects", projectId, session)
-	
+
 	if resp.Type != transfer.RError {
 		t.Fatalf("Created an existing project - shouldn't be able to")
 	}
@@ -153,4 +153,42 @@ func TestCreateProject(t *testing.T) {
 	if resp.Type != transfer.RError {
 		t.Fatalf("Sent request with bad data and didn't get an error")
 	}
+}
+
+func TestCreateFile(t *testing.T) {
+	client := loginTestUser()
+	request := transfer.Request{
+		Type: transfer.CreateFile,
+	}
+	resp := transfer.Response{}
+
+	var _ = client
+	var _ = resp
+	var _ = request
+
+	// Test create a valid file
+	createFileReq := transfer.CreateFileReq{
+		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
+		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
+		Name:      "testfile1.txt",
+	}
+
+	request.Req = createFileReq
+
+	client.Encode(&request)
+	client.Decode(&resp)
+	fmt.Println(resp)
+	createResp := resp.Resp.(transfer.CreateResp)
+	createdId := createResp.ID
+	model.Delete("datafiles", createdId, session)
+
+	// Test creating an existing file
+
+	// Test creating with an invalid project id
+
+	// Test creating with an invalid datadir id
+
+	// Test creating with a datadir not in project
+
+	// Test with bad request data
 }

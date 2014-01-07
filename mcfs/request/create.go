@@ -67,13 +67,85 @@ func (db db) createProject(projectName, user string) (projectId, datadirId strin
 	return rv.GeneratedKeys[0], datadirId, nil
 }
 
-func (r *ReqHandler) createFile(req transfer.Request) ReqStateFN {
+func (h *ReqHandler) createFile(req transfer.Request) ReqStateFN {
+	fmt.Println("createFile")
 	switch t := req.Req.(type) {
 	case transfer.CreateFileReq:
-		var _ = t
-		return nil
+		if err := h.db.validCreateFileReq(t, h.user); err != nil {
+			return h.badRequestNext(err)
+		}
+
+		df := model.NewDataFile(t.Name, "private", h.user)
+		df.DataDirs = append(df.DataDirs, t.DataDirID)
+		rv, err := r.Table("datafiles").Insert(df).RunWrite(h.db.session)
+		if err != nil {
+			return h.badRequestNext(err)
+		}
+
+		if rv.Inserted == 0 {
+			return h.badRequestNext(fmt.Errorf("Unable to insert datafile"))
+		}
+		datafileId := rv.GeneratedKeys[0]
+
+		// TODO: Eliminate an extra query to look up the DataDir
+		// when we just did during verification.
+		datadir, _ := model.GetDataDir(t.DataDirID, h.db.session)
+		datadir.DataFiles = append(datadir.DataFiles, datafileId)
+
+		// TODO: Really should check for errors here. What do
+		// we do? The database could get out of sync. Maybe
+		// need a way to update partially completed items by
+		// putting into a log? Ugh...
+		r.Table("datadirs").Update(datadir).RunWrite(h.db.session)
+		createResp := transfer.CreateResp{
+			ID: datafileId,
+		}
+		h.respOk(createResp)
+		return h.nextCommand()
 	default:
-		return r.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+		return h.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+	}
+}
+
+func (db db) validCreateFileReq(fileReq transfer.CreateFileReq, user string) error {
+	proj, err := model.GetProject(fileReq.ProjectID, db.session)
+	if err != nil {
+		return err
+	}
+
+	if proj.Owner != user {
+		return fmt.Errorf("User %s is not owner of project %s", user, proj.Name)
+	}
+
+	datadir, err := model.GetDataDir(fileReq.DataDirID, db.session)
+	if err != nil {
+		return err
+	}
+
+	if !db.datadirInProject(datadir.Id, proj.Id) {
+		return fmt.Errorf("Datadir %s not in project %s", datadir.Name, proj.Name)
+	}
+
+	return nil
+}
+
+type Project2Datadir struct {
+	Id        string `gorethink:"id"`
+	ProjectID string `gorethink:"project_id"`
+	DataDirID string `gorethink:"datadir_id"`
+}
+
+func (db db) datadirInProject(datadirId, projectId string) bool {
+	query := r.Table("project2datadir").GetAllByIndex("datadir_id", datadirId)
+	var p2d Project2Datadir
+	err := model.GetRow(query, db.session, &p2d)
+	switch {
+	case err != nil:
+		return false
+	case p2d.ProjectID != projectId:
+		return false
+	default:
+		return true
 	}
 }
 
