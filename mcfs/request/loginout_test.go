@@ -48,6 +48,14 @@ var gtarceaLoginRequest = transfer.Request{
 	Req:  gtarceaLoginReq,
 }
 
+func loginTestUser() *client {
+	client := newClient()
+	client.Encode(&gtarceaLoginRequest)
+	resp := transfer.Response{}
+	client.Decode(&resp)
+	return client
+}
+
 func TestLoginLogout(t *testing.T) {
 	client := newClient()
 	loginReq := transfer.LoginReq{
