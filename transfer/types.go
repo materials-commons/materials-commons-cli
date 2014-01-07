@@ -2,7 +2,6 @@ package transfer
 
 import (
 	"encoding/gob"
-	"fmt"
 	"time"
 )
 
@@ -35,6 +34,7 @@ func init() {
 	gob.Register(CreateDirReq{})
 	gob.Register(CreateProjectReq{})
 
+	gob.Register(CreateProjectResp{})
 	gob.Register(CreateResp{})
 
 	gob.Register(LoginReq{})
@@ -230,7 +230,12 @@ type CreateDirReq struct {
 }
 
 type CreateProjectReq struct {
-	Path string
+	Name string
+}
+
+type CreateProjectResp struct {
+	ProjectID string
+	DataDirID string
 }
 
 type CreateResp struct {
