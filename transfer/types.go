@@ -68,6 +68,7 @@ const (
 	Error
 	Logout
 	Close
+	Index
 )
 
 var types = map[RequestType]bool{
@@ -86,6 +87,7 @@ var types = map[RequestType]bool{
 	Error:         true,
 	Logout:        true,
 	Close:         true,
+	Index:         true,
 }
 
 var requestTypeString = map[RequestType]string{
@@ -104,6 +106,7 @@ var requestTypeString = map[RequestType]string{
 	Error:         "Error",
 	Logout:        "Logout",
 	Close:         "Close",
+	Index:         "Index",
 }
 
 func (t RequestType) String() string {

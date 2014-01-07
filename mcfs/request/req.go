@@ -107,6 +107,7 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 		return r.stat(req)
 	case transfer.Close:
 		return nil
+	case transfer.Index:
 	default:
 		return r.badRequestNext(fmt.Errorf("2 Bad request in NextCommand: %d", req.Type))
 	}
