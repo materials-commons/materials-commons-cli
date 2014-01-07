@@ -98,6 +98,7 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.CreateDir:
 		return r.createDir(req)
 	case transfer.CreateProject:
+		return r.createProject(req)
 	case transfer.Download:
 	case transfer.Move:
 	case transfer.Delete:
