@@ -219,7 +219,7 @@ type EndResp struct {
 type CreateFileReq struct {
 	ProjectID string
 	DataDirID string
-	Path      string
+	Name      string
 	Checksum  string
 	Size      int64
 }
