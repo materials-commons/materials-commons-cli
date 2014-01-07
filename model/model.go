@@ -37,6 +37,8 @@ func MatchingUserGroups(query r.RqlTerm, session *r.Session) ([]UserGroup, error
 		return results, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		var ug UserGroup
 		rows.Scan(&ug)
