@@ -10,11 +10,9 @@ import (
 var _ = fmt.Println
 
 func TestCreateDir(t *testing.T) {
-	client := newClient()
-	client.Encode(&gtarceaLoginRequest)
-	resp := transfer.Response{}
-	client.Decode(&resp)
+	client := loginTestUser()
 
+	resp := transfer.Response{}
 	var request transfer.Request
 
 	// Test valid path
@@ -85,5 +83,74 @@ func TestCreateDir(t *testing.T) {
 	if resp.Type != transfer.RError {
 		t.Fatalf("Create dir with missing subdirs succeeded %#v", resp)
 	}
-	fmt.Println(resp)
+
+	// Test sending a CreateDir command with the wrong
+	// type of request object.
+	request.Req = "Hello world"
+	client.Encode(&request)
+	resp = transfer.Response{}
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Sent bad req data and didn't get an error")
+	}
+}
+
+func TestCreateProject(t *testing.T) {
+	client := loginTestUser()
+	createProjectReq := transfer.CreateProjectReq{
+		Name: "TestProject1__",
+	}
+	resp := transfer.Response{}
+	request := transfer.Request{
+		Type: transfer.CreateProject,
+		Req:  createProjectReq,
+	}
+
+	var _ = client
+	var _ = resp
+	var _ = request
+
+	// Test create new project
+	client.Encode(&request)
+	client.Decode(&resp)
+
+	createProjectResp := resp.Resp.(transfer.CreateProjectResp)
+	projectId := createProjectResp.ProjectID
+	datadirId := createProjectResp.DataDirID
+
+	if resp.Type != transfer.ROk {
+		t.Fatalf("Unable to create project")
+	}
+	// Test create existing project
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+
+	model.Delete("datadirs", datadirId, session)
+	model.Delete("projects", projectId, session)
+	
+	if resp.Type != transfer.RError {
+		t.Fatalf("Created an existing project - shouldn't be able to")
+	}
+
+	// Test create project with invalid name
+	createProjectReq = transfer.CreateProjectReq{
+		Name: "/InvalidName",
+	}
+	request.Req = createProjectReq
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Created project with Invalid name")
+	}
+
+	// Test create project with bad req data
+	resp = transfer.Response{}
+	request.Req = "Invalid data"
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Sent request with bad data and didn't get an error")
+	}
 }

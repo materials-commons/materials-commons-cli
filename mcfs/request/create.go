@@ -9,13 +9,71 @@ import (
 	"strings"
 )
 
+func (h *ReqHandler) createProject(req transfer.Request) ReqStateFN {
+	switch t := req.Req.(type) {
+	case transfer.CreateProjectReq:
+		switch {
+		case !validProjectName(t.Name):
+			return h.badRequestNext(fmt.Errorf("Invalid project name %s", t.Name))
+		case h.db.projectExists(t.Name, h.user):
+			return h.badRequestNext(fmt.Errorf("Project %s exists", t.Name))
+		default:
+			projectId, datadirId, err := h.db.createProject(t.Name, h.user)
+			if err != nil {
+				h.respError(err)
+			} else {
+				resp := transfer.CreateProjectResp{
+					ProjectID: projectId,
+					DataDirID: datadirId,
+				}
+				h.respOk(resp)
+			}
+			return h.nextCommand()
+		}
+	default:
+		return h.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+	}
+}
+
+func validProjectName(projectName string) bool {
+	i := strings.Index(projectName, "/")
+	return i == -1
+}
+
+func (db db) projectExists(projectName, user string) bool {
+	results, err := r.Table("projects").Filter(r.Row.Field("owner").Eq(user)).
+		Filter(r.Row.Field("name").Eq(projectName)).
+		Run(db.session)
+	if err != nil {
+		return true // Error, we don't know if it exists
+	}
+	defer results.Close()
+
+	return results.Next()
+}
+
+func (db db) createProject(projectName, user string) (projectId, datadirId string, err error) {
+	datadir := model.NewDataDir(projectName, "private", user, "")
+	rv, err := r.Table("datadirs").Insert(datadir).RunWrite(db.session)
+	if err != nil {
+		return "", "", err
+	}
+	datadirId = datadir.Id
+	project := model.NewProject(projectName, datadirId, user)
+	rv, err = r.Table("projects").Insert(project).RunWrite(db.session)
+	if err != nil {
+		return "", "", err
+	}
+	return rv.GeneratedKeys[0], datadirId, nil
+}
+
 func (r *ReqHandler) createFile(req transfer.Request) ReqStateFN {
 	switch t := req.Req.(type) {
 	case transfer.CreateFileReq:
 		var _ = t
 		return nil
 	default:
-		return r.badRequestNext(fmt.Errorf("3 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
 	}
 }
 
@@ -27,7 +85,7 @@ func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
 		}
 		return r.badRequestNext(fmt.Errorf("Invalid project: %s", t.ProjectID))
 	default:
-		return r.badRequestNext(fmt.Errorf("4 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
 	}
 }
 
