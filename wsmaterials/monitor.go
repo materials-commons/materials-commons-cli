@@ -65,13 +65,19 @@ func projectWatcher(project *materials.Project, projectdb *materials.ProjectDB, 
 			continue
 		}
 		watcher.Start()
-		defer watcher.Close()
 
+	FsEventsLoop:
 		for {
-			event := <-watcher.Events
-			broadcastEvent(event, project.Name, sio)
-			trackEvent(event, project, projectdb)
+			select {
+			case event := <-watcher.Events:
+				broadcastEvent(event, project.Name, sio)
+				trackEvent(event, project, projectdb)
+			case err := <-watcher.ErrorEvents:
+				fmt.Println("error:", err)
+				break FsEventsLoop
+			}
 		}
+		watcher.Close()
 	}
 }
 
