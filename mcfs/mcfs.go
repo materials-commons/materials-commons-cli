@@ -38,20 +38,23 @@ import (
 	"os"
 )
 
+// Options for server startup
 type ServerOptions struct {
 	Port     uint   `long:"server-port" description:"The port the server listens on" default:"35862"`
 	Bind     string `long:"bind" description:"Address of local interface to listen on" default:"localhost"`
 	PrintPid bool   `long:"print-pid" description:"Prints the server pid to stdout"`
 }
 
+// Options for the database
 type DatabaseOptions struct {
 	Connection string `long:"db-connect" description:"The host/port to connect to database on" default:"localhost:28015"`
 	Name       string `long:"db" description:"Database to use" default:"materialscommons"`
 }
 
+// Break the options into option groups.
 type Options struct {
-	Server   ServerOptions `group:"Server Options"`
-	Database DatabaseOptions
+	Server   ServerOptions   `group:"Server Options"`
+	Database DatabaseOptions `group:"Database Options"`
 }
 
 func main() {
@@ -74,6 +77,8 @@ func main() {
 	acceptConnections(listener, opts.Database.Connection, opts.Database.Name)
 }
 
+// createListener creates the net connection. It connects to the specified host
+// and port.
 func createListener(host string, port uint) (*net.TCPListener, error) {
 	service := fmt.Sprintf("%s:%d", host, port)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
@@ -91,6 +96,9 @@ func createListener(host string, port uint) (*net.TCPListener, error) {
 	return listener, nil
 }
 
+// acceptConnections listens on the the TCPListener. When a new connection comes
+// in it is dispatched in a separate go routine. For each new connection a new
+// connection the to database is created.
 func acceptConnections(listener *net.TCPListener, dbAddress, dbName string) {
 	for {
 		conn, err := listener.Accept()
@@ -106,6 +114,9 @@ func acceptConnections(listener *net.TCPListener, dbAddress, dbName string) {
 	}
 }
 
+// handleConnection handles connection requests by running the state machine. It also
+// takes care of book keeping like shutting down the net and database connections when
+// the connection is terminated.
 func handleConnection(reqHandler *request.ReqHandler, conn net.Conn, session *r.Session) {
 	defer conn.Close()
 	defer session.Close()
