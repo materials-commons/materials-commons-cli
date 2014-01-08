@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
+	r "github.com/dancannon/gorethink"
 	"testing"
 )
 
 var _ = fmt.Println
+var _ = r.Table
 
 func TestCreateDir(t *testing.T) {
 	client := loginTestUser()
@@ -47,7 +49,13 @@ func TestCreateDir(t *testing.T) {
 	}
 
 	// Cleanup the created directory
+	fmt.Println("Deleting datadir id:", createdId)
 	model.Delete("datadirs", createdId, session)
+	// Now cleanup the join table
+	rv, _ := r.Table("project2datadir").GetAllByIndex("datadir_id", createdId).Delete().RunWrite(session)
+	if rv.Deleted != 1 {
+		t.Fatalf("Multiple entries in project2datadir matched. There should only have been one: %#v\n", rv)
+	}
 
 	// Test path outside of project
 	createDirReq.Path = "DIFFERENTPROJECT/tdir1"
@@ -177,18 +185,62 @@ func TestCreateFile(t *testing.T) {
 
 	client.Encode(&request)
 	client.Decode(&resp)
-	fmt.Println(resp)
+	if resp.Type != transfer.ROk {
+		t.Fatalf("Creating file failed")
+	}
 	createResp := resp.Resp.(transfer.CreateResp)
 	createdId := createResp.ID
-	model.Delete("datafiles", createdId, session)
+
 
 	// Test creating an existing file
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Allowed create of an existing file")
+	}
+
+	// Delete created file
+	model.Delete("datafiles", createdId, session)
 
 	// Test creating with an invalid project id
+	validProjectID := createFileReq.ProjectID
+	createFileReq.ProjectID = "abc123-doesnotexist"
+	request.Req = createFileReq
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Allowed creation of file with bad projectid")
+	}
 
 	// Test creating with an invalid datadir id
+	createFileReq.ProjectID = validProjectID
+	createFileReq.DataDirID = "abc123-doesnotexist"
+	request.Req = createFileReq
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Allowed creation of file with bad projectid")
+	}
 
 	// Test creating with a datadir not in project
+	createFileReq.DataDirID = "mcfada@umich.edu$Synthetic Tooth_Presentation_MCubed"
+	request.Req = createFileReq
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Allowed creation of file in a datadir not in project")
+	}
 
 	// Test with bad request data
+	request.Req = "hello world"
+	resp = transfer.Response{}
+	client.Encode(&request)
+	client.Decode(&resp)
+	if resp.Type != transfer.RError {
+		t.Fatalf("Should have received error when sending bad req")
+	}
 }

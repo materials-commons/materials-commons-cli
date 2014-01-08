@@ -68,7 +68,6 @@ func (db db) createProject(projectName, user string) (projectId, datadirId strin
 }
 
 func (h *ReqHandler) createFile(req transfer.Request) ReqStateFN {
-	fmt.Println("createFile")
 	switch t := req.Req.(type) {
 	case transfer.CreateFileReq:
 		if err := h.db.validCreateFileReq(t, h.user); err != nil {
@@ -110,7 +109,7 @@ func (h *ReqHandler) createFile(req transfer.Request) ReqStateFN {
 func (db db) validCreateFileReq(fileReq transfer.CreateFileReq, user string) error {
 	proj, err := model.GetProject(fileReq.ProjectID, db.session)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unknown project id %s", fileReq.ProjectID)
 	}
 
 	if proj.Owner != user {
@@ -119,18 +118,22 @@ func (db db) validCreateFileReq(fileReq transfer.CreateFileReq, user string) err
 
 	datadir, err := model.GetDataDir(fileReq.DataDirID, db.session)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unknown datadir Id %s", fileReq.DataDirID)
 	}
 
 	if !db.datadirInProject(datadir.Id, proj.Id) {
 		return fmt.Errorf("Datadir %s not in project %s", datadir.Name, proj.Name)
 	}
 
+	if db.datafileExistsInDataDir(fileReq.DataDirID, fileReq.Name) {
+		return fmt.Errorf("Datafile %s already exists in datadir %s", fileReq.Name, datadir.Name)
+	}
+
 	return nil
 }
 
 type Project2Datadir struct {
-	Id        string `gorethink:"id"`
+	Id        string `gorethink:"id,omitempty"`
 	ProjectID string `gorethink:"project_id"`
 	DataDirID string `gorethink:"datadir_id"`
 }
@@ -147,6 +150,25 @@ func (db db) datadirInProject(datadirId, projectId string) bool {
 	default:
 		return true
 	}
+}
+
+func (db db) datafileExistsInDataDir(datadirID, datafileName string) bool {
+	rows, err := r.Table("datafiles").GetAllByIndex("name", datafileName).Run(db.session)
+	if err != nil {
+		return true // don't know if it exists or not
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var df model.DataFile
+		rows.Scan(&df)
+		for _, ddirID := range df.DataDirs {
+			if datadirID == ddirID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
@@ -187,7 +209,15 @@ func (rh *ReqHandler) createDataDir(req transfer.CreateDirReq) ReqStateFN {
 		var parent string
 		if parent, err = rh.db.getParent(req.Path); err == nil {
 			datadir = model.NewDataDir(req.Path, "private", rh.user, parent)
-			_, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
+			var wr r.WriteResponse
+			wr, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
+			if err == nil && wr.Inserted > 0 {
+				p2d := Project2Datadir{
+					ProjectID: req.ProjectID,
+					DataDirID: datadir.Id,
+				}
+				r.Table("project2datadir").Insert(p2d).RunWrite(rh.db.session)
+			}
 		}
 	}
 
