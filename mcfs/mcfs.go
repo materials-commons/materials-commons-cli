@@ -31,26 +31,51 @@ package main
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials/mcfs/request"
-	"github.com/materials-commons/materials/model"
 	_ "github.com/materials-commons/materials/transfer"
 	"net"
 	"os"
 )
 
-const Port = "35862"
+type ServerOptions struct {
+	Port     uint   `long:"server-port" description:"The port the server listens on" default:"35862"`
+	Bind     string `long:"bind" description:"Address of local interface to listen on" default:"localhost"`
+	PrintPid bool   `long:"print-pid" description:"Prints the server pid to stdout"`
+}
+
+type DatabaseOptions struct {
+	Connection string `long:"db-connect" description:"The host/port to connect to database on" default:"localhost:28015"`
+	Name       string `long:"db" description:"Database to use" default:"materialscommons"`
+}
+
+type Options struct {
+	Server   ServerOptions `group:"Server Options"`
+	Database DatabaseOptions
+}
 
 func main() {
-	listener, err := createListener()
+	var opts Options
+	_, err := flags.Parse(&opts)
+
 	if err != nil {
 		os.Exit(1)
 	}
 
-	acceptConnections(listener)
+	listener, err := createListener(opts.Server.Bind, opts.Server.Port)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	if opts.Server.PrintPid {
+		fmt.Println(os.Getpid())
+	}
+
+	acceptConnections(listener, opts.Database.Connection, opts.Database.Name)
 }
 
-func createListener() (*net.TCPListener, error) {
-	service := "0.0.0.0:" + Port
+func createListener(host string, port uint) (*net.TCPListener, error) {
+	service := fmt.Sprintf("%s:%d", host, port)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
 	if err != nil {
 		fmt.Println("Resolve error:", err)
@@ -66,15 +91,15 @@ func createListener() (*net.TCPListener, error) {
 	return listener, nil
 }
 
-func acceptConnections(listener *net.TCPListener) {
+func acceptConnections(listener *net.TCPListener, dbAddress, dbName string) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			continue
 		}
 		session, _ := r.Connect(map[string]interface{}{
-			"address":  "localhost:30815",
-			"database": "materialscommons",
+			"address":  dbAddress,
+			"database": dbName,
 		})
 		r := request.NewReqHandler(conn, session)
 		go handleConnection(r, conn, session)
@@ -86,38 +111,4 @@ func handleConnection(reqHandler *request.ReqHandler, conn net.Conn, session *r.
 	defer session.Close()
 
 	reqHandler.Run()
-}
-
-// ownerGaveAccessTo checks to see if the user making the request has access to the
-// particular datafile. Access is determined as follows:
-// 1. if the user and the owner of the file are the same return true (has access).
-// 2. Get a list of all the users groups for the file owner.
-//    For each user in the user group see if teh requesting user
-//    is included. If so then return true (has access).
-// 3. None of the above matched - return false (no access)
-func ownerGaveAccessTo(owner, user string, session *r.Session) bool {
-	// Check if user and file owner are the same
-	if user == owner {
-		return true
-	}
-
-	// Get the file owners usergroups
-	rql := r.Table("usergroups").Filter(r.Row.Field("owner").Eq(owner))
-	groups, err := model.MatchingUserGroups(rql, session)
-	if err != nil {
-		return false
-	}
-
-	// For each usergroup go through its list of users
-	// and see if they match the requesting user
-	for _, group := range groups {
-		users := group.Users
-		for _, u := range users {
-			if u == user {
-				return true
-			}
-		}
-	}
-
-	return false
 }

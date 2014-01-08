@@ -8,4 +8,7 @@ export MCDOWNLOADURL=""
 export MCAPIURL=""
 export MCURL=""
 
+mcfs/mcfs --db-connect='localhost:30815'&
+MCFSPID=$!
 go test -v ./...
+kill -HUP $MCFSPID
