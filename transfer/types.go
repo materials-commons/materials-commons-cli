@@ -194,15 +194,13 @@ type SendResp struct {
 }
 
 type StatReq struct {
-	Path       string
-	DataDirID  string
 	DataFileID string
-	Checksum   string
-	Size       int64
 }
 
 type StatResp struct {
 	DataFileID string
+	Name       string
+	DataDirs   []string
 	Checksum   string
 	Size       int64
 	Birthtime  time.Time

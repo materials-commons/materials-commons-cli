@@ -16,13 +16,15 @@ func (r *ReqHandler) stat(req transfer.Request) ReqStateFN {
 		r.respStat(df)
 		return r.nextCommand()
 	default:
-		return r.badRequestNext(fmt.Errorf("5 Bad request data for type %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
 	}
 }
 
 func (r *ReqHandler) respStat(df *model.DataFile) {
 	statResp := &transfer.StatResp{
 		DataFileID: df.Id,
+		Name:       df.Name,
+		DataDirs:   df.DataDirs,
 		Checksum:   df.Checksum,
 		Size:       df.Size,
 		Birthtime:  df.Birthtime,
