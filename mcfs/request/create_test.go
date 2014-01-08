@@ -2,9 +2,9 @@ package request
 
 import (
 	"fmt"
+	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
-	r "github.com/dancannon/gorethink"
 	"testing"
 )
 
@@ -190,7 +190,6 @@ func TestCreateFile(t *testing.T) {
 	}
 	createResp := resp.Resp.(transfer.CreateResp)
 	createdId := createResp.ID
-
 
 	// Test creating an existing file
 	resp = transfer.Response{}
