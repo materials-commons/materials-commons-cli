@@ -23,7 +23,7 @@ func TestCreateDir(t *testing.T) {
 		Path:      "WE43 Heat Treatments/tdir1",
 	}
 
-	request := transfer.Request{ &createDirRequest }
+	request := transfer.Request{&createDirRequest}
 
 	err := client.Encode(&request)
 	err = client.Decode(&resp)
@@ -91,7 +91,7 @@ func TestCreateProject(t *testing.T) {
 	createProjectRequest := transfer.CreateProjectReq{
 		Name: "TestProject1__",
 	}
-	request := transfer.Request{ &createProjectRequest }
+	request := transfer.Request{&createProjectRequest}
 	resp := transfer.Response{}
 
 	// Test create new project
@@ -138,7 +138,7 @@ func TestCreateFile(t *testing.T) {
 		Name:      "testfile1.txt",
 	}
 
-	request := transfer.Request{ &createFileRequest }
+	request := transfer.Request{&createFileRequest}
 
 	client.Encode(&request)
 	client.Decode(&resp)

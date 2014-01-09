@@ -67,7 +67,7 @@ func (r *ReqHandler) startState() ReqStateFN {
 
 func (r *ReqHandler) badRequestRestart(err error) ReqStateFN {
 	fmt.Println("badRequestRestart:", err)
-	r.badRequestCount = r.badRequestCount+1
+	r.badRequestCount = r.badRequestCount + 1
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),
@@ -81,7 +81,7 @@ func (r *ReqHandler) badRequestRestart(err error) ReqStateFN {
 
 func (r *ReqHandler) badRequestNext(err error) ReqStateFN {
 	fmt.Println("badRequestNext:", err)
-	r.badRequestCount = r.badRequestCount+1
+	r.badRequestCount = r.badRequestCount + 1
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),
