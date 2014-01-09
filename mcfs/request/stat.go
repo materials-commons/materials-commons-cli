@@ -8,11 +8,15 @@ import (
 
 func (r *ReqHandler) stat(req *transfer.StatReq) ReqStateFN {
 	df, err := model.GetDataFile(req.DataFileID, r.db.session)
-	if err != nil {
+	switch {
+	case err != nil:
 		return r.badRequestNext(fmt.Errorf("Unknown id %s", req.DataFileID))
+	case !ownerGaveAccessTo(df.Owner, r.user, r.db.session):
+		return r.badRequestNext(fmt.Errorf("You do not have permission to access this datafile %s", req.DataFileID))
+	default:
+		r.respStat(df)
+		return r.nextCommand()
 	}
-	r.respStat(df)
-	return r.nextCommand()
 }
 
 func (r *ReqHandler) respStat(df *model.DataFile) {
