@@ -81,7 +81,6 @@ func (r *ReqHandler) badRequestRestart(err error) ReqStateFN {
 
 func (r *ReqHandler) badRequestNext(err error) ReqStateFN {
 	fmt.Println("badRequestNext:", err)
-	r.badRequestCount = r.badRequestCount + 1
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),
@@ -123,6 +122,7 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 		return nil
 	case transfer.IndexReq:
 	default:
+		r.badRequestCount = r.badRequestCount + 1
 		return r.badRequestNext(fmt.Errorf("Bad request %T", req))
 	}
 	return nil
