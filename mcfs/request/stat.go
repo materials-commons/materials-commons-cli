@@ -6,7 +6,7 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
-func (r *ReqHandler) stat(req transfer.StatReq) ReqStateFN {
+func (r *ReqHandler) stat(req *transfer.StatReq) ReqStateFN {
 	df, err := model.GetDataFile(req.DataFileID, r.db.session)
 	if err != nil {
 		return r.badRequestNext(fmt.Errorf("Unknown id %s", req.DataFileID))

@@ -5,9 +5,11 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/transfer"
-	"net"
 	"io"
+	"net"
 )
+
+const maxBadRequests = 10
 
 type ReqStateFN func() ReqStateFN
 
@@ -21,6 +23,7 @@ type ReqHandler struct {
 	user string
 	*gob.Decoder
 	*gob.Encoder
+	badRequestCount int
 }
 
 func NewReqHandler(conn net.Conn, session *r.Session) *ReqHandler {
@@ -42,15 +45,11 @@ type ErrorReq struct{}
 func (r *ReqHandler) req() interface{} {
 	var req transfer.Request
 	if err := r.Decode(&req); err != nil {
-		fmt.Println(err)
-		fmt.Printf("%#v\n", err)
 		if err == io.EOF {
-			fmt.Println("Sending CloseReq")
 			return transfer.CloseReq{}
 		}
 		return ErrorReq{}
 	}
-	fmt.Printf("%#v", req)
 	return req.Req
 }
 
@@ -58,31 +57,39 @@ func (r *ReqHandler) startState() ReqStateFN {
 	request := r.req()
 	switch req := request.(type) {
 	case transfer.LoginReq:
-		return r.login(req)
+		return r.login(&req)
 	case transfer.CloseReq:
 		return nil
 	default:
-		return nil //r.badRequestRestart(fmt.Errorf("Bad Request"))
+		return r.badRequestRestart(fmt.Errorf("Bad Request %T", req))
 	}
 }
 
 func (r *ReqHandler) badRequestRestart(err error) ReqStateFN {
 	fmt.Println("badRequestRestart:", err)
+	r.badRequestCount = r.badRequestCount+1
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),
 	}
 	r.Encode(resp)
+	if r.badRequestCount > maxBadRequests {
+		return nil
+	}
 	return r.startState
 }
 
 func (r *ReqHandler) badRequestNext(err error) ReqStateFN {
 	fmt.Println("badRequestNext:", err)
+	r.badRequestCount = r.badRequestCount+1
 	resp := &transfer.Response{
 		Type:   transfer.RError,
 		Status: err.Error(),
 	}
 	r.Encode(resp)
+	if r.badRequestCount > maxBadRequests {
+		return nil
+	}
 	return r.nextCommand
 }
 
@@ -98,25 +105,25 @@ func (r *ReqHandler) nextCommand() ReqStateFN {
 	request := r.req()
 	switch req := request.(type) {
 	case transfer.UploadReq:
-		return r.upload(req)
+		return r.upload(&req)
 	case transfer.CreateFileReq:
-		return r.createFile(req)
+		return r.createFile(&req)
 	case transfer.CreateDirReq:
-		return r.createDir(req)
+		return r.createDir(&req)
 	case transfer.CreateProjectReq:
-		return r.createProject(req)
+		return r.createProject(&req)
 	case transfer.DownloadReq:
 	case transfer.MoveReq:
 	case transfer.DeleteReq:
 	case transfer.LogoutReq:
-		return r.logout(req)
+		return r.logout(&req)
 	case transfer.StatReq:
-		return r.stat(req)
+		return r.stat(&req)
 	case transfer.CloseReq:
 		return nil
 	case transfer.IndexReq:
 	default:
-		return r.badRequestNext(fmt.Errorf("Bad request type"))
+		return r.badRequestNext(fmt.Errorf("Bad request %T", req))
 	}
 	return nil
 }

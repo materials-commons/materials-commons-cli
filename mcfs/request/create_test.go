@@ -12,19 +12,18 @@ var _ = fmt.Println
 var _ = r.Table
 
 func TestCreateDir(t *testing.T) {
-	if true {
-		return
-	}
 	client := loginTestUser()
 
 	resp := transfer.Response{}
 
 	// Test valid path
 
-	request := transfer.CreateDirReq{
+	createDirRequest := transfer.CreateDirReq{
 		ProjectID: "904886a7-ea57-4de7-8125-6e18c9736fd0",
 		Path:      "WE43 Heat Treatments/tdir1",
 	}
+
+	request := transfer.Request{ &createDirRequest }
 
 	err := client.Encode(&request)
 	err = client.Decode(&resp)
@@ -57,7 +56,7 @@ func TestCreateDir(t *testing.T) {
 	}
 
 	// Test path outside of project
-	request.Path = "DIFFERENTPROJECT/tdir1"
+	createDirRequest.Path = "DIFFERENTPROJECT/tdir1"
 	client.Encode(&request)
 	client.Decode(&resp)
 	if resp.Type != transfer.RError {
@@ -65,8 +64,8 @@ func TestCreateDir(t *testing.T) {
 	}
 
 	// Test invalid project id
-	request.ProjectID = "abc123"
-	request.Path = "WE43 Heat Treatments/tdir2"
+	createDirRequest.ProjectID = "abc123"
+	createDirRequest.Path = "WE43 Heat Treatments/tdir2"
 	client.Encode(&request)
 	client.Decode(&resp)
 	if resp.Type != transfer.RError {
@@ -75,8 +74,8 @@ func TestCreateDir(t *testing.T) {
 
 	// Test that fails if subdirs don't exist
 
-	request.ProjectID = "904886a7-ea57-4de7-8125-6e18c9736fd0"
-	request.Path = "WE43 Heat Treatments/tdir1/tdir2"
+	createDirRequest.ProjectID = "904886a7-ea57-4de7-8125-6e18c9736fd0"
+	createDirRequest.Path = "WE43 Heat Treatments/tdir1/tdir2"
 
 	resp = transfer.Response{}
 
@@ -88,18 +87,12 @@ func TestCreateDir(t *testing.T) {
 }
 
 func TestCreateProject(t *testing.T) {
-	if true {
-		return
-	}
 	client := loginTestUser()
-	request := transfer.CreateProjectReq{
+	createProjectRequest := transfer.CreateProjectReq{
 		Name: "TestProject1__",
 	}
+	request := transfer.Request{ &createProjectRequest }
 	resp := transfer.Response{}
-
-	var _ = client
-	var _ = resp
-	var _ = request
 
 	// Test create new project
 	client.Encode(&request)
@@ -125,7 +118,7 @@ func TestCreateProject(t *testing.T) {
 	}
 
 	// Test create project with invalid name
-	request.Name = "/InvalidName"
+	createProjectRequest.Name = "/InvalidName"
 	resp = transfer.Response{}
 	client.Encode(&request)
 	client.Decode(&resp)
@@ -135,18 +128,17 @@ func TestCreateProject(t *testing.T) {
 }
 
 func TestCreateFile(t *testing.T) {
-	if true {
-		return
-	}
 	client := loginTestUser()
 	resp := transfer.Response{}
 
 	// Test create a valid file
-	request := transfer.CreateFileReq{
+	createFileRequest := transfer.CreateFileReq{
 		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
 		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
 		Name:      "testfile1.txt",
 	}
+
+	request := transfer.Request{ &createFileRequest }
 
 	client.Encode(&request)
 	client.Decode(&resp)
@@ -168,8 +160,8 @@ func TestCreateFile(t *testing.T) {
 	model.Delete("datafiles", createdId, session)
 
 	// Test creating with an invalid project id
-	validProjectID := request.ProjectID
-	request.ProjectID = "abc123-doesnotexist"
+	validProjectID := createFileRequest.ProjectID
+	createFileRequest.ProjectID = "abc123-doesnotexist"
 	resp = transfer.Response{}
 	client.Encode(&request)
 	client.Decode(&resp)
@@ -178,8 +170,8 @@ func TestCreateFile(t *testing.T) {
 	}
 
 	// Test creating with an invalid datadir id
-	request.ProjectID = validProjectID
-	request.DataDirID = "abc123-doesnotexist"
+	createFileRequest.ProjectID = validProjectID
+	createFileRequest.DataDirID = "abc123-doesnotexist"
 	resp = transfer.Response{}
 	client.Encode(&request)
 	client.Decode(&resp)
@@ -188,7 +180,7 @@ func TestCreateFile(t *testing.T) {
 	}
 
 	// Test creating with a datadir not in project
-	request.DataDirID = "mcfada@umich.edu$Synthetic Tooth_Presentation_MCubed"
+	createFileRequest.DataDirID = "mcfada@umich.edu$Synthetic Tooth_Presentation_MCubed"
 	resp = transfer.Response{}
 	client.Encode(&request)
 	client.Decode(&resp)

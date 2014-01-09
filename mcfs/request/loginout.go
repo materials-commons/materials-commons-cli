@@ -6,7 +6,7 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
-func (r *ReqHandler) login(req transfer.LoginReq) ReqStateFN {
+func (r *ReqHandler) login(req *transfer.LoginReq) ReqStateFN {
 	if r.db.validLogin(req.User, req.ApiKey) {
 		r.user = req.User
 		r.respOk(nil)
@@ -28,7 +28,7 @@ func (db db) validLogin(user, apikey string) bool {
 	}
 }
 
-func (r *ReqHandler) logout(req transfer.LogoutReq) ReqStateFN {
+func (r *ReqHandler) logout(req *transfer.LogoutReq) ReqStateFN {
 	r.respOk(nil)
 	return r.startState
 }

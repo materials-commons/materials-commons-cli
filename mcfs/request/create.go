@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (h *ReqHandler) createProject(req transfer.CreateProjectReq) ReqStateFN {
+func (h *ReqHandler) createProject(req *transfer.CreateProjectReq) ReqStateFN {
 	switch {
 	case !validProjectName(req.Name):
 		return h.badRequestNext(fmt.Errorf("Invalid project name %s", req.Name))
@@ -62,7 +62,7 @@ func (db db) createProject(projectName, user string) (projectId, datadirId strin
 	return rv.GeneratedKeys[0], datadirId, nil
 }
 
-func (h *ReqHandler) createFile(req transfer.CreateFileReq) ReqStateFN {
+func (h *ReqHandler) createFile(req *transfer.CreateFileReq) ReqStateFN {
 	if err := h.db.validCreateFileReq(req, h.user); err != nil {
 		return h.badRequestNext(err)
 	}
@@ -96,7 +96,7 @@ func (h *ReqHandler) createFile(req transfer.CreateFileReq) ReqStateFN {
 	return h.nextCommand()
 }
 
-func (db db) validCreateFileReq(fileReq transfer.CreateFileReq, user string) error {
+func (db db) validCreateFileReq(fileReq *transfer.CreateFileReq, user string) error {
 	proj, err := model.GetProject(fileReq.ProjectID, db.session)
 	if err != nil {
 		return fmt.Errorf("Unknown project id %s", fileReq.ProjectID)
@@ -161,7 +161,7 @@ func (db db) datafileExistsInDataDir(datadirID, datafileName string) bool {
 	return false
 }
 
-func (r *ReqHandler) createDir(req transfer.CreateDirReq) ReqStateFN {
+func (r *ReqHandler) createDir(req *transfer.CreateDirReq) ReqStateFN {
 	if r.db.verifyProject(req.ProjectID, r.user) {
 		return r.createDataDir(req)
 	}
@@ -180,7 +180,7 @@ func (db db) verifyProject(projectID, user string) bool {
 	}
 }
 
-func (rh *ReqHandler) createDataDir(req transfer.CreateDirReq) ReqStateFN {
+func (rh *ReqHandler) createDataDir(req *transfer.CreateDirReq) ReqStateFN {
 	var datadir model.DataDir
 	proj, err := model.GetProject(req.ProjectID, rh.db.session)
 	switch {

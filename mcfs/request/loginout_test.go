@@ -45,7 +45,8 @@ var gtarceaLoginReq = transfer.LoginReq{
 
 func loginTestUser() *client {
 	client := newClient()
-	client.Encode(&gtarceaLoginReq)
+	request := transfer.Request{ &gtarceaLoginReq }
+	client.Encode(&request)
 	resp := transfer.Response{}
 	client.Decode(&resp)
 	return client
@@ -59,7 +60,7 @@ func TestLoginLogout(t *testing.T) {
 		ApiKey:    "472abe203cd411e3a280ac162d80f1bf",
 	}
 
-	request := transfer.Request{ loginRequest }
+	request := transfer.Request{&loginRequest}
 
 	client.Encode(&request)
 	resp := transfer.Response{}
