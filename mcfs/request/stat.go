@@ -6,18 +6,13 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
-func (r *ReqHandler) stat(req transfer.Request) ReqStateFN {
-	switch t := req.Req.(type) {
-	case transfer.StatReq:
-		df, err := model.GetDataFile(t.DataFileID, r.db.session)
-		if err != nil {
-			return r.badRequestNext(fmt.Errorf("Unknown id %s", t.DataFileID))
-		}
-		r.respStat(df)
-		return r.nextCommand()
-	default:
-		return r.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+func (r *ReqHandler) stat(req transfer.StatReq) ReqStateFN {
+	df, err := model.GetDataFile(req.DataFileID, r.db.session)
+	if err != nil {
+		return r.badRequestNext(fmt.Errorf("Unknown id %s", req.DataFileID))
 	}
+	r.respStat(df)
+	return r.nextCommand()
 }
 
 func (r *ReqHandler) respStat(df *model.DataFile) {

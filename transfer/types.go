@@ -6,8 +6,8 @@ import (
 )
 
 func init() {
-	gob.Register(Request{})
 	gob.Register(Response{})
+	gob.Register(Request{})
 
 	gob.Register(UploadReq{})
 	gob.Register(UploadResp{})
@@ -38,8 +38,17 @@ func init() {
 	gob.Register(CreateResp{})
 
 	gob.Register(LoginReq{})
+	gob.Register(LogoutReq{})
 
 	gob.Register(StartResp{})
+
+	gob.Register(CloseReq{})
+	gob.Register(IndexReq{})
+	gob.Register(DoneReq{})
+}
+
+type Request struct {
+	Req interface{}
 }
 
 type ResponseType int
@@ -49,78 +58,6 @@ const (
 	RError
 	RFatal
 )
-
-type RequestType int
-
-const (
-	Upload RequestType = iota
-	RestartUpload
-	Download
-	Move
-	Delete
-	Send
-	Stat
-	Login
-	Done
-	CreateFile
-	CreateDir
-	CreateProject
-	Error
-	Logout
-	Close
-	Index
-)
-
-var types = map[RequestType]bool{
-	Upload:        true,
-	RestartUpload: true,
-	Download:      true,
-	Move:          true,
-	Delete:        true,
-	Send:          true,
-	Stat:          true,
-	Login:         true,
-	Done:          true,
-	CreateFile:    true,
-	CreateDir:     true,
-	CreateProject: true,
-	Error:         true,
-	Logout:        true,
-	Close:         true,
-	Index:         true,
-}
-
-var requestTypeString = map[RequestType]string{
-	Upload:        "Upload",
-	RestartUpload: "RestartUpload",
-	Download:      "Download",
-	Move:          "Move",
-	Delete:        "Delete",
-	Send:          "Send",
-	Stat:          "Stat",
-	Login:         "Login",
-	Done:          "Done",
-	CreateFile:    "CreateFile",
-	CreateDir:     "CreateDir",
-	CreateProject: "CreateProject",
-	Error:         "Error",
-	Logout:        "Logout",
-	Close:         "Close",
-	Index:         "Index",
-}
-
-func (t RequestType) String() string {
-	s := requestTypeString[t]
-	if s == "" {
-		return "Unknown"
-	}
-
-	return s
-}
-
-func ValidType(t RequestType) bool {
-	return types[t]
-}
 
 type ItemType int
 
@@ -140,11 +77,6 @@ var itemTypes = map[ItemType]bool{
 
 func ValidItemType(t ItemType) bool {
 	return itemTypes[t]
-}
-
-type Request struct {
-	Type RequestType
-	Req  interface{}
 }
 
 type Response struct {
@@ -246,6 +178,12 @@ type LoginReq struct {
 	ApiKey    string
 }
 
+type LogoutReq struct{}
+
 type StartResp struct {
 	Ok bool
 }
+
+type CloseReq struct{}
+type IndexReq struct{}
+type DoneReq struct{}

@@ -11,18 +11,13 @@ import (
 	"strings"
 )
 
-func (r *ReqHandler) upload(req transfer.Request) ReqStateFN {
-	switch t := req.Req.(type) {
-	case transfer.UploadReq:
-		offset, err := r.validateUploadReq(t)
-		if err != nil {
-			return r.badRequestNext(err)
-		}
-		r.respUpload(offset, t.DataFileID)
-		return r.uploadLoop(t.DataFileID)
-	default:
-		return r.badRequestNext(fmt.Errorf("6 Bad request data for type %d", req.Type))
+func (r *ReqHandler) upload(req transfer.UploadReq) ReqStateFN {
+	offset, err := r.validateUploadReq(req)
+	if err != nil {
+		return r.badRequestNext(err)
 	}
+	r.respUpload(offset, req.DataFileID)
+	return r.uploadLoop(req.DataFileID)
 }
 
 func (r *ReqHandler) validateUploadReq(req transfer.UploadReq) (offset int64, err error) {
@@ -100,33 +95,25 @@ func (r *ReqHandler) uploadLoop(dfid string) ReqStateFN {
 }
 
 func (h *uploadHandler) upload() ReqStateFN {
-	req := h.req()
-	switch req.Type {
-	case transfer.Send:
-		switch t := req.Req.(type) {
-		case transfer.SendReq:
-			if t.DataFileID != h.dataFileID {
-				// bad send - error out?
-			}
-			n, err := dfWrite(h.w, t.Bytes)
-			if err != nil {
-				// error writing, do something...
-			}
-			h.nbytes = h.nbytes + int64(n)
-		default:
-			// What to do here? Probably assume an error and close
-			// the connection.
-			dfClose(h.w, h.dataFileID, h.db.session)
-			return h.badRequestNext(fmt.Errorf("Bad Request"))
+	request := h.req()
+	switch req := request.(type) {
+	case transfer.SendReq:
+		if req.DataFileID != h.dataFileID {
+			// bad send - error out?
 		}
-	case transfer.Error:
-	case transfer.Logout:
+		n, err := dfWrite(h.w, req.Bytes)
+		if err != nil {
+			// error writing, do something...
+		}
+		h.nbytes = h.nbytes + int64(n)
+	case ErrorReq:
+	case transfer.LogoutReq:
 		dfClose(h.w, h.dataFileID, h.db.session)
 		return h.startState
-	case transfer.Close:
+	case transfer.CloseReq:
 		dfClose(h.w, h.dataFileID, h.db.session)
 		return nil
-	case transfer.Done:
+	case transfer.DoneReq:
 		dfClose(h.w, h.dataFileID, h.db.session)
 		return h.nextCommand()
 	default:

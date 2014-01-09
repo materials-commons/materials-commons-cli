@@ -6,18 +6,13 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
-func (r *ReqHandler) login(req transfer.Request) ReqStateFN {
-	switch t := req.Req.(type) {
-	case transfer.LoginReq:
-		if r.db.validLogin(t.User, t.ApiKey) {
-			r.user = t.User
-			r.respOk(nil)
-			return r.nextCommand()
-		} else {
-			return r.badRequestRestart(fmt.Errorf("Bad login %s/%s", t.User, t.ApiKey))
-		}
-	default:
-		return r.badRequestRestart(fmt.Errorf("1 Bad request data for type %d", req.Type))
+func (r *ReqHandler) login(req transfer.LoginReq) ReqStateFN {
+	if r.db.validLogin(req.User, req.ApiKey) {
+		r.user = req.User
+		r.respOk(nil)
+		return r.nextCommand()
+	} else {
+		return r.badRequestRestart(fmt.Errorf("Bad login %s/%s", req.User, req.ApiKey))
 	}
 }
 
@@ -33,7 +28,7 @@ func (db db) validLogin(user, apikey string) bool {
 	}
 }
 
-func (r *ReqHandler) logout(req transfer.Request) ReqStateFN {
+func (r *ReqHandler) logout(req transfer.LogoutReq) ReqStateFN {
 	r.respOk(nil)
 	return r.startState
 }

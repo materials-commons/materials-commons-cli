@@ -9,29 +9,24 @@ import (
 	"strings"
 )
 
-func (h *ReqHandler) createProject(req transfer.Request) ReqStateFN {
-	switch t := req.Req.(type) {
-	case transfer.CreateProjectReq:
-		switch {
-		case !validProjectName(t.Name):
-			return h.badRequestNext(fmt.Errorf("Invalid project name %s", t.Name))
-		case h.db.projectExists(t.Name, h.user):
-			return h.badRequestNext(fmt.Errorf("Project %s exists", t.Name))
-		default:
-			projectId, datadirId, err := h.db.createProject(t.Name, h.user)
-			if err != nil {
-				h.respError(err)
-			} else {
-				resp := transfer.CreateProjectResp{
-					ProjectID: projectId,
-					DataDirID: datadirId,
-				}
-				h.respOk(resp)
-			}
-			return h.nextCommand()
-		}
+func (h *ReqHandler) createProject(req transfer.CreateProjectReq) ReqStateFN {
+	switch {
+	case !validProjectName(req.Name):
+		return h.badRequestNext(fmt.Errorf("Invalid project name %s", req.Name))
+	case h.db.projectExists(req.Name, h.user):
+		return h.badRequestNext(fmt.Errorf("Project %s exists", req.Name))
 	default:
-		return h.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+		projectId, datadirId, err := h.db.createProject(req.Name, h.user)
+		if err != nil {
+			h.respError(err)
+		} else {
+			resp := transfer.CreateProjectResp{
+				ProjectID: projectId,
+				DataDirID: datadirId,
+			}
+			h.respOk(resp)
+		}
+		return h.nextCommand()
 	}
 }
 
@@ -67,43 +62,38 @@ func (db db) createProject(projectName, user string) (projectId, datadirId strin
 	return rv.GeneratedKeys[0], datadirId, nil
 }
 
-func (h *ReqHandler) createFile(req transfer.Request) ReqStateFN {
-	switch t := req.Req.(type) {
-	case transfer.CreateFileReq:
-		if err := h.db.validCreateFileReq(t, h.user); err != nil {
-			return h.badRequestNext(err)
-		}
-
-		df := model.NewDataFile(t.Name, "private", h.user)
-		df.DataDirs = append(df.DataDirs, t.DataDirID)
-		rv, err := r.Table("datafiles").Insert(df).RunWrite(h.db.session)
-		if err != nil {
-			return h.badRequestNext(err)
-		}
-
-		if rv.Inserted == 0 {
-			return h.badRequestNext(fmt.Errorf("Unable to insert datafile"))
-		}
-		datafileId := rv.GeneratedKeys[0]
-
-		// TODO: Eliminate an extra query to look up the DataDir
-		// when we just did during verification.
-		datadir, _ := model.GetDataDir(t.DataDirID, h.db.session)
-		datadir.DataFiles = append(datadir.DataFiles, datafileId)
-
-		// TODO: Really should check for errors here. What do
-		// we do? The database could get out of sync. Maybe
-		// need a way to update partially completed items by
-		// putting into a log? Ugh...
-		r.Table("datadirs").Update(datadir).RunWrite(h.db.session)
-		createResp := transfer.CreateResp{
-			ID: datafileId,
-		}
-		h.respOk(createResp)
-		return h.nextCommand()
-	default:
-		return h.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+func (h *ReqHandler) createFile(req transfer.CreateFileReq) ReqStateFN {
+	if err := h.db.validCreateFileReq(req, h.user); err != nil {
+		return h.badRequestNext(err)
 	}
+
+	df := model.NewDataFile(req.Name, "private", h.user)
+	df.DataDirs = append(df.DataDirs, req.DataDirID)
+	rv, err := r.Table("datafiles").Insert(df).RunWrite(h.db.session)
+	if err != nil {
+		return h.badRequestNext(err)
+	}
+
+	if rv.Inserted == 0 {
+		return h.badRequestNext(fmt.Errorf("Unable to insert datafile"))
+	}
+	datafileId := rv.GeneratedKeys[0]
+
+	// TODO: Eliminate an extra query to look up the DataDir
+	// when we just did during verification.
+	datadir, _ := model.GetDataDir(req.DataDirID, h.db.session)
+	datadir.DataFiles = append(datadir.DataFiles, datafileId)
+
+	// TODO: Really should check for errors here. What do
+	// we do? The database could get out of sync. Maybe
+	// need a way to update partially completed items by
+	// putting into a log? Ugh...
+	r.Table("datadirs").Update(datadir).RunWrite(h.db.session)
+	createResp := transfer.CreateResp{
+		ID: datafileId,
+	}
+	h.respOk(createResp)
+	return h.nextCommand()
 }
 
 func (db db) validCreateFileReq(fileReq transfer.CreateFileReq, user string) error {
@@ -171,16 +161,11 @@ func (db db) datafileExistsInDataDir(datadirID, datafileName string) bool {
 	return false
 }
 
-func (r *ReqHandler) createDir(req transfer.Request) ReqStateFN {
-	switch t := req.Req.(type) {
-	case transfer.CreateDirReq:
-		if r.db.verifyProject(t.ProjectID, r.user) {
-			return r.createDataDir(t)
-		}
-		return r.badRequestNext(fmt.Errorf("Invalid project: %s", t.ProjectID))
-	default:
-		return r.badRequestNext(fmt.Errorf("Bad request data for type %s", req.Type))
+func (r *ReqHandler) createDir(req transfer.CreateDirReq) ReqStateFN {
+	if r.db.verifyProject(req.ProjectID, r.user) {
+		return r.createDataDir(req)
 	}
+	return r.badRequestNext(fmt.Errorf("Invalid project: %s", req.ProjectID))
 }
 
 func (db db) verifyProject(projectID, user string) bool {

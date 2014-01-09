@@ -6,6 +6,7 @@ import (
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/materials/transfer"
 	"net"
+	"io"
 )
 
 type ReqStateFN func() ReqStateFN
@@ -36,27 +37,32 @@ func (r *ReqHandler) Run() {
 	}
 }
 
-func (r *ReqHandler) req() transfer.Request {
+type ErrorReq struct{}
+
+func (r *ReqHandler) req() interface{} {
 	var req transfer.Request
-	err := r.Decode(&req)
-	switch {
-	case err != nil:
-		req.Type = transfer.Close
-	case !transfer.ValidType(req.Type):
-		req.Type = transfer.Error
+	if err := r.Decode(&req); err != nil {
+		fmt.Println(err)
+		fmt.Printf("%#v\n", err)
+		if err == io.EOF {
+			fmt.Println("Sending CloseReq")
+			return transfer.CloseReq{}
+		}
+		return ErrorReq{}
 	}
-	return req
+	fmt.Printf("%#v", req)
+	return req.Req
 }
 
 func (r *ReqHandler) startState() ReqStateFN {
-	req := r.req()
-	switch req.Type {
-	case transfer.Login:
+	request := r.req()
+	switch req := request.(type) {
+	case transfer.LoginReq:
 		return r.login(req)
-	case transfer.Close:
+	case transfer.CloseReq:
 		return nil
 	default:
-		return r.badRequestRestart(fmt.Errorf("Bad state change %d\n", req.Type))
+		return nil //r.badRequestRestart(fmt.Errorf("Bad Request"))
 	}
 }
 
@@ -89,28 +95,28 @@ func (r *ReqHandler) respOk(respData interface{}) {
 }
 
 func (r *ReqHandler) nextCommand() ReqStateFN {
-	req := r.req()
-	switch req.Type {
-	case transfer.Upload:
+	request := r.req()
+	switch req := request.(type) {
+	case transfer.UploadReq:
 		return r.upload(req)
-	case transfer.CreateFile:
+	case transfer.CreateFileReq:
 		return r.createFile(req)
-	case transfer.CreateDir:
+	case transfer.CreateDirReq:
 		return r.createDir(req)
-	case transfer.CreateProject:
+	case transfer.CreateProjectReq:
 		return r.createProject(req)
-	case transfer.Download:
-	case transfer.Move:
-	case transfer.Delete:
-	case transfer.Logout:
+	case transfer.DownloadReq:
+	case transfer.MoveReq:
+	case transfer.DeleteReq:
+	case transfer.LogoutReq:
 		return r.logout(req)
-	case transfer.Stat:
+	case transfer.StatReq:
 		return r.stat(req)
-	case transfer.Close:
+	case transfer.CloseReq:
 		return nil
-	case transfer.Index:
+	case transfer.IndexReq:
 	default:
-		return r.badRequestNext(fmt.Errorf("2 Bad request in NextCommand: %d", req.Type))
+		return r.badRequestNext(fmt.Errorf("Bad request type"))
 	}
 	return nil
 }
