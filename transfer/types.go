@@ -93,6 +93,7 @@ type UploadReq struct {
 
 type UploadResp struct {
 	DataFileID string
+	Offset     int64
 }
 
 type DownloadReq struct {
