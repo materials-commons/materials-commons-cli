@@ -12,6 +12,11 @@ func TestStat(t *testing.T) {
 	m := NewRequestResponseMarshaler()
 	h := NewReqHandler(m, session)
 	h.user = "gtarcea@umich.edu"
+
+	// We do this so that the call exits without doing any marshal calls
+	// so that we can look at the response.
+	request := transfer.Request{ transfer.CloseReq{} }
+	m.Marshal(&request)
 	
 	// Test existing file
 	
@@ -21,8 +26,7 @@ func TestStat(t *testing.T) {
 	statRequest := transfer.StatReq{
 		DataFileID: "1a455b46-a560-472e-acec-c96482fd655a",
 	}
-	request := transfer.Request{ transfer.CloseReq{} }
-	m.Marshal(&request)
+
 	h.stat(&statRequest)
 	m.Unmarshal(&resp)
 
