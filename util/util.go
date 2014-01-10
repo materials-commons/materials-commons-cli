@@ -1,8 +1,8 @@
 package util
 
 import (
-	"time"
 	"fmt"
+	"time"
 )
 
 func FormatTime(t time.Time) string {
