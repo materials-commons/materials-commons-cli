@@ -1,5 +1,3 @@
-GODIRS = . wsmaterials materials site autoupdate send mcfs transfer model mcfs/request
-
 .PHONY: bin test all fmt
 
 all: fmt test bin
@@ -23,4 +21,4 @@ test:
 	rm -rf /tmp/tproj
 
 fmt:
-	-for d in $(GODIRS); do (cd $$d; go fmt); done
+	-go fmt ./...
