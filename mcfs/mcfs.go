@@ -109,7 +109,8 @@ func acceptConnections(listener *net.TCPListener, dbAddress, dbName string) {
 			"address":  dbAddress,
 			"database": dbName,
 		})
-		r := request.NewReqHandler(conn, session)
+		m := request.NewGobMarshaler(conn)
+		r := request.NewReqHandler(m, session)
 		go handleConnection(r, conn, session)
 	}
 }
