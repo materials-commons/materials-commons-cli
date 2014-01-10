@@ -12,8 +12,14 @@ var _ = fmt.Println
 var _ = r.Table
 
 func TestCreateDir(t *testing.T) {
-	client := loginTestUser()
+	m := NewRequestResponseMarshaler()
+	h := NewReqHandler(m, session)
+	h.user = "gtarcea@umich.edu"
 
+	// We do this so that the call exits without doing any marshal calls
+	// so that we can look at the response.
+	request := transfer.Request{ transfer.CloseReq{} }
+	m.Marshal(&request)	
 	resp := transfer.Response{}
 
 	// Test valid path
@@ -23,21 +29,18 @@ func TestCreateDir(t *testing.T) {
 		Path:      "WE43 Heat Treatments/tdir1",
 	}
 
-	request := transfer.Request{&createDirRequest}
-
-	err := client.Encode(&request)
-	err = client.Decode(&resp)
-	if err != nil {
-		t.Fatalf("Decode failed %s", err)
-	}
-
+	h.createDataDir(&createDirRequest)
+	m.Unmarshal(&resp)
+	
 	if resp.Type != transfer.ROk {
 		t.Fatalf("Directory create failed with %s", resp.Status)
 	}
 
-	createResp := resp.Resp.(transfer.CreateResp)
+	createResp := getCreateResp(resp.Resp)
 	createdId := createResp.ID
-
+	var _ = createdId
+	
+/*
 	// Test existing directory
 
 	client.Encode(&request)
@@ -83,6 +86,18 @@ func TestCreateDir(t *testing.T) {
 	client.Decode(&resp)
 	if resp.Type != transfer.RError {
 		t.Fatalf("Create dir with missing subdirs succeeded %#v", resp)
+	}
+	*/
+}
+
+func getCreateResp(resp interface{}) transfer.CreateResp {
+	switch t:= resp.(type) {
+	case *transfer.CreateResp:
+		return *t
+	case transfer.CreateResp:
+		return t
+	default:
+		return transfer.CreateResp{}
 	}
 }
 
