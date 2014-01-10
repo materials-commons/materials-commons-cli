@@ -6,16 +6,18 @@ import (
 	"testing"
 )
 
+var _ = fmt.Println
+
 func TestRequestMarshaler(t *testing.T) {
-	m := NewRequestMarshaler()
-	loginReq := transfer.LoginReq{}
-	var _ = loginReq
+	m := NewRequestResponseMarshaler()
 	request := transfer.Request{ 1 }
-	fmt.Printf("request = %#v\n", request)
 	m.Marshal(&request)
 	var d transfer.Request
-	err := m.Unmarshal(&d)
-	fmt.Println(d)
-	fmt.Println(err)
-	fmt.Printf("d.Req = %#v\n", d.Req)
+	if err := m.Unmarshal(&d); err != nil {
+		t.Fatalf("Unmarshal failed with error %s", err)
+	}
+	
+	if d.Req != 1 {
+		t.Fatalf("Inner item not being properly saved")
+	}
 }

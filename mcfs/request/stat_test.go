@@ -9,21 +9,28 @@ import (
 var _ = fmt.Println
 
 func TestStat(t *testing.T) {
+	m := NewRequestResponseMarshaler()
+	h := NewReqHandler(m, session)
+	h.user = "gtarcea@umich.edu"
+	
 	// Test existing file
-	client := loginTestUser()
+	
+	//client := loginTestUser()
 	resp := transfer.Response{}
 
 	statRequest := transfer.StatReq{
 		DataFileID: "1a455b46-a560-472e-acec-c96482fd655a",
 	}
-	request := transfer.Request{&statRequest}
-	client.Encode(&request)
-	client.Decode(&resp)
+	request := transfer.Request{ transfer.CloseReq{} }
+	m.Marshal(&request)
+	h.stat(&statRequest)
+	m.Unmarshal(&resp)
+
 	if resp.Type != transfer.ROk {
 		t.Fatalf("Bad stat request")
 	}
 
-	sinfo := resp.Resp.(transfer.StatResp)
+	sinfo := statResp(resp.Resp)
 	if len(sinfo.DataDirs) != 1 {
 		t.Fatalf("DataDirs length incorrect, expected 1 got %d", len(sinfo.DataDirs))
 	}
@@ -46,19 +53,30 @@ func TestStat(t *testing.T) {
 
 	// Test file we don't have access to
 	statRequest.DataFileID = "01cc4163-8c6f-4832-8c7b-15e34e4368ae"
-	client.Encode(&request)
+	h.stat(&statRequest)
 	resp = transfer.Response{}
-	client.Decode(&resp)
+	m.Unmarshal(&resp)
 	if resp.Type != transfer.RError {
 		t.Fatalf("Access to file we shouldn't have access to")
 	}
 
 	// Test sending bad DataFileID
 	statRequest.DataFileID = "idonotexist"
-	client.Encode(&request)
+	h.stat(&statRequest)
 	resp = transfer.Response{}
-	client.Decode(&resp)
+	m.Unmarshal(&resp)
 	if resp.Type != transfer.RError {
 		t.Fatalf("Succeeded for data file that doesn't exist")
+	}
+}
+
+func statResp(req interface{}) transfer.StatResp {
+	switch t := req.(type) {
+	case *transfer.StatResp:
+		return *t
+	case transfer.StatResp:
+		return t
+	default:
+		return transfer.StatResp{}
 	}
 }

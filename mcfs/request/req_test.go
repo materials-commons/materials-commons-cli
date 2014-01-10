@@ -7,8 +7,10 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
+var _ = fmt.Println
+
 func TestReq(t *testing.T) {
-	m := NewRequestMarshaler()
+	m := NewRequestResponseMarshaler()
 	h := NewReqHandler(m, session)
 
 	m.SetError(io.EOF)
@@ -28,9 +30,13 @@ func TestReq(t *testing.T) {
 	m.ClearError()
 	loginReq := transfer.LoginReq{}
 	request := transfer.Request{ loginReq }
-	m.Marshal(request)
+	if err := m.Marshal(&request); err != nil {
+		t.Fatalf("Marshal failed")
+	}
 	val := h.req()
-	fmt.Printf("%#v", val)
+	switch val.(type) {
+	case transfer.LoginReq:
+	default:
+		t.Fatalf("req returned wrong type %T", val)
+	}
 }
-
-
