@@ -17,15 +17,15 @@ type db struct {
 }
 
 type ReqHandler struct {
-	db
-	user string
+	session *r.Session
+	user    string
 	marshaling.MarshalUnmarshaler
 	badRequestCount int
 }
 
 func NewReqHandler(m marshaling.MarshalUnmarshaler, session *r.Session) *ReqHandler {
 	return &ReqHandler{
-		db:                 db{session: session},
+		session:            session,
 		MarshalUnmarshaler: m,
 	}
 }

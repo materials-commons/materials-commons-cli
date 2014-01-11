@@ -11,18 +11,18 @@ import (
 	"strings"
 )
 
-func (r *ReqHandler) upload(req *transfer.UploadReq) ReqStateFN {
-	offset, err := r.validateUploadReq(req)
+func (h *ReqHandler) upload(req *transfer.UploadReq) ReqStateFN {
+	offset, err := h.validateUploadReq(req)
 	if err != nil {
-		return r.badRequestNext(err)
+		return h.badRequestNext(err)
 	}
-	r.respUpload(offset, req.DataFileID)
-	return r.uploadLoop(req.DataFileID)
+	h.respUpload(offset, req.DataFileID)
+	return h.uploadLoop(req.DataFileID)
 }
 
-func (r *ReqHandler) validateUploadReq(req *transfer.UploadReq) (offset int64, err error) {
+func (h *ReqHandler) validateUploadReq(req *transfer.UploadReq) (offset int64, err error) {
 	offset = -1
-	df, err := model.GetDataFile(req.DataFileID, r.db.session)
+	df, err := model.GetDataFile(req.DataFileID, h.session)
 	switch {
 	case err != nil:
 		return offset, err
@@ -108,16 +108,16 @@ func (h *uploadHandler) upload() ReqStateFN {
 		h.nbytes = h.nbytes + int64(n)
 	case *ErrorReq:
 	case *transfer.LogoutReq:
-		dfClose(h.w, h.dataFileID, h.db.session)
+		dfClose(h.w, h.dataFileID, h.session)
 		return h.startState
 	case *transfer.CloseReq:
-		dfClose(h.w, h.dataFileID, h.db.session)
+		dfClose(h.w, h.dataFileID, h.session)
 		return nil
 	case *transfer.DoneReq:
-		dfClose(h.w, h.dataFileID, h.db.session)
+		dfClose(h.w, h.dataFileID, h.session)
 		return h.nextCommand()
 	default:
-		dfClose(h.w, h.dataFileID, h.db.session)
+		dfClose(h.w, h.dataFileID, h.session)
 		return h.badRequestNext(fmt.Errorf("Unknown Request Type"))
 	}
 	return h.upload()

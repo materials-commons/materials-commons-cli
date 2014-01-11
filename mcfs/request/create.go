@@ -13,10 +13,10 @@ func (h *ReqHandler) createProject(req *transfer.CreateProjectReq) (*transfer.Cr
 	switch {
 	case !validProjectName(req.Name):
 		return nil, fmt.Errorf("Invalid project name %s", req.Name)
-	case h.db.projectExists(req.Name, h.user):
+	case projectExists(req.Name, h.user, h.session):
 		return nil, fmt.Errorf("Project %s exists", req.Name)
 	default:
-		projectId, datadirId, err := h.db.createProject(req.Name, h.user)
+		projectId, datadirId, err := projectCreate(req.Name, h.user, h.session)
 		if err != nil {
 			return nil, err
 		}
@@ -33,10 +33,10 @@ func validProjectName(projectName string) bool {
 	return i == -1
 }
 
-func (db db) projectExists(projectName, user string) bool {
+func projectExists(projectName, user string, session *r.Session) bool {
 	results, err := r.Table("projects").Filter(r.Row.Field("owner").Eq(user)).
 		Filter(r.Row.Field("name").Eq(projectName)).
-		Run(db.session)
+		Run(session)
 	if err != nil {
 		return true // Error, we don't know if it exists
 	}
@@ -45,29 +45,37 @@ func (db db) projectExists(projectName, user string) bool {
 	return results.Next()
 }
 
-func (db db) createProject(projectName, user string) (projectId, datadirId string, err error) {
+func projectCreate(projectName, user string, session *r.Session) (projectId, datadirId string, err error) {
 	datadir := model.NewDataDir(projectName, "private", user, "")
-	rv, err := r.Table("datadirs").Insert(datadir).RunWrite(db.session)
+	rv, err := r.Table("datadirs").Insert(datadir).RunWrite(session)
 	if err != nil {
 		return "", "", err
 	}
 	datadirId = datadir.Id
 	project := model.NewProject(projectName, datadirId, user)
-	rv, err = r.Table("projects").Insert(project).RunWrite(db.session)
+	rv, err = r.Table("projects").Insert(project).RunWrite(session)
 	if err != nil {
 		return "", "", err
 	}
 	return rv.GeneratedKeys[0], datadirId, nil
 }
 
+type createFileValidator struct {
+	modelValidator
+}
+
 func (h *ReqHandler) createFile(req *transfer.CreateFileReq) (*transfer.CreateResp, error) {
-	if err := h.db.validCreateFileReq(req, h.user); err != nil {
+	v := createFileValidator{
+		modelValidator: newModelValidator(h.user, h.session),
+	}
+
+	if err := v.validCreateFileReq(req); err != nil {
 		return nil, err
 	}
 
 	df := model.NewDataFile(req.Name, "private", h.user)
 	df.DataDirs = append(df.DataDirs, req.DataDirID)
-	rv, err := r.Table("datafiles").Insert(df).RunWrite(h.db.session)
+	rv, err := r.Table("datafiles").Insert(df).RunWrite(h.session)
 	if err != nil {
 		return nil, err
 	}
@@ -79,128 +87,78 @@ func (h *ReqHandler) createFile(req *transfer.CreateFileReq) (*transfer.CreateRe
 
 	// TODO: Eliminate an extra query to look up the DataDir
 	// when we just did during verification.
-	datadir, _ := model.GetDataDir(req.DataDirID, h.db.session)
+	datadir, _ := model.GetDataDir(req.DataDirID, h.session)
 	datadir.DataFiles = append(datadir.DataFiles, datafileId)
 
 	// TODO: Really should check for errors here. What do
 	// we do? The database could get out of sync. Maybe
 	// need a way to update partially completed items by
 	// putting into a log? Ugh...
-	r.Table("datadirs").Update(datadir).RunWrite(h.db.session)
+	r.Table("datadirs").Update(datadir).RunWrite(h.session)
 	createResp := transfer.CreateResp{
 		ID: datafileId,
 	}
 	return &createResp, nil
 }
 
-func (db db) validCreateFileReq(fileReq *transfer.CreateFileReq, user string) error {
-	proj, err := model.GetProject(fileReq.ProjectID, db.session)
+func (v createFileValidator) validCreateFileReq(fileReq *transfer.CreateFileReq) error {
+	proj, err := model.GetProject(fileReq.ProjectID, v.session)
 	if err != nil {
 		return fmt.Errorf("Unknown project id %s", fileReq.ProjectID)
 	}
 
-	if proj.Owner != user {
-		return fmt.Errorf("User %s is not owner of project %s", user, proj.Name)
+	if proj.Owner != v.user {
+		return fmt.Errorf("User %s is not owner of project %s", v.user, proj.Name)
 	}
 
-	datadir, err := model.GetDataDir(fileReq.DataDirID, db.session)
+	datadir, err := model.GetDataDir(fileReq.DataDirID, v.session)
 	if err != nil {
 		return fmt.Errorf("Unknown datadir Id %s", fileReq.DataDirID)
 	}
 
-	if !db.datadirInProject(datadir.Id, proj.Id) {
+	if !v.datadirInProject(datadir.Id, proj.Id) {
 		return fmt.Errorf("Datadir %s not in project %s", datadir.Name, proj.Name)
 	}
 
-	if db.datafileExistsInDataDir(fileReq.DataDirID, fileReq.Name) {
+	if v.datafileExistsInDataDir(fileReq.DataDirID, fileReq.Name) {
 		return fmt.Errorf("Datafile %s already exists in datadir %s", fileReq.Name, datadir.Name)
 	}
 
 	return nil
 }
 
-type Project2Datadir struct {
-	Id        string `gorethink:"id,omitempty"`
-	ProjectID string `gorethink:"project_id"`
-	DataDirID string `gorethink:"datadir_id"`
-}
-
-func (db db) datadirInProject(datadirId, projectId string) bool {
-	query := r.Table("project2datadir").GetAllByIndex("datadir_id", datadirId)
-	var p2d Project2Datadir
-	err := model.GetRow(query, db.session, &p2d)
-	switch {
-	case err != nil:
-		return false
-	case p2d.ProjectID != projectId:
-		return false
-	default:
-		return true
-	}
-}
-
-func (db db) datafileExistsInDataDir(datadirID, datafileName string) bool {
-	rows, err := r.Table("datafiles").GetAllByIndex("name", datafileName).Run(db.session)
-	if err != nil {
-		return true // don't know if it exists or not
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var df model.DataFile
-		rows.Scan(&df)
-		for _, ddirID := range df.DataDirs {
-			if datadirID == ddirID {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (r *ReqHandler) createDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
-	if r.db.verifyProject(req.ProjectID, r.user) {
-		return r.createDataDir(req)
+func (h *ReqHandler) createDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
+	v := newModelValidator(h.user, h.session)
+	if v.verifyProject(req.ProjectID) {
+		return h.createDataDir(req)
 	}
 	return nil, fmt.Errorf("Invalid project: %s", req.ProjectID)
 }
 
-func (db db) verifyProject(projectID, user string) bool {
-	project, err := model.GetProject(projectID, db.session)
-	switch {
-	case err != nil:
-		return false
-	case project.Owner != user:
-		return false
-	default:
-		return true
-	}
-}
-
-func (rh *ReqHandler) createDataDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
+func (h *ReqHandler) createDataDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
 	var datadir model.DataDir
-	proj, err := model.GetProject(req.ProjectID, rh.db.session)
+	proj, err := model.GetProject(req.ProjectID, h.session)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("Bad projectID %s", req.ProjectID)
-	case proj.Owner != rh.user:
+	case proj.Owner != h.user:
 		return nil, fmt.Errorf("Access to project not allowed")
-	case !rh.db.validDirPath(proj.Name, req.Path):
+	case !validDirPath(proj.Name, req.Path):
 		return nil, fmt.Errorf("Invalid directory path %s", req.Path)
 	default:
 		var parent string
-		if parent, err = rh.db.getParent(req.Path); err != nil {
+		if parent, err = getParent(req.Path, h.session); err != nil {
 			return nil, err
 		}
-		datadir = model.NewDataDir(req.Path, "private", rh.user, parent)
+		datadir = model.NewDataDir(req.Path, "private", h.user, parent)
 		var wr r.WriteResponse
-		wr, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
+		wr, err = r.Table("datadirs").Insert(datadir).RunWrite(h.session)
 		if err == nil && wr.Inserted > 0 {
 			p2d := Project2Datadir{
 				ProjectID: req.ProjectID,
 				DataDirID: datadir.Id,
 			}
-			r.Table("project2datadir").Insert(p2d).RunWrite(rh.db.session)
+			r.Table("project2datadir").Insert(p2d).RunWrite(h.session)
 		}
 		resp := &transfer.CreateResp{
 			ID: datadir.Id,
@@ -209,7 +167,7 @@ func (rh *ReqHandler) createDataDir(req *transfer.CreateDirReq) (*transfer.Creat
 	}
 }
 
-func (db db) validDirPath(projName, dirPath string) bool {
+func validDirPath(projName, dirPath string) bool {
 	slash := strings.Index(dirPath, "/")
 	switch {
 	case slash == -1:
@@ -221,11 +179,11 @@ func (db db) validDirPath(projName, dirPath string) bool {
 	}
 }
 
-func (db db) getParent(ddirPath string) (string, error) {
+func getParent(ddirPath string, session *r.Session) (string, error) {
 	parent := filepath.Dir(ddirPath)
 	query := r.Table("datadirs").GetAllByIndex("name", parent)
 	var d model.DataDir
-	err := model.GetRow(query, db.session, &d)
+	err := model.GetRow(query, session, &d)
 	if err != nil {
 		return "", fmt.Errorf("No parent for %s", ddirPath)
 	}

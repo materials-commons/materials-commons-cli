@@ -6,19 +6,19 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
-func (r *ReqHandler) stat(req *transfer.StatReq) (*transfer.StatResp, error) {
-	df, err := model.GetDataFile(req.DataFileID, r.db.session)
+func (h *ReqHandler) stat(req *transfer.StatReq) (*transfer.StatResp, error) {
+	df, err := model.GetDataFile(req.DataFileID, h.session)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("Unknown id %s", req.DataFileID)
-	case !ownerGaveAccessTo(df.Owner, r.user, r.db.session):
+	case !ownerGaveAccessTo(df.Owner, h.user, h.session):
 		return nil, fmt.Errorf("You do not have permission to access this datafile %s", req.DataFileID)
 	default:
-		return r.respStat(df), nil
+		return respStat(df), nil
 	}
 }
 
-func (r *ReqHandler) respStat(df *model.DataFile) *transfer.StatResp {
+func respStat(df *model.DataFile) *transfer.StatResp {
 	return &transfer.StatResp{
 		DataFileID: df.Id,
 		Name:       df.Name,
