@@ -12,15 +12,8 @@ var _ = fmt.Println
 var _ = r.Table
 
 func TestCreateDir(t *testing.T) {
-	m := NewRequestResponseMarshaler()
-	h := NewReqHandler(m, session)
+	h := NewReqHandler(nil, session)
 	h.user = "gtarcea@umich.edu"
-
-	// We do this so that the call exits without doing any marshal calls
-	// so that we can look at the response.
-	request := transfer.Request{ transfer.CloseReq{} }
-	m.Marshal(&request)	
-	resp := transfer.Response{}
 
 	// Test valid path
 
@@ -29,23 +22,19 @@ func TestCreateDir(t *testing.T) {
 		Path:      "WE43 Heat Treatments/tdir1",
 	}
 
-	h.createDataDir(&createDirRequest)
-	m.Unmarshal(&resp)
-	
-	if resp.Type != transfer.ROk {
-		t.Fatalf("Directory create failed with %s", resp.Status)
+	resp, err := h.createDir(&createDirRequest)
+
+	if err != nil {
+		t.Fatalf("Directory create failed with %s", err)
 	}
 
-	createResp := getCreateResp(resp.Resp)
-	createdId := createResp.ID
+	createdId := resp.ID
 	var _ = createdId
-	
-/*
+
 	// Test existing directory
 
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.ROk {
+	resp, err = h.createDir(&createDirRequest)
+	if err != nil {
 		t.Fatalf("Create existing directory failed with %#v", resp)
 	}
 
@@ -60,18 +49,16 @@ func TestCreateDir(t *testing.T) {
 
 	// Test path outside of project
 	createDirRequest.Path = "DIFFERENTPROJECT/tdir1"
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createDir(&createDirRequest)
+	if err == nil {
 		t.Fatalf("Create dir outside of project succeeded %#v", resp)
 	}
 
 	// Test invalid project id
 	createDirRequest.ProjectID = "abc123"
 	createDirRequest.Path = "WE43 Heat Treatments/tdir2"
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createDir(&createDirRequest)
+	if err == nil {
 		t.Fatalf("Create dir with bad project succeeded %#v", resp)
 	}
 
@@ -80,64 +67,45 @@ func TestCreateDir(t *testing.T) {
 	createDirRequest.ProjectID = "904886a7-ea57-4de7-8125-6e18c9736fd0"
 	createDirRequest.Path = "WE43 Heat Treatments/tdir1/tdir2"
 
-	resp = transfer.Response{}
-
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createDir(&createDirRequest)
+	if err == nil {
 		t.Fatalf("Create dir with missing subdirs succeeded %#v", resp)
-	}
-	*/
-}
-
-func getCreateResp(resp interface{}) transfer.CreateResp {
-	switch t:= resp.(type) {
-	case *transfer.CreateResp:
-		return *t
-	case transfer.CreateResp:
-		return t
-	default:
-		return transfer.CreateResp{}
 	}
 }
 
 func TestCreateProject(t *testing.T) {
-	client := loginTestUser()
+	h := NewReqHandler(nil, session)
+	h.user = "gtarcea@umich.edu"
+
 	createProjectRequest := transfer.CreateProjectReq{
 		Name: "TestProject1__",
 	}
-	request := transfer.Request{&createProjectRequest}
-	resp := transfer.Response{}
 
 	// Test create new project
-	client.Encode(&request)
-	client.Decode(&resp)
+	resp, err := h.createProject(&createProjectRequest)
 
-	createProjectResp := resp.Resp.(transfer.CreateProjectResp)
-	projectId := createProjectResp.ProjectID
-	datadirId := createProjectResp.DataDirID
+	projectId := resp.ProjectID
+	datadirId := resp.DataDirID
 
-	if resp.Type != transfer.ROk {
+	if err != nil {
 		t.Fatalf("Unable to create project")
 	}
-	// Test create existing project
-	resp = transfer.Response{}
-	client.Encode(&request)
-	client.Decode(&resp)
 
+	// Test create existing project
+	resp, err = h.createProject(&createProjectRequest)
+
+	// Delete before test so we can cleanup if there is a failure
 	model.Delete("datadirs", datadirId, session)
 	model.Delete("projects", projectId, session)
 
-	if resp.Type != transfer.RError {
+	if err == nil {
 		t.Fatalf("Created an existing project - shouldn't be able to")
 	}
 
 	// Test create project with invalid name
 	createProjectRequest.Name = "/InvalidName"
-	resp = transfer.Response{}
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createProject(&createProjectRequest)
+	if err == nil {
 		t.Fatalf("Created project with Invalid name")
 	}
 }

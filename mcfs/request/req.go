@@ -97,6 +97,9 @@ func (h *ReqHandler) respOk(respData interface{}) {
 }
 
 func (h *ReqHandler) nextCommand() ReqStateFN {
+	var err error
+	var resp interface{}
+
 	request := h.req()
 	switch req := request.(type) {
 	case transfer.UploadReq:
@@ -104,16 +107,16 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.CreateFileReq:
 		return h.createFile(&req)
 	case transfer.CreateDirReq:
-		return h.createDir(&req)
+		resp, err = h.createDir(&req)
 	case transfer.CreateProjectReq:
-		return h.createProject(&req)
+		resp, err = h.createProject(&req)
 	case transfer.DownloadReq:
 	case transfer.MoveReq:
 	case transfer.DeleteReq:
 	case transfer.LogoutReq:
 		return h.logout(&req)
 	case transfer.StatReq:
-		return h.stat(&req)
+		resp, err = h.stat(&req)
 	case transfer.CloseReq:
 		return nil
 	case transfer.IndexReq:
@@ -121,7 +124,15 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 		h.badRequestCount = h.badRequestCount + 1
 		return h.badRequestNext(fmt.Errorf("Bad request %T", req))
 	}
-	return nil
+
+	switch {
+	case err != nil:
+		h.respError(err)
+	default:
+		h.respOk(resp)
+	}
+
+	return h.nextCommand
 }
 
 func (h *ReqHandler) respError(err error) {

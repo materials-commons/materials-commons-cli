@@ -3,8 +3,8 @@ package request
 import (
 	"encoding/gob"
 	"fmt"
-	"io"
 	"github.com/materials-commons/materials/transfer"
+	"io"
 )
 
 var _ = fmt.Println
@@ -37,16 +37,18 @@ func (m *GobMarshaler) Unmarshal(data interface{}) error {
 // It can be set to return an error instead. This is useful
 // for testing.
 type whichType int
+
 const (
 	cleared whichType = iota
-	useResponse 
+	useResponse
 	useRequest
 )
+
 type RequestResponseMarshaler struct {
-	which whichType
-	request transfer.Request
+	which    whichType
+	request  transfer.Request
 	response transfer.Response
-	err  error
+	err      error
 }
 
 // NewIdentityMarshaler returns a new IdentityMarshaler

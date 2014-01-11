@@ -9,24 +9,22 @@ import (
 	"strings"
 )
 
-func (h *ReqHandler) createProject(req *transfer.CreateProjectReq) ReqStateFN {
+func (h *ReqHandler) createProject(req *transfer.CreateProjectReq) (*transfer.CreateProjectResp, error) {
 	switch {
 	case !validProjectName(req.Name):
-		return h.badRequestNext(fmt.Errorf("Invalid project name %s", req.Name))
+		return nil, fmt.Errorf("Invalid project name %s", req.Name)
 	case h.db.projectExists(req.Name, h.user):
-		return h.badRequestNext(fmt.Errorf("Project %s exists", req.Name))
+		return nil, fmt.Errorf("Project %s exists", req.Name)
 	default:
 		projectId, datadirId, err := h.db.createProject(req.Name, h.user)
 		if err != nil {
-			h.respError(err)
-		} else {
-			resp := transfer.CreateProjectResp{
-				ProjectID: projectId,
-				DataDirID: datadirId,
-			}
-			h.respOk(resp)
+			return nil, err
 		}
-		return h.nextCommand()
+		resp := &transfer.CreateProjectResp{
+			ProjectID: projectId,
+			DataDirID: datadirId,
+		}
+		return resp, nil
 	}
 }
 
@@ -161,11 +159,11 @@ func (db db) datafileExistsInDataDir(datadirID, datafileName string) bool {
 	return false
 }
 
-func (r *ReqHandler) createDir(req *transfer.CreateDirReq) ReqStateFN {
+func (r *ReqHandler) createDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
 	if r.db.verifyProject(req.ProjectID, r.user) {
 		return r.createDataDir(req)
 	}
-	return r.badRequestNext(fmt.Errorf("Invalid project: %s", req.ProjectID))
+	return nil, fmt.Errorf("Invalid project: %s", req.ProjectID)
 }
 
 func (db db) verifyProject(projectID, user string) bool {
@@ -180,41 +178,36 @@ func (db db) verifyProject(projectID, user string) bool {
 	}
 }
 
-func (rh *ReqHandler) createDataDir(req *transfer.CreateDirReq) ReqStateFN {
+func (rh *ReqHandler) createDataDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
 	var datadir model.DataDir
 	proj, err := model.GetProject(req.ProjectID, rh.db.session)
 	switch {
 	case err != nil:
-		err = fmt.Errorf("Bad projectID %s", req.ProjectID)
+		return nil, fmt.Errorf("Bad projectID %s", req.ProjectID)
 	case proj.Owner != rh.user:
-		err = fmt.Errorf("Access to project not allowed")
+		return nil, fmt.Errorf("Access to project not allowed")
 	case !rh.db.validDirPath(proj.Name, req.Path):
-		err = fmt.Errorf("Invalid directory path %s", req.Path)
+		return nil, fmt.Errorf("Invalid directory path %s", req.Path)
 	default:
 		var parent string
-		if parent, err = rh.db.getParent(req.Path); err == nil {
-			datadir = model.NewDataDir(req.Path, "private", rh.user, parent)
-			var wr r.WriteResponse
-			wr, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
-			if err == nil && wr.Inserted > 0 {
-				p2d := Project2Datadir{
-					ProjectID: req.ProjectID,
-					DataDirID: datadir.Id,
-				}
-				r.Table("project2datadir").Insert(p2d).RunWrite(rh.db.session)
-			}
+		if parent, err = rh.db.getParent(req.Path); err != nil {
+			return nil, err
 		}
-	}
-
-	if err != nil {
-		rh.respError(err)
-	} else {
-		resp := transfer.CreateResp{
+		datadir = model.NewDataDir(req.Path, "private", rh.user, parent)
+		var wr r.WriteResponse
+		wr, err = r.Table("datadirs").Insert(datadir).RunWrite(rh.db.session)
+		if err == nil && wr.Inserted > 0 {
+			p2d := Project2Datadir{
+				ProjectID: req.ProjectID,
+				DataDirID: datadir.Id,
+			}
+			r.Table("project2datadir").Insert(p2d).RunWrite(rh.db.session)
+		}
+		resp := &transfer.CreateResp{
 			ID: datadir.Id,
 		}
-		rh.respOk(resp)
+		return resp, nil
 	}
-	return rh.nextCommand()
 }
 
 func (db db) validDirPath(projName, dirPath string) bool {

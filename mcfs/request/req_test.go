@@ -2,9 +2,9 @@ package request
 
 import (
 	"fmt"
-	"testing"
-	"io"
 	"github.com/materials-commons/materials/transfer"
+	"io"
+	"testing"
 )
 
 var _ = fmt.Println
@@ -29,7 +29,7 @@ func TestReq(t *testing.T) {
 
 	m.ClearError()
 	loginReq := transfer.LoginReq{}
-	request := transfer.Request{ loginReq }
+	request := transfer.Request{loginReq}
 	if err := m.Marshal(&request); err != nil {
 		t.Fatalf("Marshal failed")
 	}
