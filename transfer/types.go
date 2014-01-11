@@ -38,7 +38,9 @@ func init() {
 	gob.Register(CreateResp{})
 
 	gob.Register(LoginReq{})
+	gob.Register(LoginResp{})
 	gob.Register(LogoutReq{})
+	gob.Register(LogoutResp{})
 
 	gob.Register(StartResp{})
 
@@ -179,7 +181,10 @@ type LoginReq struct {
 	ApiKey    string
 }
 
+type LoginResp struct{}
+
 type LogoutReq struct{}
+type LogoutResp struct{}
 
 type StartResp struct {
 	Ok bool

@@ -6,13 +6,12 @@ import (
 	"github.com/materials-commons/materials/transfer"
 )
 
-func (r *ReqHandler) login(req *transfer.LoginReq) ReqStateFN {
+func (r *ReqHandler) login(req *transfer.LoginReq) (*transfer.LoginResp, error) {
 	if r.db.validLogin(req.User, req.ApiKey) {
 		r.user = req.User
-		r.respOk(nil)
-		return r.nextCommand()
+		return nil, nil
 	} else {
-		return r.badRequestRestart(fmt.Errorf("Bad login %s/%s", req.User, req.ApiKey))
+		return nil, fmt.Errorf("Bad login %s/%s", req.User, req.ApiKey)
 	}
 }
 
@@ -28,7 +27,6 @@ func (db db) validLogin(user, apikey string) bool {
 	}
 }
 
-func (r *ReqHandler) logout(req *transfer.LogoutReq) ReqStateFN {
-	r.respOk(nil)
-	return r.startState
+func (r *ReqHandler) logout(req *transfer.LogoutReq) (*transfer.LogoutResp, error) {
+	return nil, nil
 }

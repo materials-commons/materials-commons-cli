@@ -60,20 +60,20 @@ func (db db) createProject(projectName, user string) (projectId, datadirId strin
 	return rv.GeneratedKeys[0], datadirId, nil
 }
 
-func (h *ReqHandler) createFile(req *transfer.CreateFileReq) ReqStateFN {
+func (h *ReqHandler) createFile(req *transfer.CreateFileReq) (*transfer.CreateResp, error) {
 	if err := h.db.validCreateFileReq(req, h.user); err != nil {
-		return h.badRequestNext(err)
+		return nil, err
 	}
 
 	df := model.NewDataFile(req.Name, "private", h.user)
 	df.DataDirs = append(df.DataDirs, req.DataDirID)
 	rv, err := r.Table("datafiles").Insert(df).RunWrite(h.db.session)
 	if err != nil {
-		return h.badRequestNext(err)
+		return nil, err
 	}
 
 	if rv.Inserted == 0 {
-		return h.badRequestNext(fmt.Errorf("Unable to insert datafile"))
+		return nil, fmt.Errorf("Unable to insert datafile")
 	}
 	datafileId := rv.GeneratedKeys[0]
 
@@ -90,8 +90,7 @@ func (h *ReqHandler) createFile(req *transfer.CreateFileReq) ReqStateFN {
 	createResp := transfer.CreateResp{
 		ID: datafileId,
 	}
-	h.respOk(createResp)
-	return h.nextCommand()
+	return &createResp, nil
 }
 
 func (db db) validCreateFileReq(fileReq *transfer.CreateFileReq, user string) error {

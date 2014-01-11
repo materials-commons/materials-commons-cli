@@ -50,10 +50,17 @@ func (h *ReqHandler) req() interface{} {
 }
 
 func (h *ReqHandler) startState() ReqStateFN {
+	var resp interface{}
+	var err error
 	request := h.req()
 	switch req := request.(type) {
 	case transfer.LoginReq:
-		return h.login(&req)
+		resp, err = h.login(&req)
+		if err != nil {
+			return h.badRequestRestart(err)
+		}
+		h.respOk(resp)
+		return h.nextCommand
 	case transfer.CloseReq:
 		return nil
 	default:
@@ -105,7 +112,7 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.UploadReq:
 		return h.upload(&req)
 	case transfer.CreateFileReq:
-		return h.createFile(&req)
+		resp, err = h.createFile(&req)
 	case transfer.CreateDirReq:
 		resp, err = h.createDir(&req)
 	case transfer.CreateProjectReq:
@@ -114,7 +121,8 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.MoveReq:
 	case transfer.DeleteReq:
 	case transfer.LogoutReq:
-		return h.logout(&req)
+		resp, err = h.logout(&req)
+		return h.startState
 	case transfer.StatReq:
 		resp, err = h.stat(&req)
 	case transfer.CloseReq:

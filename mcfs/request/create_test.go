@@ -111,8 +111,8 @@ func TestCreateProject(t *testing.T) {
 }
 
 func TestCreateFile(t *testing.T) {
-	client := loginTestUser()
-	resp := transfer.Response{}
+	h := NewReqHandler(nil, session)
+	h.user = "gtarcea@umich.edu"
 
 	// Test create a valid file
 	createFileRequest := transfer.CreateFileReq{
@@ -121,21 +121,15 @@ func TestCreateFile(t *testing.T) {
 		Name:      "testfile1.txt",
 	}
 
-	request := transfer.Request{&createFileRequest}
-
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.ROk {
+	resp, err := h.createFile(&createFileRequest)
+	if err != nil {
 		t.Fatalf("Creating file failed")
 	}
-	createResp := resp.Resp.(transfer.CreateResp)
-	createdId := createResp.ID
+	createdId := resp.ID
 
 	// Test creating an existing file
-	resp = transfer.Response{}
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createFile(&createFileRequest)
+	if err == nil {
 		t.Fatalf("Allowed create of an existing file")
 	}
 
@@ -145,29 +139,23 @@ func TestCreateFile(t *testing.T) {
 	// Test creating with an invalid project id
 	validProjectID := createFileRequest.ProjectID
 	createFileRequest.ProjectID = "abc123-doesnotexist"
-	resp = transfer.Response{}
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createFile(&createFileRequest)
+	if err == nil {
 		t.Fatalf("Allowed creation of file with bad projectid")
 	}
 
 	// Test creating with an invalid datadir id
 	createFileRequest.ProjectID = validProjectID
 	createFileRequest.DataDirID = "abc123-doesnotexist"
-	resp = transfer.Response{}
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createFile(&createFileRequest)
+	if err == nil {
 		t.Fatalf("Allowed creation of file with bad projectid")
 	}
 
 	// Test creating with a datadir not in project
 	createFileRequest.DataDirID = "mcfada@umich.edu$Synthetic Tooth_Presentation_MCubed"
-	resp = transfer.Response{}
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
+	resp, err = h.createFile(&createFileRequest)
+	if err == nil {
 		t.Fatalf("Allowed creation of file in a datadir not in project")
 	}
 }
