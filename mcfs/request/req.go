@@ -101,7 +101,7 @@ func (h *ReqHandler) respOk(respData interface{}) {
 		Resp: respData,
 	}
 	err := h.Marshal(resp)
-	fmt.Println("   respOk err =", err)
+	var _ = err
 }
 
 func (h *ReqHandler) nextCommand() ReqStateFN {
