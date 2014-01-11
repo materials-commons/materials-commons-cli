@@ -28,5 +28,5 @@ func (db db) validLogin(user, apikey string) bool {
 }
 
 func (r *ReqHandler) logout(req *transfer.LogoutReq) (*transfer.LogoutResp, error) {
-	return nil, nil
+	return &transfer.LogoutResp{}, nil
 }
