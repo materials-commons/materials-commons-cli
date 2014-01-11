@@ -100,7 +100,8 @@ func (h *ReqHandler) respOk(respData interface{}) {
 		Type: transfer.ROk,
 		Resp: respData,
 	}
-	h.Marshal(resp)
+	err := h.Marshal(resp)
+	fmt.Println("   respOk err =", err)
 }
 
 func (h *ReqHandler) nextCommand() ReqStateFN {

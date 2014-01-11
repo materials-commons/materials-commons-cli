@@ -9,7 +9,7 @@ import (
 func (r *ReqHandler) login(req *transfer.LoginReq) (*transfer.LoginResp, error) {
 	if r.db.validLogin(req.User, req.ApiKey) {
 		r.user = req.User
-		return nil, nil
+		return &transfer.LoginResp{}, nil
 	} else {
 		return nil, fmt.Errorf("Bad login %s/%s", req.User, req.ApiKey)
 	}
