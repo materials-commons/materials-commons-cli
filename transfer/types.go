@@ -176,9 +176,8 @@ type CreateResp struct {
 }
 
 type LoginReq struct {
-	ProjectID string
-	User      string
-	ApiKey    string
+	User   string
+	ApiKey string
 }
 
 type LoginResp struct{}

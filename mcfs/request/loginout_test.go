@@ -53,41 +53,47 @@ func loginTestUser() *client {
 }
 
 func TestLoginLogout(t *testing.T) {
-	client := newClient()
+	h := NewReqHandler(nil, session)
+	h.user = "gtarcea@umich.edu"
+
+	// Test valid login
 	loginRequest := transfer.LoginReq{
-		ProjectID: "abc123",
-		User:      "gtarcea@umich.edu",
-		ApiKey:    "472abe203cd411e3a280ac162d80f1bf",
+		User:   "gtarcea@umich.edu",
+		ApiKey: "472abe203cd411e3a280ac162d80f1bf",
 	}
 
-	request := transfer.Request{&loginRequest}
-
-	client.Encode(&request)
-	resp := transfer.Response{}
-	err := client.Decode(&resp)
+	_, err := h.login(&loginRequest)
 	if err != nil {
-		t.Fatalf("Unable to decode response")
+		t.Fatalf("Failed to login with valid user id %s", err)
 	}
 
-	if resp.Type != transfer.ROk {
-		t.Fatalf("Unexpected return %d expected %d", resp.Type, transfer.ROk)
+	// Test logout
+	logoutRequest := transfer.LogoutReq{}
+	_, err = h.logout(&logoutRequest)
+	if err != nil {
+		t.Fatalf("logout failed %s", err)
 	}
-	requestLogout := transfer.LogoutReq{}
-	request.Req = requestLogout
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.ROk {
-		t.Fatalf("Unexpected return %d expected %d", resp.Type, transfer.ROk)
-	}
+
+	// Test Bad Apikey with a known user
 	loginRequest.ApiKey = "abc12356"
-	request.Req = loginRequest
-	client.Encode(&request)
-	client.Decode(&resp)
-	if resp.Type != transfer.RError {
-		t.Fatalf("Unexpected return %d expected %d", resp.Type, transfer.RError)
+	_, err = h.login(&loginRequest)
+	if err == nil {
+		t.Fatalf("Successful login with bad apikey")
 	}
 
-	if resp.Status == "" {
-		t.Fatalf("Status should have contained a message")
+	// Test good Apikey with wrong user
+	loginRequest.ApiKey = "472abe203cd411e3a280ac162d80f1bf"
+	loginRequest.User = "mcfada@umich.edu"
+	_, err = h.login(&loginRequest)
+	if err == nil {
+		t.Fatalf("Login successful with good api but wrong user")
 	}
+
+	// Test good Apikey with an non existing user
+	loginRequest.User = "i@donotexist.com"
+	_, err = h.login(&loginRequest)
+	if err == nil {
+		t.Fatalf("Login successful with good api but a non existing user")
+	}
+
 }
