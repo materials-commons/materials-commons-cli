@@ -47,6 +47,7 @@ func init() {
 	gob.Register(CloseReq{})
 	gob.Register(IndexReq{})
 	gob.Register(DoneReq{})
+	gob.Register(DoneResp{})
 }
 
 type Request struct {
@@ -125,7 +126,7 @@ type SendReq struct {
 }
 
 type SendResp struct {
-	BytesWritten int64
+	BytesWritten int
 }
 
 type StatReq struct {
@@ -192,3 +193,4 @@ type StartResp struct {
 type CloseReq struct{}
 type IndexReq struct{}
 type DoneReq struct{}
+type DoneResp struct{}
