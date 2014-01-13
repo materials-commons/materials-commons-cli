@@ -11,6 +11,64 @@ import (
 	"strings"
 )
 
+type uploadReq struct {
+	*transfer.UploadReq
+	session  *r.Session
+	dataFile *model.DataFile
+	finfo    os.FileInfo
+}
+
+func (h *ReqHandler) upload2(req *transfer.UploadReq) (*transfer.UploadResp, error) {
+	ureq := &uploadReq{
+		UploadReq: req,
+		session:   h.session,
+	}
+
+	if err := ureq.IsValid(); err != nil {
+		return nil, err
+	}
+
+	switch {
+	case ureq.dataFile.Size == ureq.Size && ureq.dataFile.Checksum == ureq.Checksum:
+		if ureq.finfo.Size() < ureq.Size {
+			//interrupted transfer
+			// send offset = ureq.finfo.Size() and ureq.dataFile.ID
+		} else if ureq.finfo.Size() == ureq.Size {
+			// nothing to send file upload completed
+		} else {
+			// ureq.finfo.Size() > ureq.Size && checksums are equal
+			// Houston we have a problem!
+		}
+
+	case ureq.dataFile.Size != ureq.Size:
+		// wants to upload a new version
+		if ureq.finfo.Size() < ureq.dataFile.Size {
+			// Other upload hasn't completed - reject this one until other completes
+		} else {
+			// create a new version and send new data file and offset = 0
+		}
+
+	case ureq.dataFile.Size == ureq.Size && ureq.dataFile.Checksum != ureq.Checksum:
+		// wants to upload new version
+		if ureq.finfo.Size() < ureq.dataFile.Size {
+			// Other upload hasn't completed - reject this one until other completes
+		} else {
+			// create a new version start upload
+			// send offset = 0 and a new datafile id
+		}
+
+	default:
+		// We should never get here so this is a bug that we need to log
+
+	}
+
+	return nil, nil
+}
+
+func (req *uploadReq) IsValid() error {
+	return nil
+}
+
 func (h *ReqHandler) upload(req *transfer.UploadReq) ReqStateFN {
 	offset, err := h.validateUploadReq(req)
 	if err != nil {
@@ -120,7 +178,7 @@ func (h *uploadHandler) upload() ReqStateFN {
 		dfClose(h.w, h.dataFileID, h.session)
 		return h.badRequestNext(fmt.Errorf("Unknown Request Type"))
 	}
-	return h.upload()
+	return h.upload
 }
 
 func createDataFileDir(dataFileID string) error {
