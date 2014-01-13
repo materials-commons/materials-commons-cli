@@ -8,8 +8,6 @@ import (
 	"github.com/materials-commons/materials/transfer"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 type uploadReq struct {
@@ -152,10 +150,6 @@ func datafileOpen(mcdir, dfid string, offset int64) (io.WriteCloser, error) {
 The following variables define functions for interacting with the datafile. They also
 allow these functions to be replaced during testing when the test doesn't really
 need to do anything with the datafile.
-
-TODO: Think about creating a type and interface that defines all operations on a
-data file, Then pass this interface in to the request handler. That way we can
-always replace it for testing or other purposes.
 */
 var dfWrite = datafileWrite
 var dfClose = datafileClose
@@ -234,7 +228,6 @@ func (h *uploadHandler) sendReqWrite(req *transfer.SendReq) (int, error) {
 }
 
 func createDataFileDir(mcdir, dataFileID string) error {
-	pieces := strings.Split(dataFileID, "-")
-	dirpath := filepath.Join(mcdir, pieces[1][0:2], pieces[1][2:4])
+	dirpath := datafileDir(mcdir, dataFileID)
 	return os.MkdirAll(dirpath, 0777)
 }
