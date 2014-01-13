@@ -42,6 +42,7 @@ import (
 type ServerOptions struct {
 	Port     uint   `long:"server-port" description:"The port the server listens on" default:"35862"`
 	Bind     string `long:"bind" description:"Address of local interface to listen on" default:"localhost"`
+	MCDir    string `long:"mcdir" description:"Directory path to materials commons file storage" default:"/mcfs/data/materialscommons"`
 	PrintPid bool   `long:"print-pid" description:"Prints the server pid to stdout"`
 }
 
@@ -74,7 +75,7 @@ func main() {
 		fmt.Println(os.Getpid())
 	}
 
-	acceptConnections(listener, opts.Database.Connection, opts.Database.Name)
+	acceptConnections(listener, opts.Database.Connection, opts.Database.Name, opts.Server.MCDir)
 }
 
 // createListener creates the net connection. It connects to the specified host
@@ -99,7 +100,7 @@ func createListener(host string, port uint) (*net.TCPListener, error) {
 // acceptConnections listens on the the TCPListener. When a new connection comes
 // in it is dispatched in a separate go routine. For each new connection a new
 // connection the to database is created.
-func acceptConnections(listener *net.TCPListener, dbAddress, dbName string) {
+func acceptConnections(listener *net.TCPListener, dbAddress, dbName, mcDir string) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -110,7 +111,7 @@ func acceptConnections(listener *net.TCPListener, dbAddress, dbName string) {
 			"database": dbName,
 		})
 		m := request.NewGobMarshaler(conn)
-		r := request.NewReqHandler(m, session)
+		r := request.NewReqHandler(m, session, mcDir)
 		go handleConnection(r, conn, session)
 	}
 }
