@@ -9,94 +9,108 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"github.com/materials-commons/gohandy/handyfile"
 )
 
 type uploadReq struct {
 	*transfer.UploadReq
-	session  *r.Session
+	*ReqHandler
 	dataFile *model.DataFile
-	finfo    os.FileInfo
 }
 
-func (h *ReqHandler) upload2(req *transfer.UploadReq) (*transfer.UploadResp, error) {
+func (h *ReqHandler) upload(req *transfer.UploadReq) (*transfer.UploadResp, error) {
 	ureq := &uploadReq{
-		UploadReq: req,
-		session:   h.session,
+		UploadReq:  req,
+		ReqHandler: h,
 	}
 
-	if err := ureq.IsValid(); err != nil {
+	resp := &transfer.UploadResp{}
+
+	if err := ureq.isValid(); err != nil {
 		return nil, err
 	}
 
+	fsize := datafileSize(h.mcdir, req.DataFileID)
+
 	switch {
+	case fsize == -1:
+		// Problem doing a stat on the file path, send back an error
+		return nil, fmt.Errorf("Access to path for file %s denied", req.DataFileID)
 	case ureq.dataFile.Size == ureq.Size && ureq.dataFile.Checksum == ureq.Checksum:
-		if ureq.finfo.Size() < ureq.Size {
+		if fsize < ureq.Size {
 			//interrupted transfer
-			// send offset = ureq.finfo.Size() and ureq.dataFile.ID
-		} else if ureq.finfo.Size() == ureq.Size {
+			// send offset = fsize and ureq.dataFile.ID
+			resp.DataFileID = req.DataFileID
+			resp.Offset = fsize
+		} else if fsize == ureq.Size {
 			// nothing to send file upload completed
+			resp.DataFileID = req.DataFileID
+			resp.Offset = ureq.Size
 		} else {
-			// ureq.finfo.Size() > ureq.Size && checksums are equal
+			// fsize > ureq.Size && checksums are equal
 			// Houston we have a problem!
+			return nil, fmt.Errorf("Fatal error fsize (%d) > ureq.Size (%d) with equal checksums", fsize, ureq.Size)
 		}
 
 	case ureq.dataFile.Size != ureq.Size:
 		// wants to upload a new version
-		if ureq.finfo.Size() < ureq.dataFile.Size {
+		if fsize < ureq.dataFile.Size {
 			// Other upload hasn't completed - reject this one until other completes
+			return nil, fmt.Errorf("Cannot create new version of data file when previous version hasn't completed loading.")
 		} else {
 			// create a new version and send new data file and offset = 0
+			resp.DataFileID = ureq.createNewDataFileVersion()
+			resp.Offset = 0
 		}
 
 	case ureq.dataFile.Size == ureq.Size && ureq.dataFile.Checksum != ureq.Checksum:
 		// wants to upload new version
-		if ureq.finfo.Size() < ureq.dataFile.Size {
+		if fsize < ureq.dataFile.Size {
 			// Other upload hasn't completed - reject this one until other completes
+			return nil, fmt.Errorf("Cannot create new version of data file when previous version hasn't completed loading.")
 		} else {
 			// create a new version start upload
 			// send offset = 0 and a new datafile id
+			resp.DataFileID = ureq.createNewDataFileVersion()
+			resp.Offset = 0
 		}
 
 	default:
 		// We should never get here so this is a bug that we need to log
-
+		return nil, fmt.Errorf("Internal fatal error")
 	}
 
-	return nil, nil
+	return resp, nil
 }
 
-func (req *uploadReq) IsValid() error {
-	return nil
-}
-
-func (h *ReqHandler) upload(req *transfer.UploadReq) ReqStateFN {
-	offset, err := h.validateUploadReq(req)
-	if err != nil {
-		return h.badRequestNext(err)
-	}
-	h.respUpload(offset, req.DataFileID)
-	return h.uploadLoop(req.DataFileID)
-}
-
-func (h *ReqHandler) validateUploadReq(req *transfer.UploadReq) (offset int64, err error) {
-	offset = -1
-	df, err := model.GetDataFile(req.DataFileID, h.session)
+func (req *uploadReq) isValid() error {
+	dataFile, err := model.GetDataFile(req.DataFileID, req.session)
 	switch {
 	case err != nil:
-		return offset, err
-	case req.Checksum != df.Checksum:
-		return offset, fmt.Errorf("Checksums don't match")
+		return fmt.Errorf("No such datafile %s", req.DataFileID)
+	case !ownerGaveAccessTo(dataFile.Owner, req.user, req.session):
+		return fmt.Errorf("Permission denied to %s", req.DataFileID)
 	default:
-		sinfo, err := os.Stat(datafilePath(req.DataFileID))
-		if err == nil && sinfo.Size() < df.Size {
-			offset = sinfo.Size()
-		}
+		req.dataFile = dataFile
+		return nil
 	}
-	return offset, err
 }
 
-func (r *ReqHandler) respUpload(offset int64, dfid string) {
+func datafileSize(mcdir, dataFileID string) int64 {
+	path := datafilePath(mcdir, dataFileID)
+	finfo, err := os.Stat(path)
+	switch {
+	case err == nil:
+		return finfo.Size()
+	case os.IsNotExist(err):
+		return 0
+	default:
+		return -1
+	}
+}
 
+func (req *uploadReq) createNewDataFileVersion() (dataFileID string) {
+	return "NEW"
 }
 
 type uploadHandler struct {
@@ -116,12 +130,22 @@ func datafileClose(w io.WriteCloser, dataFileID string, session *r.Session) erro
 	return nil
 }
 
-func datafileOpen(dfid string) (io.WriteCloser, error) {
-	err := createDataFileDir(dfid)
-	if err != nil {
-		return nil, err
+func datafileOpen(mcdir, dfid string, offset int64) (io.WriteCloser, error) {
+	path := datafilePath(mcdir, dfid)
+	switch {
+	case handyfile.Exists(path):
+		mode := os.O_RDWR
+		if offset != 0 {
+			mode = mode | os.O_APPEND
+		}
+		return os.OpenFile(path, mode, 0660)
+	default:
+		err := createDataFileDir(mcdir, dfid)
+		if err != nil {
+			return nil, err
+		}
+		return os.Create(path)
 	}
-	return os.Create(datafilePath(dfid))
 }
 
 /*
@@ -137,52 +161,80 @@ var dfWrite = datafileWrite
 var dfClose = datafileClose
 var dfOpen = datafileOpen
 
-func (r *ReqHandler) uploadLoop(dfid string) ReqStateFN {
-	f, err := dfOpen(dfid)
+func prepareUploadHandler(h *ReqHandler, dataFileID string, offset int64) (*uploadHandler, error) {
+	f, err := dfOpen(h.mcdir, dataFileID, offset)
 	if err != nil {
-		return nil // return something else
+		return nil, err
 	}
-	h := &uploadHandler{
+	
+	handler := &uploadHandler{
 		w:          f,
-		dataFileID: dfid,
+		dataFileID: dataFileID,
 		nbytes:     0,
-		ReqHandler: r,
+		ReqHandler: h,
 	}
 
-	return h.upload()
+	return handler, nil
 }
 
-func (h *uploadHandler) upload() ReqStateFN {
+func (r *ReqHandler) uploadLoop(resp *transfer.UploadResp) ReqStateFN {
+	if uploadHandler, err := prepareUploadHandler(r, resp.DataFileID, resp.Offset); err != nil {
+		r.respError(err) // this is out of sequence...
+		return r.nextCommand
+	} else {
+		r.respOk(resp)
+		return uploadHandler.uploadState
+	}
+}
+
+func (h *uploadHandler) uploadState() ReqStateFN {
 	request := h.req()
 	switch req := request.(type) {
 	case *transfer.SendReq:
-		if req.DataFileID != h.dataFileID {
-			// bad send - error out?
-		}
-		n, err := dfWrite(h.w, req.Bytes)
+		n, err := h.sendReqWrite(req)
 		if err != nil {
-			// error writing, do something...
+			dfClose(h.w, h.dataFileID, h.session)
+			h.respError(err)
+			return h.nextCommand
 		}
 		h.nbytes = h.nbytes + int64(n)
+		h.respOk(&transfer.SendResp{BytesWritten: n})
+		return h.uploadState
 	case *ErrorReq:
+		dfClose(h.w, h.dataFileID, h.session)
+		return nil
 	case *transfer.LogoutReq:
 		dfClose(h.w, h.dataFileID, h.session)
+		h.respOk(&transfer.LogoutResp{})
 		return h.startState
 	case *transfer.CloseReq:
 		dfClose(h.w, h.dataFileID, h.session)
 		return nil
 	case *transfer.DoneReq:
 		dfClose(h.w, h.dataFileID, h.session)
-		return h.nextCommand()
+		h.respOk(&transfer.DoneResp{})
+		return h.nextCommand
 	default:
 		dfClose(h.w, h.dataFileID, h.session)
 		return h.badRequestNext(fmt.Errorf("Unknown Request Type"))
 	}
-	return h.upload
 }
 
-func createDataFileDir(dataFileID string) error {
+func (h *uploadHandler) sendReqWrite(req *transfer.SendReq) (int, error) {
+	if req.DataFileID != h.dataFileID {
+		return 0, fmt.Errorf("Unexpected DataFileID %s", req.DataFileID)
+	}
+
+	n, err := dfWrite(h.w, req.Bytes)
+	if err != nil {
+		return 0, fmt.Errorf("Write unexpectedly failed for %s", req.DataFileID)
+	}
+	
+	return n, nil
+}
+
+func createDataFileDir(mcdir, dataFileID string) error {
 	pieces := strings.Split(dataFileID, "-")
-	dirpath := filepath.Join("/mcfs/data/materialscommons", pieces[1][0:2], pieces[1][2:4])
-	return os.MkdirAll(dirpath, 0600)
+	dirpath := filepath.Join(mcdir, pieces[1][0:2], pieces[1][2:4])
+	return os.MkdirAll(dirpath, 0777)
 }
