@@ -53,7 +53,7 @@ func loginTestUser() *client {
 }
 
 func TestLoginLogout(t *testing.T) {
-	h := NewReqHandler(nil, session)
+	h := NewReqHandler(nil, session, "")
 	h.user = "gtarcea@umich.edu"
 
 	// Test valid login
