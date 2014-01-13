@@ -2,10 +2,10 @@ package request
 
 import (
 	"fmt"
-	"github.com/materials-commons/materials/transfer"
 	"github.com/materials-commons/materials/model"
-	"testing"
+	"github.com/materials-commons/materials/transfer"
 	"os"
+	"testing"
 )
 
 var _ = fmt.Println
@@ -18,8 +18,8 @@ func TestUploadCasesFile(t *testing.T) {
 	// Test bad upload with non existant DataFileID
 	uploadReq := transfer.UploadReq{
 		DataFileID: "does not exist",
-		Size: 6,
-		Checksum: "abc123",
+		Size:       6,
+		Checksum:   "abc123",
 	}
 
 	resp, err := h.upload(&uploadReq)
@@ -32,8 +32,8 @@ func TestUploadCasesFile(t *testing.T) {
 		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
 		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
 		Name:      "testfile1.txt",
-		Size: 6,
-		Checksum: "abc123",
+		Size:      6,
+		Checksum:  "abc123",
 	}
 
 	createResp, _ := h.createFile(&createFileRequest)
@@ -84,7 +84,6 @@ func TestUploadCasesFile(t *testing.T) {
 		t.Fatalf("Upload with different checksum should have failed")
 	}
 
-
 	// Test Existing without permissions
 	h.user = "mcfada@umich.edu"
 	uploadReq.Size = 6
@@ -101,7 +100,7 @@ func TestUploadCasesFile(t *testing.T) {
 	w, err := datafileOpen(h.mcdir, createdId, 0)
 	w.Write([]byte("Hello"))
 	w.(*os.File).Sync()
-	
+
 	resp, err = h.upload(&uploadReq)
 	if err != nil {
 		t.Fatalf("Restart interrupted failed")
@@ -112,7 +111,7 @@ func TestUploadCasesFile(t *testing.T) {
 	if resp.DataFileID != createdId {
 		t.Fatalf("Tried to create a new datafile id for an interrupted transfer")
 	}
-	
+
 	// Test new version with previous interrupted
 	uploadReq.Size = 8
 	uploadReq.Checksum = "def456"
@@ -136,12 +135,12 @@ func TestUploadCasesFile(t *testing.T) {
 	if resp.Offset != 0 {
 		t.Fatalf("Uploading new version offset should be 0 not %d", resp.Offset)
 	}
-	
+
 	fmt.Println("Deleting datafile id", createdId)
 	model.Delete("datafiles", createdId, session)
 	os.RemoveAll("/tmp/mcdir")
 }
 
 func TestUploadNewFile(t *testing.T) {
-	
+
 }

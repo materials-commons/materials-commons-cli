@@ -3,13 +3,13 @@ package request
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"github.com/materials-commons/gohandy/handyfile"
 )
 
 type uploadReq struct {
@@ -166,7 +166,7 @@ func prepareUploadHandler(h *ReqHandler, dataFileID string, offset int64) (*uplo
 	if err != nil {
 		return nil, err
 	}
-	
+
 	handler := &uploadHandler{
 		w:          f,
 		dataFileID: dataFileID,
@@ -229,7 +229,7 @@ func (h *uploadHandler) sendReqWrite(req *transfer.SendReq) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("Write unexpectedly failed for %s", req.DataFileID)
 	}
-	
+
 	return n, nil
 }
 

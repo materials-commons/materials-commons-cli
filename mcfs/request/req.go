@@ -116,7 +116,7 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 		var respUpload *transfer.UploadResp
 		respUpload, err = h.upload(&req)
 		if err == nil {
-			return h.uploadLoop(respUpload)	
+			return h.uploadLoop(respUpload)
 		}
 	case transfer.CreateFileReq:
 		resp, err = h.createFile(&req)

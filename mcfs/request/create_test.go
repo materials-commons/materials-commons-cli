@@ -119,7 +119,7 @@ func TestCreateFile(t *testing.T) {
 		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
 		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
 		Name:      "testfile1.txt",
-		Checksum: "abc123",
+		Checksum:  "abc123",
 	}
 
 	resp, err := h.createFile(&createFileRequest)
@@ -133,7 +133,7 @@ func TestCreateFile(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Created file with no checksum")
 	}
-	
+
 	// Test create a valid file
 	createFileRequest.Size = 1
 	createFileRequest.Checksum = "abc123"
@@ -142,7 +142,7 @@ func TestCreateFile(t *testing.T) {
 		t.Fatalf("Create file failed")
 	}
 	createdId := resp.ID
-	
+
 	// Validate the newly created datafile
 	df, err := model.GetDataFile(createdId, session)
 	if err != nil {
