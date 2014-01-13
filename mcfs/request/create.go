@@ -75,6 +75,8 @@ func (h *ReqHandler) createFile(req *transfer.CreateFileReq) (*transfer.CreateRe
 
 	df := model.NewDataFile(req.Name, "private", h.user)
 	df.DataDirs = append(df.DataDirs, req.DataDirID)
+	df.Checksum = req.Checksum
+	df.Size = req.Size
 	rv, err := r.Table("datafiles").Insert(df).RunWrite(h.session)
 	if err != nil {
 		return nil, err
@@ -122,6 +124,14 @@ func (v createFileValidator) validCreateFileReq(fileReq *transfer.CreateFileReq)
 
 	if v.datafileExistsInDataDir(fileReq.DataDirID, fileReq.Name) {
 		return fmt.Errorf("Datafile %s already exists in datadir %s", fileReq.Name, datadir.Name)
+	}
+
+	if fileReq.Size < 1 {
+		return fmt.Errorf("Invalid size (%d) for datafile %s", fileReq.Size, fileReq.Name)
+	}
+
+	if fileReq.Checksum == "" {
+		return fmt.Errorf("Bad checksum (%s) for datafile %s", fileReq.Checksum, fileReq.Name)
 	}
 
 	return nil

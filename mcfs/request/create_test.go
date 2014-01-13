@@ -12,7 +12,7 @@ var _ = fmt.Println
 var _ = r.Table
 
 func TestCreateDir(t *testing.T) {
-	h := NewReqHandler(nil, session)
+	h := NewReqHandler(nil, session, "")
 	h.user = "gtarcea@umich.edu"
 
 	// Test valid path
@@ -74,7 +74,7 @@ func TestCreateDir(t *testing.T) {
 }
 
 func TestCreateProject(t *testing.T) {
-	h := NewReqHandler(nil, session)
+	h := NewReqHandler(nil, session, "")
 	h.user = "gtarcea@umich.edu"
 
 	createProjectRequest := transfer.CreateProjectReq{
@@ -111,21 +111,71 @@ func TestCreateProject(t *testing.T) {
 }
 
 func TestCreateFile(t *testing.T) {
-	h := NewReqHandler(nil, session)
+	h := NewReqHandler(nil, session, "")
 	h.user = "gtarcea@umich.edu"
 
-	// Test create a valid file
+	// Test create with no size
 	createFileRequest := transfer.CreateFileReq{
 		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
 		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
 		Name:      "testfile1.txt",
+		Checksum: "abc123",
 	}
 
 	resp, err := h.createFile(&createFileRequest)
+	if err == nil {
+		t.Fatalf("Created file with no size")
+	}
+
+	createFileRequest.Size = 1
+	createFileRequest.Checksum = ""
+	resp, err = h.createFile(&createFileRequest)
+	if err == nil {
+		t.Fatalf("Created file with no checksum")
+	}
+	
+	// Test create a valid file
+	createFileRequest.Size = 1
+	createFileRequest.Checksum = "abc123"
+	resp, err = h.createFile(&createFileRequest)
 	if err != nil {
-		t.Fatalf("Creating file failed")
+		t.Fatalf("Create file failed")
 	}
 	createdId := resp.ID
+	
+	// Validate the newly created datafile
+	df, err := model.GetDataFile(createdId, session)
+	if err != nil {
+		t.Fatalf("Unable to retrieve a newly created datafile %s", err)
+	}
+
+	if df.Size != 1 {
+		t.Fatalf("Wrong size %#v", df)
+	}
+
+	if df.Checksum != "abc123" {
+		t.Fatalf("Bad checksum %#v", df)
+	}
+
+	if len(df.DataDirs) != 1 {
+		t.Fatalf("Wrong number of datadirs %#v", df)
+	}
+
+	if df.DataDirs[0] != "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data" {
+		t.Fatalf("Wrong datadir inserted %#v", df)
+	}
+
+	if df.Access != "private" {
+		t.Fatalf("Wrong access set %#v", df)
+	}
+
+	if df.Owner != "gtarcea@umich.edu" {
+		t.Fatalf("Wrong owner %#v", df)
+	}
+
+	if df.Name != "testfile1.txt" {
+		t.Fatalf("Wrong name %#v", df)
+	}
 
 	// Test creating an existing file
 	resp, err = h.createFile(&createFileRequest)
