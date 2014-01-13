@@ -19,14 +19,16 @@ type db struct {
 type ReqHandler struct {
 	session *r.Session
 	user    string
+	mcdir   string
 	marshaling.MarshalUnmarshaler
 	badRequestCount int
 }
 
-func NewReqHandler(m marshaling.MarshalUnmarshaler, session *r.Session) *ReqHandler {
+func NewReqHandler(m marshaling.MarshalUnmarshaler, session *r.Session, mcdir string) *ReqHandler {
 	return &ReqHandler{
 		session:            session,
 		MarshalUnmarshaler: m,
+		mcdir:              mcdir,
 	}
 }
 
@@ -111,7 +113,11 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 	request := h.req()
 	switch req := request.(type) {
 	case transfer.UploadReq:
-		return h.upload(&req)
+		var respUpload *transfer.UploadResp
+		respUpload, err = h.upload(&req)
+		if err == nil {
+			return h.uploadLoop(respUpload)	
+		}
 	case transfer.CreateFileReq:
 		resp, err = h.createFile(&req)
 	case transfer.CreateDirReq:
@@ -134,10 +140,9 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 		return h.badRequestNext(fmt.Errorf("Bad request %T", req))
 	}
 
-	switch {
-	case err != nil:
+	if err != nil {
 		h.respError(err)
-	default:
+	} else {
 		h.respOk(resp)
 	}
 

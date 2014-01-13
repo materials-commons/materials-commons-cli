@@ -11,7 +11,7 @@ var _ = fmt.Println
 
 func TestReq(t *testing.T) {
 	m := NewRequestResponseMarshaler()
-	h := NewReqHandler(m, session)
+	h := NewReqHandler(m, session, "")
 
 	m.SetError(io.EOF)
 	switch h.req().(type) {
