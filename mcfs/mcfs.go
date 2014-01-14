@@ -89,7 +89,7 @@ func main() {
 	DBName = opts.Database.Name
 	go webserver(opts.Server.HttpPort)
 
-	acceptConnections(listener, opts.Database.Connection, opts.Database.Name, opts.Server.MCDir)
+	acceptConnections(listener)
 }
 
 // webserver starts an http server that serves out datafile.
@@ -162,7 +162,7 @@ func createListener(host string, port uint) (*net.TCPListener, error) {
 // acceptConnections listens on the the TCPListener. When a new connection comes
 // in it is dispatched in a separate go routine. For each new connection a new
 // connection the to database is created.
-func acceptConnections(listener *net.TCPListener, dbAddress, dbName, mcDir string) {
+func acceptConnections(listener *net.TCPListener) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -170,8 +170,8 @@ func acceptConnections(listener *net.TCPListener, dbAddress, dbName, mcDir strin
 		}
 
 		session, err := r.Connect(map[string]interface{}{
-			"address":  dbAddress,
-			"database": dbName,
+			"address":  DBAddress,
+			"database": DBName,
 		})
 		if err != nil {
 			conn.Close()
@@ -179,7 +179,7 @@ func acceptConnections(listener *net.TCPListener, dbAddress, dbName, mcDir strin
 		}
 
 		m := request.NewGobMarshaler(conn)
-		r := request.NewReqHandler(m, session, mcDir)
+		r := request.NewReqHandler(m, session, MCDir)
 		go handleConnection(r, conn, session)
 	}
 }
