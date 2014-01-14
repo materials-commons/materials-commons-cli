@@ -13,3 +13,7 @@ func datafileDir(mcdir, dataFileID string) string {
 func datafilePath(mcdir, dataFileID string) string {
 	return filepath.Join(datafileDir(mcdir, dataFileID), dataFileID)
 }
+
+func DataFilePath(mcdir, dataFileID string) string {
+	return datafilePath(mcdir, dataFileID)
+}
