@@ -13,12 +13,12 @@ func TestHasAccess(t *testing.T) {
 	user := "gtarcea@umich.edu"
 	owner := "mcfada@umich.edu"
 	// Test empty table different user
-	if ownerGaveAccessTo(owner, "someuser@umich.edu", session) {
+	if OwnerGaveAccessTo(owner, "someuser@umich.edu", session) {
 		t.Fatalf("Access passed should have failed with empty usergroups table")
 	}
 
 	//Test empty table same user
-	if !ownerGaveAccessTo("gtarcea@umich.edu", "gtarcea@umich.edu", session) {
+	if !OwnerGaveAccessTo("gtarcea@umich.edu", "gtarcea@umich.edu", session) {
 		t.Fatalf("Access failed when user is also the user")
 	}
 
@@ -32,12 +32,12 @@ func TestHasAccess(t *testing.T) {
 	defer deleteItem(id, "usergroups", session)
 
 	// Test user who should have access
-	if !ownerGaveAccessTo(owner, user, session) {
+	if !OwnerGaveAccessTo(owner, user, session) {
 		t.Fatalf("gtarcea@umich.edu should have had access")
 	}
 
 	// Test user who doesn't have access
-	if ownerGaveAccessTo(owner, "nouser@umich.edu", session) {
+	if OwnerGaveAccessTo(owner, "nouser@umich.edu", session) {
 		t.Fatalf("nouser@umich.edu should not have access")
 	}
 }

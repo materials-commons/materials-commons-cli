@@ -12,7 +12,7 @@ import (
 //    For each user in the user group see if teh requesting user
 //    is included. If so then return true (has access).
 // 3. None of the above matched - return false (no access)
-func ownerGaveAccessTo(owner, user string, session *r.Session) bool {
+func OwnerGaveAccessTo(owner, user string, session *r.Session) bool {
 	// Check if user and file owner are the same
 	if user == owner {
 		return true

@@ -11,7 +11,7 @@ func (h *ReqHandler) stat(req *transfer.StatReq) (*transfer.StatResp, error) {
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("Unknown id %s", req.DataFileID)
-	case !ownerGaveAccessTo(df.Owner, h.user, h.session):
+	case !OwnerGaveAccessTo(df.Owner, h.user, h.session):
 		return nil, fmt.Errorf("You do not have permission to access this datafile %s", req.DataFileID)
 	default:
 		return respStat(df), nil
