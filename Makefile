@@ -3,8 +3,8 @@
 all: fmt test bin
 
 bin:
-	(cd materials; go build materials.go)
-	(cd mcfs; go build mcfs.go)
+	(cd main; go build materials.go)
+	(cd mcfs/main; go build mcfs.go)
 
 test:
 	-./runtests.sh
