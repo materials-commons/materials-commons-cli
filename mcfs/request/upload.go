@@ -86,7 +86,7 @@ func (req *uploadReq) isValid() error {
 	switch {
 	case err != nil:
 		return fmt.Errorf("No such datafile %s", req.DataFileID)
-	case !ownerGaveAccessTo(dataFile.Owner, req.user, req.session):
+	case !OwnerGaveAccessTo(dataFile.Owner, req.user, req.session):
 		return fmt.Errorf("Permission denied to %s", req.DataFileID)
 	default:
 		req.dataFile = dataFile
