@@ -36,16 +36,8 @@ func (m *GobMarshaler) Unmarshal(data interface{}) error {
 // A IdentityMarshaler saves the data passed and returns it.
 // It can be set to return an error instead. This is useful
 // for testing.
-type whichType int
-
-const (
-	cleared whichType = iota
-	useResponse
-	useRequest
-)
 
 type RequestResponseMarshaler struct {
-	which    whichType
 	request  transfer.Request
 	response transfer.Response
 	err      error
@@ -66,13 +58,10 @@ func (m *RequestResponseMarshaler) Marshal(data interface{}) error {
 
 	switch t := data.(type) {
 	case *transfer.Request:
-		m.which = useRequest
 		m.request = *t
 	case *transfer.Response:
-		m.which = useResponse
 		m.response = *t
 	default:
-		m.which = cleared
 		return fmt.Errorf("Not a transfer.Request")
 	}
 
