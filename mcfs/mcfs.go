@@ -33,9 +33,12 @@ import (
 	r "github.com/dancannon/gorethink"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials/mcfs/request"
+	"github.com/materials-commons/materials/model"
 	_ "github.com/materials-commons/materials/transfer"
 	"net"
+	"net/http"
 	"os"
+	"path/filepath"
 )
 
 // Options for server startup
@@ -44,6 +47,7 @@ type ServerOptions struct {
 	Bind     string `long:"bind" description:"Address of local interface to listen on" default:"localhost"`
 	MCDir    string `long:"mcdir" description:"Directory path to materials commons file storage" default:"/mcfs/data/materialscommons"`
 	PrintPid bool   `long:"print-pid" description:"Prints the server pid to stdout"`
+	HttpPort uint   `long:"http-port" description:"Port webserver listens on" default:"5010"`
 }
 
 // Options for the database
@@ -57,6 +61,10 @@ type Options struct {
 	Server   ServerOptions   `group:"Server Options"`
 	Database DatabaseOptions `group:"Database Options"`
 }
+
+var MCDir string
+var DBAddress string
+var DBName string
 
 func main() {
 	var opts Options
@@ -75,7 +83,51 @@ func main() {
 		fmt.Println(os.Getpid())
 	}
 
+	MCDir = opts.Server.MCDir
+	DBAddress = opts.Database.Connection
+	DBName = opts.Database.Name
+	go webserver(opts.Server.HttpPort)
+
 	acceptConnections(listener, opts.Database.Connection, opts.Database.Name, opts.Server.MCDir)
+}
+
+func webserver(port uint) {
+	http.HandleFunc("/datafiles/static/", datafileHandler)
+	fmt.Println(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+}
+
+func datafileHandler(writer http.ResponseWriter, req *http.Request) {
+	apikey := req.FormValue("apikey")
+	if apikey == "" {
+		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	session, _ := r.Connect(map[string]interface{}{
+		"address":  DBAddress,
+		"database": DBName,
+	})
+
+	// Verify key
+	var u model.User
+	query := r.Table("users").GetAllByIndex("apikey", apikey)
+	if err := model.GetRow(query, session, &u); err != nil {
+		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	// Get datafile from db and check access
+	dataFileID := filepath.Base(req.URL.Path)
+	df, err := model.GetDataFile(dataFileID, session)
+	switch {
+	case err != nil:
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	case !request.OwnerGaveAccessTo(df.Owner, u.Email, session):
+		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	default:
+		path := request.DataFilePath(MCDir, dataFileID)
+		http.ServeFile(writer, req, path)
+	}
 }
 
 // createListener creates the net connection. It connects to the specified host
