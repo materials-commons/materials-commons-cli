@@ -1,9 +1,12 @@
 package request
 
 import (
+	"crypto/md5"
 	"fmt"
+	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -142,5 +145,71 @@ func TestUploadCasesFile(t *testing.T) {
 }
 
 func TestUploadNewFile(t *testing.T) {
+	h := NewReqHandler(nil, session, "/tmp/mcdir")
+	h.user = "gtarcea@umich.edu"
+	testfilePath := "/tmp/mcdir/testfile.txt"
+	testfileData := "Hello world for testing"
+	testfileLen := int64(len(testfileData))
 
+	// Create file that we are going to upload
+	os.MkdirAll("/tmp/mcdir", 0777)
+	ioutil.WriteFile(testfilePath, []byte(testfileData), 0777)
+	checksum, _ := handyfile.Hash(md5.New(), testfilePath)
+	checksumHex := fmt.Sprintf("%x", checksum)
+	createFileRequest := transfer.CreateFileReq{
+		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
+		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
+		Name:      "testfile.txt",
+		Size:      int64(len(testfileData)),
+		Checksum:  checksumHex,
+	}
+
+	createResp, _ := h.createFile(&createFileRequest)
+	createdId := createResp.ID
+	defer cleanup(createdId)
+	uploadReq := transfer.UploadReq{
+		DataFileID: createdId,
+		Size:       testfileLen,
+		Checksum:   checksumHex,
+	}
+
+	resp, err := h.upload(&uploadReq)
+	if err != nil {
+		t.Fatalf("error %s", err)
+	}
+
+	if resp.DataFileID != createdId {
+		t.Fatalf("ids don't match")
+	}
+
+	if resp.Offset != 0 {
+		t.Fatalf("Wrong offset")
+	}
+
+	uploadHandler, err := prepareUploadHandler(h, resp.DataFileID, resp.Offset)
+	if err != nil {
+		t.Fatalf("Couldn't create uploadHandler %s", err)
+	}
+
+	var _ = uploadHandler
+	sendReq := transfer.SendReq{
+		DataFileID: createdId,
+		Bytes:      []byte(testfileData),
+	}
+
+	sresp, err := uploadHandler.sendReqWrite(&sendReq)
+	fmt.Println("err = ", err)
+	fmt.Printf("%#v\n", sresp)
+
+	/*
+		fmt.Println("Deleteing datafile id =", createdId)
+		model.Delete("datafiles", createdId, session)
+		os.RemoveAll("/tmp/mcdir")
+	*/
+}
+
+func cleanup(datafileId string) {
+	fmt.Println("Deleting datafile id =", datafileId)
+	model.Delete("datafiles", datafileId, session)
+	os.RemoveAll("/tmp/mcdir")
 }
