@@ -62,9 +62,10 @@ type Options struct {
 	Database DatabaseOptions `group:"Database Options"`
 }
 
-var MCDir string
-var DBAddress string
-var DBName string
+// The following are set to command line argument values
+var MCDir string     // Directory datafiles are stored in
+var DBAddress string // Database address
+var DBName string    // Database name
 
 func main() {
 	var opts Options
@@ -91,11 +92,13 @@ func main() {
 	acceptConnections(listener, opts.Database.Connection, opts.Database.Name, opts.Server.MCDir)
 }
 
+// webserver starts an http server that serves out datafile.
 func webserver(port uint) {
 	http.HandleFunc("/datafiles/static/", datafileHandler)
 	fmt.Println(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
 
+// datafileHandler server data files.
 func datafileHandler(writer http.ResponseWriter, req *http.Request) {
 	apikey := req.FormValue("apikey")
 	if apikey == "" {
@@ -103,10 +106,17 @@ func datafileHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, _ := r.Connect(map[string]interface{}{
+	session, err := r.Connect(map[string]interface{}{
 		"address":  DBAddress,
 		"database": DBName,
 	})
+
+	if err != nil {
+		http.Error(writer, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+		return
+	}
+
+	defer session.Close()
 
 	// Verify key
 	var u model.User
@@ -158,10 +168,16 @@ func acceptConnections(listener *net.TCPListener, dbAddress, dbName, mcDir strin
 		if err != nil {
 			continue
 		}
-		session, _ := r.Connect(map[string]interface{}{
+
+		session, err := r.Connect(map[string]interface{}{
 			"address":  dbAddress,
 			"database": dbName,
 		})
+		if err != nil {
+			conn.Close()
+			continue
+		}
+
 		m := request.NewGobMarshaler(conn)
 		r := request.NewReqHandler(m, session, mcDir)
 		go handleConnection(r, conn, session)
