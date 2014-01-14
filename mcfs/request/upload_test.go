@@ -160,7 +160,7 @@ func TestUploadNewFile(t *testing.T) {
 		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
 		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
 		Name:      "testfile.txt",
-		Size:      int64(len(testfileData)),
+		Size:      testfileLen,
 		Checksum:  checksumHex,
 	}
 
@@ -197,15 +197,119 @@ func TestUploadNewFile(t *testing.T) {
 		Bytes:      []byte(testfileData),
 	}
 
-	sresp, err := uploadHandler.sendReqWrite(&sendReq)
-	fmt.Println("err = ", err)
-	fmt.Printf("%#v\n", sresp)
+	n, err := uploadHandler.sendReqWrite(&sendReq)
+	if n != len(testfileData) {
+		t.Fatalf("Incorrect number of bytes written expected %d, wrote %d", testfileLen, n)
+	}
 
-	/*
-		fmt.Println("Deleteing datafile id =", createdId)
-		model.Delete("datafiles", createdId, session)
-		os.RemoveAll("/tmp/mcdir")
-	*/
+	nchecksum, err := handyfile.Hash(md5.New(), datafilePath(h.mcdir, createdId))
+	if err != nil {
+		t.Fatalf("Unable to checksum datafile %s", createdId)
+	}
+
+	dfClose(uploadHandler.w, uploadHandler.dataFileID, uploadHandler.session)
+
+	nchecksumHex := fmt.Sprintf("%x", nchecksum)
+	if nchecksumHex != checksumHex {
+		t.Fatalf("Checksums don't match for uploaded file expected = %s, got %s", checksumHex, nchecksumHex)
+	}
+}
+
+func TestPartialToCompleted(t *testing.T) {
+	h := NewReqHandler(nil, session, "/tmp/mcdir")
+	h.user = "gtarcea@umich.edu"
+	testfilePath := "/tmp/mcdir/testfile.txt"
+	testfileData := "Hello world for testing"
+	testfileLen := int64(len(testfileData))
+
+	// Create file that we are going to upload
+	os.MkdirAll("/tmp/mcdir", 0777)
+	ioutil.WriteFile(testfilePath, []byte(testfileData), 0777)
+	checksum, _ := handyfile.Hash(md5.New(), testfilePath)
+	checksumHex := fmt.Sprintf("%x", checksum)
+	createFileRequest := transfer.CreateFileReq{
+		ProjectID: "c33edab7-a65f-478e-9fa6-9013271c73ea",
+		DataDirID: "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data",
+		Name:      "testfile.txt",
+		Size:      testfileLen,
+		Checksum:  checksumHex,
+	}
+
+	createResp, _ := h.createFile(&createFileRequest)
+	createdId := createResp.ID
+	defer cleanup(createdId)
+
+	uploadReq := transfer.UploadReq{
+		DataFileID: createdId,
+		Size:       testfileLen,
+		Checksum:   checksumHex,
+	}
+
+	resp, err := h.upload(&uploadReq)
+	if err != nil {
+		t.Fatalf("error %s", err)
+	}
+
+	if resp.DataFileID != createdId {
+		t.Fatalf("ids don't match")
+	}
+
+	if resp.Offset != 0 {
+		t.Fatalf("Wrong offset")
+	}
+
+	uploadHandler, err := prepareUploadHandler(h, resp.DataFileID, resp.Offset)
+	if err != nil {
+		t.Fatalf("Couldn't create uploadHandler %s", err)
+	}
+
+	sendReq := transfer.SendReq{
+		DataFileID: createdId,
+		Bytes:      []byte(testfileData[0:3]),
+	}
+
+	n, _ := uploadHandler.sendReqWrite(&sendReq)
+	if n != 3 {
+		t.Fatalf("Wrong number of bytes written, expected 3, got %d", n)
+	}
+	dfClose(uploadHandler.w, uploadHandler.dataFileID, uploadHandler.session)
+
+	// Start a new uploadReq so we can finish the upload
+	resp, err = h.upload(&uploadReq)
+	if err != nil {
+		t.Fatalf("Completing upload rejected %s", err)
+	}
+
+	if resp.DataFileID != createdId {
+		t.Fatalf("Unexpected creation of a new version of datafile")
+	}
+
+	if resp.Offset != 3 {
+		t.Fatalf("Wrong offset expected 3, got %d", resp.Offset)
+	}
+
+	uploadHandler, err = prepareUploadHandler(h, resp.DataFileID, resp.Offset)
+	if err != nil {
+		t.Fatalf("Couldn't create uploadHandler %s", err)
+	}
+
+	sendReq.Bytes = []byte(testfileData[resp.Offset:])
+	n, _ = uploadHandler.sendReqWrite(&sendReq)
+	if n != len(testfileData[resp.Offset:]) {
+		t.Fatalf("Incorrect number of bytes written expected %d, wrote %d", testfileLen, n)
+	}
+
+	nchecksum, err := handyfile.Hash(md5.New(), datafilePath(h.mcdir, createdId))
+	if err != nil {
+		t.Fatalf("Unable to checksum datafile %s", createdId)
+	}
+
+	dfClose(uploadHandler.w, uploadHandler.dataFileID, uploadHandler.session)
+
+	nchecksumHex := fmt.Sprintf("%x", nchecksum)
+	if nchecksumHex != checksumHex {
+		t.Fatalf("Checksums don't match for uploaded file expected = %s, got %s", checksumHex, nchecksumHex)
+	}
 }
 
 func cleanup(datafileId string) {

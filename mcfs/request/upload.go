@@ -108,6 +108,24 @@ func datafileSize(mcdir, dataFileID string) int64 {
 }
 
 func (req *uploadReq) createNewDataFileVersion() (dataFileID string) {
+	/*
+		newDataFile := *req.dataFile
+		newDataFile.Id = ""
+		newDataFile.Parent = req.dataFile.Id
+		rv, err := r.Table("datafiles").Insert(newDataFile).RunWrite(req.session)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if rv.Inserted == 0 {
+			fmt.Println("Nothing inserted!")
+		}
+		dataFileID = rv.GeneratedKeys[0]
+		// Update datadir to point at new file
+		var ddirs = []string{}
+		for _, ddir := range req.dataFile.DataDirs {
+			if ddir !=
+		}
+	*/
 	return "NEW"
 }
 
@@ -123,7 +141,7 @@ func datafileWrite(w io.WriteCloser, bytes []byte) (int, error) {
 }
 
 func datafileClose(w io.WriteCloser, dataFileID string, session *r.Session) error {
-	// Update datafile in db
+	// Update datafile in db?
 	w.Close()
 	return nil
 }
@@ -173,7 +191,7 @@ func prepareUploadHandler(h *ReqHandler, dataFileID string, offset int64) (*uplo
 
 func (r *ReqHandler) uploadLoop(resp *transfer.UploadResp) ReqStateFN {
 	if uploadHandler, err := prepareUploadHandler(r, resp.DataFileID, resp.Offset); err != nil {
-		r.respError(err) // this is out of sequence...
+		r.respError(err)
 		return r.nextCommand
 	} else {
 		r.respOk(resp)

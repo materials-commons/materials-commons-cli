@@ -139,7 +139,7 @@ func TestCreateFile(t *testing.T) {
 	createFileRequest.Checksum = "abc123"
 	resp, err = h.createFile(&createFileRequest)
 	if err != nil {
-		t.Fatalf("Create file failed")
+		t.Fatalf("Create file failed %s", err)
 	}
 	createdId := resp.ID
 
