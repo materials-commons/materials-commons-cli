@@ -33,6 +33,72 @@ func (m *GobMarshaler) Unmarshal(data interface{}) error {
 	return m.Decode(data)
 }
 
+/* ******************************************************************* */
+
+type ChannelMarshaler struct {
+	request  chan transfer.Request
+	response chan transfer.Response
+	err      error
+}
+
+func NewChannelMarshaler() *ChannelMarshaler {
+	return &ChannelMarshaler{
+		request:  make(chan transfer.Request),
+		response: make(chan transfer.Response),
+	}
+}
+
+func (m *ChannelMarshaler) Marshal(data interface{}) error {
+	if m.err != nil {
+		return m.err
+	}
+	switch t := data.(type) {
+	case *transfer.Request:
+		m.request <- *t
+	case transfer.Request:
+		m.request <- t
+	case *transfer.Response:
+		m.response <- *t
+	case transfer.Response:
+		m.response <- t
+	}
+	return nil
+}
+
+func (m *ChannelMarshaler) Unmarshal(data interface{}) error {
+	if m.err != nil {
+		return m.err
+	}
+
+	select {
+	case req := <-m.request:
+		switch t := data.(type) {
+		case *transfer.Request:
+			*t = req
+		default:
+			return fmt.Errorf("Request data needed")
+		}
+	case resp := <-m.response:
+		switch t := data.(type) {
+		case *transfer.Response:
+			*t = resp
+		default:
+			return fmt.Errorf("Response data needed")
+		}
+	}
+	return nil
+}
+
+func (m *ChannelMarshaler) SetError(err error) {
+	m.err = err
+}
+
+func (m *ChannelMarshaler) ClearError() {
+	m.err = nil
+}
+
+/* ******************************************************************* */
+
 // A IdentityMarshaler saves the data passed and returns it.
 // It can be set to return an error instead. This is useful
 // for testing.
@@ -62,7 +128,7 @@ func (m *RequestResponseMarshaler) Marshal(data interface{}) error {
 	case *transfer.Response:
 		m.response = *t
 	default:
-		return fmt.Errorf("Not a transfer.Request")
+		return fmt.Errorf("Not a valid type")
 	}
 
 	return nil
@@ -82,7 +148,7 @@ func (m *RequestResponseMarshaler) Unmarshal(data interface{}) error {
 	case *transfer.Response:
 		*t = m.response
 	default:
-		fmt.Errorf("Not a transfer.Request")
+		return fmt.Errorf("Not a valid type")
 	}
 
 	return nil
