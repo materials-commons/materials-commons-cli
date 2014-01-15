@@ -1,12 +1,15 @@
 package mcfs
 
 import (
+	"crypto/md5"
 	"fmt"
+	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/gohandy/marshaling"
 	"github.com/materials-commons/materials/transfer"
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 )
 
 const readBufSize = 1024 * 1024 * 20
@@ -84,8 +87,71 @@ func (c *Client) CreateDir(projectID, path string) (dataDirID string, err error)
 	}
 }
 
-func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded int64, err error) {
-	return 0, nil
+func (c *Client) RestartFileUpload(dataFileID, path string) (bytesUploaded int64, err error) {
+	checksum, size, err := fileInfo(path)
+	if err != nil {
+		return 0, err
+	}
+
+	return c.uploadFile(dataFileID, path, checksum, size)
+}
+
+func (c *Client) uploadFile(dataFileID, path, checksum string, size int64) (bytesUploaded int64, err error) {
+	uploadReq := &transfer.UploadReq{
+		DataFileID: dataFileID,
+		Checksum:   checksum,
+		Size:       size,
+	}
+
+	uploadResp, err := c.startUpload(uploadReq)
+	switch {
+	case err != nil:
+		return 0, err
+	case uploadResp.DataFileID != dataFileID:
+		return 0, fmt.Errorf("DataFileIDs don't match")
+	default:
+		n, err := c.sendFile(dataFileID, path, uploadResp.Offset)
+		c.endUpload()
+		return n, err
+	}
+
+}
+
+func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded int64, dataFileID string, err error) {
+	checksum, size, err := fileInfo(path)
+	if err != nil {
+		return 0, "", err
+	}
+
+	createFileReq := &transfer.CreateFileReq{
+		ProjectID: projectID,
+		DataDirID: dataDirID,
+		Name:      filepath.Base(path),
+		Checksum:  checksum,
+		Size:      size,
+	}
+
+	dataFileID, err = c.createFile(createFileReq)
+	if err != nil {
+		return 0, "", err
+	}
+
+	n, err := c.uploadFile(dataFileID, path, checksum, size)
+	return n, dataFileID, err
+}
+
+func fileInfo(path string) (checksum string, size int64, err error) {
+	checksum, err = handyfile.HashStr(md5.New(), path)
+	if err != nil {
+		return
+	}
+
+	finfo, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	size = finfo.Size()
+	return
 }
 
 func (c *Client) createFile(req *transfer.CreateFileReq) (dataFileID string, err error) {
