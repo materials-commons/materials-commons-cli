@@ -6,6 +6,7 @@ import (
 	"github.com/materials-commons/gohandy/handyfile"
 	"github.com/materials-commons/gohandy/marshaling"
 	"github.com/materials-commons/materials/transfer"
+	"github.com/materials-commons/materials/util"
 	"io"
 	"net"
 	"os"
@@ -27,8 +28,17 @@ type Project struct {
 var ErrBadResponseType = fmt.Errorf("Unexpected Response Type")
 
 func NewClient(host string, port uint) (*Client, error) {
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	m := util.NewGobMarshaler(conn)
+	c := &Client{
+		MarshalUnmarshaler: m,
+		conn:               conn,
+	}
+	return c, nil
 }
 
 func (c *Client) Close() {
