@@ -46,7 +46,7 @@ func (c *Client) Close() {
 }
 
 func (c *Client) Login(user, apikey string) error {
-	req := &transfer.LoginReq{
+	req := transfer.LoginReq{
 		User:   user,
 		ApiKey: apikey,
 	}
@@ -56,7 +56,7 @@ func (c *Client) Login(user, apikey string) error {
 }
 
 func (c *Client) Logout() error {
-	req := &transfer.LogoutReq{}
+	req := transfer.LogoutReq{}
 	_, err := c.doRequest(req)
 	return err
 }
@@ -75,6 +75,7 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 	case transfer.CreateProjectResp:
 		return &Project{t.ProjectID, t.DataDirID}, nil
 	default:
+		fmt.Printf("1 %s %T\n", ErrBadResponseType, t)
 		return nil, ErrBadResponseType
 	}
 }
@@ -94,6 +95,7 @@ func (c *Client) CreateDir(projectID, path string) (dataDirID string, err error)
 	case transfer.CreateResp:
 		return t.ID, nil
 	default:
+		fmt.Printf("2 %s %T\n", ErrBadResponseType, t)
 		return "", ErrBadResponseType
 	}
 }
@@ -166,7 +168,7 @@ func fileInfo(path string) (checksum string, size int64, err error) {
 }
 
 func (c *Client) createFile(req *transfer.CreateFileReq) (dataFileID string, err error) {
-	resp, err := c.doRequest(req)
+	resp, err := c.doRequest(*req)
 	if err != nil {
 		return "", err
 	}
@@ -174,13 +176,16 @@ func (c *Client) createFile(req *transfer.CreateFileReq) (dataFileID string, err
 	switch t := resp.(type) {
 	case transfer.CreateResp:
 		return t.ID, nil
+	case *transfer.CreateResp:
+		return t.ID, nil
 	default:
+		fmt.Printf("3 %s %T\n", ErrBadResponseType, t)
 		return "", ErrBadResponseType
 	}
 }
 
 func (c *Client) startUpload(req *transfer.UploadReq) (*transfer.UploadResp, error) {
-	resp, err := c.doRequest(req)
+	resp, err := c.doRequest(*req)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +193,10 @@ func (c *Client) startUpload(req *transfer.UploadReq) (*transfer.UploadResp, err
 	switch t := resp.(type) {
 	case transfer.UploadResp:
 		return &t, nil
+	case *transfer.UploadResp:
+		return t, nil
 	default:
+		fmt.Printf("4 %s %T\n", ErrBadResponseType, t)
 		return nil, ErrBadResponseType
 	}
 }
@@ -250,8 +258,10 @@ func (c *Client) sendBytes(sendReq *transfer.SendReq) (bytesSent int, err error)
 	switch t := resp.(type) {
 	case transfer.SendResp:
 		return t.BytesWritten, nil
-		// there are other cases we need to check for
+	case *transfer.SendResp:
+		return t.BytesWritten, nil
 	default:
+		fmt.Printf("5 %s %T\n", ErrBadResponseType, t)
 		return 0, ErrBadResponseType
 	}
 }
