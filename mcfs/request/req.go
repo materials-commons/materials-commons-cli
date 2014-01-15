@@ -97,15 +97,6 @@ func (h *ReqHandler) badRequestNext(err error) ReqStateFN {
 	return h.nextCommand
 }
 
-func (h *ReqHandler) respOk(respData interface{}) {
-	resp := &transfer.Response{
-		Type: transfer.ROk,
-		Resp: respData,
-	}
-	err := h.Marshal(resp)
-	var _ = err
-}
-
 func (h *ReqHandler) nextCommand() ReqStateFN {
 	var err error
 	var resp interface{}
@@ -129,6 +120,7 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.DeleteReq:
 	case transfer.LogoutReq:
 		resp, err = h.logout(&req)
+		h.sendResp(resp, err)
 		return h.startState
 	case transfer.StatReq:
 		resp, err = h.stat(&req)
@@ -140,13 +132,25 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 		return h.badRequestNext(fmt.Errorf("Bad request %T", req))
 	}
 
+	h.sendResp(resp, err)
+	return h.nextCommand
+}
+
+func (h *ReqHandler) sendResp(resp interface{}, err error) {
 	if err != nil {
 		h.respError(err)
 	} else {
 		h.respOk(resp)
 	}
+}
 
-	return h.nextCommand
+func (h *ReqHandler) respOk(respData interface{}) {
+	resp := &transfer.Response{
+		Type: transfer.ROk,
+		Resp: respData,
+	}
+	err := h.Marshal(resp)
+	var _ = err
 }
 
 func (h *ReqHandler) respError(err error) {
