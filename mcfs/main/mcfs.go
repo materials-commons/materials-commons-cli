@@ -35,6 +35,7 @@ import (
 	"github.com/materials-commons/materials/mcfs/request"
 	"github.com/materials-commons/materials/model"
 	_ "github.com/materials-commons/materials/transfer"
+	"github.com/materials-commons/materials/util"
 	"net"
 	"net/http"
 	"os"
@@ -178,7 +179,7 @@ func acceptConnections(listener *net.TCPListener) {
 			continue
 		}
 
-		m := request.NewGobMarshaler(conn)
+		m := util.NewGobMarshaler(conn)
 		r := request.NewReqHandler(m, session, MCDir)
 		go handleConnection(r, conn, session)
 	}

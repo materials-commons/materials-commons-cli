@@ -3,6 +3,7 @@ package request
 import (
 	"fmt"
 	"github.com/materials-commons/materials/transfer"
+	"github.com/materials-commons/materials/util"
 	"io"
 	"testing"
 )
@@ -10,7 +11,7 @@ import (
 var _ = fmt.Println
 
 func TestReq(t *testing.T) {
-	m := NewRequestResponseMarshaler()
+	m := util.NewRequestResponseMarshaler()
 	h := NewReqHandler(m, session, "")
 
 	m.SetError(io.EOF)

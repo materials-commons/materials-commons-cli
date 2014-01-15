@@ -27,6 +27,7 @@ type Project struct {
 var ErrBadResponseType = fmt.Errorf("Unexpected Response Type")
 
 func NewClient(host string, port uint) (*Client, error) {
+
 	return nil, nil
 }
 

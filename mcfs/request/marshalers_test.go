@@ -3,13 +3,14 @@ package request
 import (
 	"fmt"
 	"github.com/materials-commons/materials/transfer"
+	"github.com/materials-commons/materials/util"
 	"testing"
 )
 
 var _ = fmt.Println
 
 func TestRequestMarshaler(t *testing.T) {
-	m := NewRequestResponseMarshaler()
+	m := util.NewRequestResponseMarshaler()
 	request := transfer.Request{1}
 	m.Marshal(&request)
 	var d transfer.Request
