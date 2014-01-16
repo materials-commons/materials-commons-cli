@@ -203,7 +203,8 @@ type DoneReq struct{}
 type DoneResp struct{}
 
 type LookupReq struct {
-	Field string
-	Value string
-	Type  string
+	Field     string
+	Value     string
+	Type      string
+	LimitToID string
 }
