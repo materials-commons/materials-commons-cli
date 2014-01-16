@@ -118,6 +118,8 @@ func (h *ReqHandler) nextCommand() ReqStateFN {
 	case transfer.DownloadReq:
 	case transfer.MoveReq:
 	case transfer.DeleteReq:
+	case transfer.LookupReq:
+		resp, err = h.lookup(&req)
 	case transfer.LogoutReq:
 		resp, err = h.logout(&req)
 		h.sendResp(resp, err)

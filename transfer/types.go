@@ -3,6 +3,7 @@ package transfer
 import (
 	"encoding/gob"
 	"time"
+	"github.com/materials-commons/materials/model"
 )
 
 func init() {
@@ -48,6 +49,12 @@ func init() {
 	gob.Register(IndexReq{})
 	gob.Register(DoneReq{})
 	gob.Register(DoneResp{})
+
+	gob.Register(LookupReq{})
+
+	gob.Register(model.DataFile{})
+	gob.Register(model.DataDir{})
+	gob.Register(model.Project{})
 }
 
 type Request struct {
@@ -194,3 +201,8 @@ type CloseReq struct{}
 type IndexReq struct{}
 type DoneReq struct{}
 type DoneResp struct{}
+
+type LookupReq struct {
+	ID string
+	EntryType string
+}
