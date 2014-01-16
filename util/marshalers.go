@@ -9,6 +9,35 @@ import (
 
 var _ = fmt.Println
 
+type ChannelReadWriter struct {
+	c   chan []byte
+	err error
+}
+
+func NewChannelReadWriter() *ChannelReadWriter {
+	return &ChannelReadWriter{
+		c: make(chan []byte),
+	}
+}
+
+func (this *ChannelReadWriter) Write(bytes []byte) (n int, err error) {
+	if this.err != nil {
+		return 0, err
+	}
+
+	this.c <- bytes
+	return len(bytes), nil
+}
+
+func (this *ChannelReadWriter) Read(bytes []byte) (n int, err error) {
+	if this.err != nil {
+		return 0, err
+	}
+
+	bytes = <-this.c
+	return len(bytes), nil
+}
+
 // A GobMarshaler marshals and unmarshals data using Gob.
 type GobMarshaler struct {
 	*gob.Encoder

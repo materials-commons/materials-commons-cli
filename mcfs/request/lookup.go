@@ -1,65 +1,62 @@
 package request
 
 import (
-	"github.com/materials-commons/materials/transfer"
-	"github.com/materials-commons/materials/model"
 	"fmt"
+	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/materials/transfer"
 )
 
 type lookupHandler struct {
-	*ReqHandler
-	ID string
+	session *r.Session
+	user    string
 }
 
 func (h *ReqHandler) lookup(req *transfer.LookupReq) (interface{}, error) {
 	l := &lookupHandler{
-		ReqHandler: h,
-		ID: req.ID,
+		session: h.session,
+		user:    h.user,
 	}
-	switch req.EntryType {
+
+	switch req.Type {
 	case "project":
-		return l.lookupProject()
+		rql := r.Table("projects").GetAllByIndex(req.Field, req.Value)
+		var proj model.Project
+		return l.execute(rql, &proj)
 	case "datafile":
-		return l.lookupDataFile()
+		rql := r.Table("datafiles").GetAllByIndex(req.Field, req.Value)
+		var datafile model.DataFile
+		return l.execute(rql, &datafile)
 	case "datadir":
-		return l.lookupDataDir()
+		rql := r.Table("datadirs").GetAllByIndex(req.Field, req.Value)
+		var datadir model.DataDir
+		return l.execute(rql, &datadir)
 	default:
-		return nil, fmt.Errorf("Unknown entry type %s", req.EntryType)
+		return nil, fmt.Errorf("Unknown entry type %s", req.Type)
 	}
 }
 
-func (l *lookupHandler) lookupProject() (*model.Project, error) {
-	proj, err := model.GetProject(l.ID, l.session)
+func (l *lookupHandler) execute(query r.RqlTerm, v interface{}) (interface{}, error) {
+	err := model.GetRow(query, l.session, v)
 	switch {
 	case err != nil:
 		return nil, err
-	case !OwnerGaveAccessTo(proj.Owner, l.user, l.session):
+	case !l.hasAccess(v):
 		return nil, fmt.Errorf("Permission denied")
 	default:
-		return proj, nil
+		return v, nil
 	}
 }
 
-func (l *lookupHandler) lookupDataFile() (*model.DataFile, error) {
-	dataFile, err := model.GetDataFile(l.ID, l.session)
-	switch {
-	case err != nil:
-		return nil, err
-	case !OwnerGaveAccessTo(dataFile.Owner, l.user, l.session):
-		return nil, fmt.Errorf("Permission denied")
-	default:
-		return dataFile, nil
+func (l *lookupHandler) hasAccess(v interface{}) bool {
+	var owner string
+	switch t := v.(type) {
+	case *model.Project:
+		owner = t.Owner
+	case *model.DataDir:
+		owner = t.Owner
+	case *model.DataFile:
+		owner = t.Owner
 	}
-}
-
-func (l *lookupHandler) lookupDataDir() (*model.DataDir, error) {
-	dataDir, err := model.GetDataDir(l.ID, l.session)
-	switch {
-	case err != nil:
-		return nil, err
-	case !OwnerGaveAccessTo(dataDir.Owner, l.user, l.session):
-		return nil, fmt.Errorf("Permission denied")
-	default:
-		return dataDir, nil
-	}
+	return OwnerGaveAccessTo(owner, l.user, l.session)
 }

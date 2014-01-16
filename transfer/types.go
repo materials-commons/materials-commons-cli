@@ -2,8 +2,8 @@ package transfer
 
 import (
 	"encoding/gob"
-	"time"
 	"github.com/materials-commons/materials/model"
+	"time"
 )
 
 func init() {
@@ -203,6 +203,7 @@ type DoneReq struct{}
 type DoneResp struct{}
 
 type LookupReq struct {
-	ID string
-	EntryType string
+	Field string
+	Value string
+	Type  string
 }
