@@ -37,21 +37,32 @@ var dataFileTests = []lookupTest{
 	{"id", "", "", false, "id Existing without permission"},
 	{"blah", "blah", "", false, "No such field"},
 	{"name", "blah", "", false, "No such name"},
-	{"name", "WE43 Heat Treatments/AT 200C", "", true, "Existing name with perimissions"},
-	{"name", "WE43 Heat Treatments/AT 200C", "", true, "Existing name with bad datadir"},
-	{"name", "Synthetic Tooth/Presentation/1F vs Enamel/Mass Spec Compared", "", false, "Existing name without perimissions"},
+	{"name", "8H-4.JPG", "gtarcea@umich.edu$WE43 Heat Treatments_AT 250C_AT 8 hours_Optical Images", true, "Existing name with perimissions"},
+	{"name", "8H-4.JPG", "blah", false, "Existing name with bad datadir"},
+	{"name", "tooth-F.rrng", "mcfada@umich.edu$Synthetic Tooth_Reconstructions", false, "Existing name without perimissions"},
 }
 
 func TestLookupDataFile(t *testing.T) {
+	conductTest(t, dataFileTests, "datafile")
+}
 
+var projectTests = []lookupTest{
+	{"id", "abc123", "", false, "No such id"},
+	{"id", "904886a7-ea57-4de7-8125-6e18c9736fd0", "", true, "id Existing project with permissions"},
+	{"id", "34520277-4a0d-4f79-a30c-b63886f003c4", "", false, "id Existing project without permissions"},
+	{"name", "WE43 Heat Treatments", "", false, "name All other attributes should fail"},
 }
 
 func TestLookupProject(t *testing.T) {
+	conductTest(t, projectTests, "project")
+}
 
+var invalidItemTests = []lookupTest{
+	{"id", "gtarcea@umich.edu", "", false, "id Lookup users table should fail"},
 }
 
 func TestLookupInvalidItem(t *testing.T) {
-
+	conductTest(t, invalidItemTests, "user")
 }
 
 func conductTest(t *testing.T, tests []lookupTest, whichType string) {

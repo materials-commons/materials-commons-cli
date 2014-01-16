@@ -17,48 +17,54 @@ func (h *ReqHandler) lookup(req *transfer.LookupReq) (interface{}, error) {
 		session: h.session,
 		user:    h.user,
 	}
-	var rql r.RqlTerm
 
 	switch req.Type {
 	case "project":
-		if req.Field == "id" {
-			rql = r.Table("projects").Get(req.Value)
-		} else {
-			rql = r.Table("projects").GetAllByIndex(req.Field, req.Value)
+		if req.Field != "id" {
+			return nil, fmt.Errorf("Projects can only be queried by id")
 		}
+		rql := l.projectRql(req)
 		var proj model.Project
 		return l.execute(rql, &proj)
+
 	case "datafile":
-		if req.Field == "id" {
-			rql = r.Table("datafiles").Get(req.Value)
-		} else {
-			/*
-			    selection = list(r.table('datadirs').filter({'owner': user}).outer_join(\
-			 44             r.table('datafiles'), lambda ddirrow, drow: ddirrow['datafiles'].contains(drow['id']))\
-			 45                      .run(g.conn, time_format='raw'))
-			*/
-			rql = r.Table("datadirs").Filter(r.Row.Field("id").Eq(req.LimitToID)).
-				OuterJoin(r.Table("datafiles"),
-				func(ddirRow, dfRow r.RqlTerm) r.RqlTerm {
-					return ddirRow.Field("datafiles").Contains(dfRow.Field("id"))
-				}).Zip().Filter(r.Row.Field(req.Field).Eq(req.Value))
-		}
-		//rql := r.Table("datafiles").GetAllByIndex(req.Field, req.Value)
+		rql := l.dataFileRql(req)
 		var datafile model.DataFile
 		return l.execute(rql, &datafile)
+
 	case "datadir":
-		if req.Field == "id" {
-			rql = r.Table("datadirs").Get(req.Value)
-		} else {
-			rql = r.Table("project2datadir").Filter(r.Row.Field("project_id").Eq(req.LimitToID)).
-				EqJoin("datadir_id", r.Table("datadirs")).Zip().
-				Filter(r.Row.Field(req.Field).Eq(req.Value))
-		}
-		//rql := r.Table("datadirs").GetAllByIndex(req.Field, req.Value)
+		rql := l.dataDirRql(req)
 		var datadir model.DataDir
 		return l.execute(rql, &datadir)
+
 	default:
 		return nil, fmt.Errorf("Unknown entry type %s", req.Type)
+	}
+}
+
+func (l *lookupHandler) projectRql(req *transfer.LookupReq) r.RqlTerm {
+	return r.Table("projects").Get(req.Value)
+}
+
+func (l *lookupHandler) dataFileRql(req *transfer.LookupReq) r.RqlTerm {
+	if req.Field == "id" {
+		return r.Table("datafiles").Get(req.Value)
+	} else {
+		return r.Table("datadirs").Filter(r.Row.Field("id").Eq(req.LimitToID)).
+			OuterJoin(r.Table("datafiles"),
+			func(ddirRow, dfRow r.RqlTerm) r.RqlTerm {
+				return ddirRow.Field("datafiles").Contains(dfRow.Field("id"))
+			}).Zip().Filter(r.Row.Field(req.Field).Eq(req.Value))
+	}
+}
+
+func (l *lookupHandler) dataDirRql(req *transfer.LookupReq) r.RqlTerm {
+	if req.Field == "id" {
+		return r.Table("datadirs").Get(req.Value)
+	} else {
+		return r.Table("project2datadir").Filter(r.Row.Field("project_id").Eq(req.LimitToID)).
+			EqJoin("datadir_id", r.Table("datadirs")).Zip().
+			Filter(r.Row.Field(req.Field).Eq(req.Value))
 	}
 }
 
