@@ -37,6 +37,11 @@ func TestBinaryUrl(t *testing.T) {
 }
 
 func TestDownloadNewBinary(t *testing.T) {
+	testBinary := map[string]string{
+		"windows": "materials.test.exe",
+		"darwin":  "materials.test",
+		"linux":   "materials.test",
+	}
 	ts := httptest.NewServer(http.FileServer(http.Dir("test_data")))
 	defer ts.Close()
 
@@ -45,7 +50,12 @@ func TestDownloadNewBinary(t *testing.T) {
 		t.Fatalf("Unexpected error on download %s\n", err.Error())
 	}
 
-	expectedPath := filepath.Join(os.TempDir(), "materials.test")
+	testBinaryName, ok := testBinary[runtime.GOOS]
+	if !ok {
+		panic(fmt.Sprintf("Unknown OS for test %s", runtime.GOOS))
+	}
+
+	expectedPath := filepath.Join(os.TempDir(), testBinaryName)
 	if path != expectedPath {
 		t.Fatalf("Downloaded to unexpected name %s, expected %s\n", path, expectedPath)
 	}
