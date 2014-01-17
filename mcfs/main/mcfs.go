@@ -32,8 +32,9 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/jessevdk/go-flags"
+	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/contrib/schema"
 	"github.com/materials-commons/materials/mcfs/request"
-	"github.com/materials-commons/materials/model"
 	_ "github.com/materials-commons/materials/transfer"
 	"github.com/materials-commons/materials/util"
 	"net"
@@ -120,7 +121,7 @@ func datafileHandler(writer http.ResponseWriter, req *http.Request) {
 	defer session.Close()
 
 	// Verify key
-	var u model.User
+	var u schema.User
 	query := r.Table("users").GetAllByIndex("apikey", apikey)
 	if err := model.GetRow(query, session, &u); err != nil {
 		http.Error(writer, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

@@ -3,7 +3,8 @@ package request
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/contrib/schema"
 	"github.com/materials-commons/materials/transfer"
 )
 
@@ -24,17 +25,17 @@ func (h *ReqHandler) lookup(req *transfer.LookupReq) (interface{}, error) {
 			return nil, fmt.Errorf("Projects can only be queried by id")
 		}
 		rql := l.projectRql(req)
-		var proj model.Project
+		var proj schema.Project
 		return l.execute(rql, &proj)
 
 	case "datafile":
 		rql := l.dataFileRql(req)
-		var datafile model.DataFile
+		var datafile schema.DataFile
 		return l.execute(rql, &datafile)
 
 	case "datadir":
 		rql := l.dataDirRql(req)
-		var datadir model.DataDir
+		var datadir schema.DataDir
 		return l.execute(rql, &datadir)
 
 	default:
@@ -83,11 +84,11 @@ func (l *lookupHandler) execute(query r.RqlTerm, v interface{}) (interface{}, er
 func (l *lookupHandler) hasAccess(v interface{}) bool {
 	var owner string
 	switch t := v.(type) {
-	case *model.Project:
+	case *schema.Project:
 		owner = t.Owner
-	case *model.DataDir:
+	case *schema.DataDir:
 		owner = t.Owner
-	case *model.DataFile:
+	case *schema.DataFile:
 		owner = t.Owner
 	}
 	return OwnerGaveAccessTo(owner, l.user, l.session)

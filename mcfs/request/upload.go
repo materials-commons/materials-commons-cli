@@ -3,8 +3,9 @@ package request
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/contrib/schema"
 	"github.com/materials-commons/gohandy/handyfile"
-	"github.com/materials-commons/materials/model"
 	"github.com/materials-commons/materials/transfer"
 	"io"
 	"os"
@@ -13,7 +14,7 @@ import (
 type uploadReq struct {
 	*transfer.UploadReq
 	*ReqHandler
-	dataFile *model.DataFile
+	dataFile *schema.DataFile
 }
 
 func (h *ReqHandler) upload(req *transfer.UploadReq) (*transfer.UploadResp, error) {

@@ -3,7 +3,8 @@ package request
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/contrib/schema"
 	"github.com/materials-commons/materials/transfer"
 	"path/filepath"
 	"strings"
@@ -46,13 +47,13 @@ func projectExists(projectName, user string, session *r.Session) bool {
 }
 
 func projectCreate(projectName, user string, session *r.Session) (projectId, datadirId string, err error) {
-	datadir := model.NewDataDir(projectName, "private", user, "")
+	datadir := schema.NewDataDir(projectName, "private", user, "")
 	rv, err := r.Table("datadirs").Insert(datadir).RunWrite(session)
 	if err != nil {
 		return "", "", err
 	}
 	datadirId = datadir.Id
-	project := model.NewProject(projectName, datadirId, user)
+	project := schema.NewProject(projectName, datadirId, user)
 	rv, err = r.Table("projects").Insert(project).RunWrite(session)
 	if err != nil {
 		return "", "", err
@@ -73,7 +74,7 @@ func (h *ReqHandler) createFile(req *transfer.CreateFileReq) (*transfer.CreateRe
 		return nil, err
 	}
 
-	df := model.NewDataFile(req.Name, "private", h.user)
+	df := schema.NewDataFile(req.Name, "private", h.user)
 	df.DataDirs = append(df.DataDirs, req.DataDirID)
 	df.Checksum = req.Checksum
 	df.Size = req.Size
@@ -146,7 +147,7 @@ func (h *ReqHandler) createDir(req *transfer.CreateDirReq) (*transfer.CreateResp
 }
 
 func (h *ReqHandler) createDataDir(req *transfer.CreateDirReq) (*transfer.CreateResp, error) {
-	var datadir model.DataDir
+	var datadir schema.DataDir
 	proj, err := model.GetProject(req.ProjectID, h.session)
 	switch {
 	case err != nil:
@@ -160,7 +161,7 @@ func (h *ReqHandler) createDataDir(req *transfer.CreateDirReq) (*transfer.Create
 		if parent, err = getParent(req.Path, h.session); err != nil {
 			return nil, err
 		}
-		datadir = model.NewDataDir(req.Path, "private", h.user, parent)
+		datadir = schema.NewDataDir(req.Path, "private", h.user, parent)
 		var wr r.WriteResponse
 		wr, err = r.Table("datadirs").Insert(datadir).RunWrite(h.session)
 		if err == nil && wr.Inserted > 0 {
@@ -192,7 +193,7 @@ func validDirPath(projName, dirPath string) bool {
 func getParent(ddirPath string, session *r.Session) (string, error) {
 	parent := filepath.Dir(ddirPath)
 	query := r.Table("datadirs").GetAllByIndex("name", parent)
-	var d model.DataDir
+	var d schema.DataDir
 	err := model.GetRow(query, session, &d)
 	if err != nil {
 		return "", fmt.Errorf("No parent for %s", ddirPath)

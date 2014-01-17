@@ -2,7 +2,8 @@ package request
 
 import (
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/contrib/schema"
 )
 
 type modelValidator struct {
@@ -45,7 +46,7 @@ func (v modelValidator) datafileExistsInDataDir(datadirID, datafileName string) 
 	defer rows.Close()
 
 	for rows.Next() {
-		var df model.DataFile
+		var df schema.DataFile
 		rows.Scan(&df)
 		for _, ddirID := range df.DataDirs {
 			if datadirID == ddirID {

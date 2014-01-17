@@ -3,7 +3,7 @@ package request
 import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/model"
 	"github.com/materials-commons/materials/transfer"
 )
 

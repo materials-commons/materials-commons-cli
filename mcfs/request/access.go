@@ -2,7 +2,7 @@ package request
 
 import (
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/model"
 )
 
 // ownerGaveAccessTo checks to see if the user making the request has access to the

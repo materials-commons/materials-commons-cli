@@ -2,7 +2,8 @@ package request
 
 import (
 	"fmt"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/contrib/schema"
 	"github.com/materials-commons/materials/transfer"
 )
 
@@ -18,7 +19,7 @@ func (h *ReqHandler) stat(req *transfer.StatReq) (*transfer.StatResp, error) {
 	}
 }
 
-func respStat(df *model.DataFile) *transfer.StatResp {
+func respStat(df *schema.DataFile) *transfer.StatResp {
 	return &transfer.StatResp{
 		DataFileID: df.Id,
 		Name:       df.Name,

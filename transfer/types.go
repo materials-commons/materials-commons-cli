@@ -2,7 +2,7 @@ package transfer
 
 import (
 	"encoding/gob"
-	"github.com/materials-commons/materials/model"
+	"github.com/materials-commons/contrib/schema"
 	"time"
 )
 
@@ -52,9 +52,9 @@ func init() {
 
 	gob.Register(LookupReq{})
 
-	gob.Register(model.DataFile{})
-	gob.Register(model.DataDir{})
-	gob.Register(model.Project{})
+	gob.Register(schema.DataFile{})
+	gob.Register(schema.DataDir{})
+	gob.Register(schema.Project{})
 }
 
 type Request struct {
