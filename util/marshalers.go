@@ -3,7 +3,7 @@ package util
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/materials-commons/materials/transfer"
+	"github.com/materials-commons/mcfs/protocol"
 	"io"
 )
 
@@ -65,15 +65,15 @@ func (m *GobMarshaler) Unmarshal(data interface{}) error {
 /* ******************************************************************* */
 
 type ChannelMarshaler struct {
-	request  chan transfer.Request
-	response chan transfer.Response
+	request  chan protocol.Request
+	response chan protocol.Response
 	err      error
 }
 
 func NewChannelMarshaler() *ChannelMarshaler {
 	return &ChannelMarshaler{
-		request:  make(chan transfer.Request),
-		response: make(chan transfer.Response),
+		request:  make(chan protocol.Request),
+		response: make(chan protocol.Response),
 	}
 }
 
@@ -82,13 +82,13 @@ func (m *ChannelMarshaler) Marshal(data interface{}) error {
 		return m.err
 	}
 	switch t := data.(type) {
-	case *transfer.Request:
+	case *protocol.Request:
 		m.request <- *t
-	case transfer.Request:
+	case protocol.Request:
 		m.request <- t
-	case *transfer.Response:
+	case *protocol.Response:
 		m.response <- *t
-	case transfer.Response:
+	case protocol.Response:
 		m.response <- t
 	}
 	return nil
@@ -102,14 +102,14 @@ func (m *ChannelMarshaler) Unmarshal(data interface{}) error {
 	select {
 	case req := <-m.request:
 		switch t := data.(type) {
-		case *transfer.Request:
+		case *protocol.Request:
 			*t = req
 		default:
 			return fmt.Errorf("Request data needed")
 		}
 	case resp := <-m.response:
 		switch t := data.(type) {
-		case *transfer.Response:
+		case *protocol.Response:
 			*t = resp
 		default:
 			return fmt.Errorf("Response data needed")
@@ -133,8 +133,8 @@ func (m *ChannelMarshaler) ClearError() {
 // for testing.
 
 type RequestResponseMarshaler struct {
-	request  transfer.Request
-	response transfer.Response
+	request  protocol.Request
+	response protocol.Response
 	err      error
 }
 
@@ -152,9 +152,9 @@ func (m *RequestResponseMarshaler) Marshal(data interface{}) error {
 	}
 
 	switch t := data.(type) {
-	case *transfer.Request:
+	case *protocol.Request:
 		m.request = *t
-	case *transfer.Response:
+	case *protocol.Response:
 		m.response = *t
 	default:
 		return fmt.Errorf("Not a valid type")
@@ -172,9 +172,9 @@ func (m *RequestResponseMarshaler) Unmarshal(data interface{}) error {
 	}
 
 	switch t := data.(type) {
-	case *transfer.Request:
+	case *protocol.Request:
 		*t = m.request
-	case *transfer.Response:
+	case *protocol.Response:
 		*t = m.response
 	default:
 		return fmt.Errorf("Not a valid type")
@@ -198,9 +198,9 @@ func (m *RequestResponseMarshaler) ClearError() {
 // in some test cases.
 func (m *RequestResponseMarshaler) SetData(data interface{}) {
 	switch t := data.(type) {
-	case *transfer.Request:
+	case *protocol.Request:
 		m.request = *t
-	case *transfer.Response:
+	case *protocol.Response:
 		m.response = *t
 	}
 }
