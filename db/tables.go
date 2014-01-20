@@ -1,9 +1,10 @@
 package db
 
 import (
-//"database/sql"
+	"fmt"
+	"database/sql"
 //"github.com/jmoiron/sqlx"
-//"github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -21,3 +22,16 @@ create table project_filter (
 )
 `
 )
+
+func init() {
+	fmt.Println("in db.tables init")
+	db, err := sql.Open("sqlite3", "file:/tmp/sql.db?cached=shared&mode=rwc")
+	if err != nil {
+		fmt.Println("sql.Open err =", err)
+	}
+	_, err = db.Exec(projectSchema)
+	if err != nil {
+		fmt.Println("Exec err =", err)
+	}
+	db.Close()
+}

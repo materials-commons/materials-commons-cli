@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	_ "github.com/materials-commons/materials/db"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
