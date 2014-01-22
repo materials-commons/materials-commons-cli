@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	//"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -105,10 +104,10 @@ var schemas = []schemaCommand{
 	{
 		description: "Trigger To Update Projects For DataDirs",
 		create: `
-  create trigger project_datadir after insert on datadirs
-  begin
-    insert into project2datadir(project_id, datadir_id) values(new.project_id, new.id);
-  end`,
+      create trigger project_datadir after insert on datadirs
+      begin
+        insert into project2datadir(project_id, datadir_id) values(new.project_id, new.id);
+      end`,
 	},
 	{
 		description: "Trigger to Update Projects For DataFiles",

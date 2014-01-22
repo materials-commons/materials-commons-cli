@@ -141,6 +141,24 @@ func TestDataFiles(t *testing.T) {
 	if datafile != datafiles[0] {
 		t.Fatalf("Inserted datafile different than retrieved version: i/r %#v/%#v", datafile, datafiles[0])
 	}
+
+	// Test that trigger fired
+	var count int
+	if err = DataFiles.QueryRow("select count(project_id) from project2datafile;").Scan(&count); err != nil {
+		t.Errorf("Select count on project2datafile failed: %s", err)
+	}
+	if count != 1 {
+		t.Errorf("Expected count of 1 for project2datafile, got %d", count)
+	}
+
+	count = 0
+	if err = DataFiles.QueryRow("select count(datadir_id) from datadir2datafile;").Scan(&count); err != nil {
+		t.Errorf("Select count on datadir2datafile failed: %s", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Expected count of 1 for datadir2datafile, got %d", count)
+	}
 }
 
 func TestDataDirs(t *testing.T) {
@@ -174,12 +192,21 @@ func TestDataDirs(t *testing.T) {
 	if datadir != datadirs[0] {
 		t.Fatalf("Inserted datadir different than retrieved version: i/r %#v/%#v", datadirs, datadirs[0])
 	}
+
+	// Test that trigger fired
+	var count int
+	if err = DataDirs.QueryRow("select count(project_id) from project2datadir;").Scan(&count); err != nil {
+		t.Errorf("Select count on project2datadir failed: %s", err)
+	}
+	if count != 1 {
+		t.Errorf("Expected count of 1 for project2datadir, got %d", count)
+	}
+
 	defer cleanupMT()
 }
 
 func cleanupMT() {
+	fmt.Println("cleanupMT")
 	tdb.Close()
-	//os.RemoveAll("/tmp/sqltest.db")
-
-	os.RemoveAll("")
+	os.RemoveAll("/tmp/sqltest.db")
 }
