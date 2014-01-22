@@ -8,6 +8,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/autoupdate"
+	_ "github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/site"
 	"github.com/materials-commons/materials/wsmaterials"
 	"io/ioutil"
@@ -16,7 +17,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	_ "github.com/materials-commons/materials/db"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
