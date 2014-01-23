@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/materials-commons/materials/db/model"
+	"github.com/materials-commons/materials/db/schema"
 )
 
 var (
@@ -27,19 +28,19 @@ func init() {
 	pQueries := model.ModelQueries{
 		Insert: "insert into projects (name, path, mcid) values (:name, :path, :mcid)",
 	}
-	ProjectsModel = model.New(Project{}, "projects", pQueries)
+	ProjectsModel = model.New(schema.Project{}, "projects", pQueries)
 
 	peQueries := model.ModelQueries{
 		Insert: `insert into project_events (path, event, event_time, project_id)
                  values (:path, :event, :event_time, :project_id)`,
 	}
-	ProjectEventsModel = model.New(ProjectEvent{}, "project_events", peQueries)
+	ProjectEventsModel = model.New(schema.ProjectEvent{}, "project_events", peQueries)
 
 	ddirQueries := model.ModelQueries{
 		Insert: `insert into datadirs (mcid, project_id, name, path, parent_mcid, parent)
                  values (:mcid, :project_id, :name, :path, :parent_mcid, :parent)`,
 	}
-	DataDirsModel = model.New(DataDir{}, "datadirs", ddirQueries)
+	DataDirsModel = model.New(schema.DataDir{}, "datadirs", ddirQueries)
 
 	dfQueries := model.ModelQueries{
 		Insert: `insert into datafiles
@@ -47,5 +48,5 @@ func init() {
                  values
                   (:mcid, :name, :path, :datadir_id, :project_id, :size, :checksum, :last_upload, :mtime, :version, :parent_mcid, :parent)`,
 	}
-	DataFilesModel = model.New(DataFile{}, "datafiles", dfQueries)
+	DataFilesModel = model.New(schema.DataFile{}, "datafiles", dfQueries)
 }

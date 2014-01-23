@@ -1,9 +1,8 @@
-package db
+package schema
 
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type schemaCommand struct {
@@ -120,16 +119,9 @@ var schemas = []schemaCommand{
 	},
 }
 
-func Create(path string) error {
-	dbArgs := fmt.Sprintf("file:%s?cached=shared&mode=rwc", path)
-	db, err := sql.Open("sqlite3", dbArgs)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
+func Create(db *sql.DB) error {
 	for _, schema := range schemas {
-		_, err = db.Exec(schema.create)
+		_, err := db.Exec(schema.create)
 		if err != nil {
 			return fmt.Errorf("Failed on create for %s: %s", schema.description, err)
 		}

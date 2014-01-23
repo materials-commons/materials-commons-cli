@@ -1,8 +1,10 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/materials-commons/materials/db/schema"
 	"os"
 	"testing"
 	"time"
@@ -13,18 +15,26 @@ var _ = fmt.Println
 var tdb *sqlx.DB
 
 func init() {
-	Create("/tmp/sqltest.db")
 	var err error
 	dbArgs := fmt.Sprintf("file:%s?cached=shared&mode=rwc", "/tmp/sqltest.db")
-	tdb, err = sqlx.Open("sqlite3", dbArgs)
+	db, err := sql.Open("sqlite3", dbArgs)
+	if err != nil {
+		panic("Couldn't open test db")
+	}
+	err = schema.Create(db)
 	if err != nil {
 		panic("Couldn't create test db")
+	}
+	db.Close()
+	tdb, err = sqlx.Open("sqlite3", dbArgs)
+	if err != nil {
+		panic("Couldn't reopen db under sqlx")
 	}
 	Use(tdb)
 }
 
 func TestProjects(t *testing.T) {
-	proj := Project{
+	proj := schema.Project{
 		Name: "testproject",
 		Path: "/tmp/testproject",
 		MCId: "abc123",
@@ -35,7 +45,7 @@ func TestProjects(t *testing.T) {
 		t.Fatalf("Insert Project %#v into projects failed %s", proj, err)
 	}
 
-	projects := []Project{}
+	projects := []schema.Project{}
 	err = Projects.Select(&projects, "select * from projects")
 	if err != nil {
 		t.Fatalf("Select of projects failed: %s", err)
@@ -49,10 +59,27 @@ func TestProjects(t *testing.T) {
 	if projects[0] != proj {
 		t.Fatalf("Inserted proj different than retrieved version: i/r %#v/%#v", proj, projects[0])
 	}
+
+	// Test retrieve a single project
+	var p schema.Project
+	err = Projects.Get(&p, "select * from projects where path=$1", proj.Path)
+	if err != nil {
+		t.Errorf("Unable to retrieve a single project: %s", err)
+	}
+
+	if p != proj {
+		t.Errorf("Inserted object different from retrieved object i/r %#v/%#v", proj, p)
+	}
+
+	// Test retrieve non existing
+	err = Projects.Get(&p, "select * from projects where path=$1", "/does/not/exist")
+	if err == nil {
+		t.Errorf("Retrieved non existing project got: %#v", p)
+	}
 }
 
 func TestProjectEvents(t *testing.T) {
-	event := ProjectEvent{
+	event := schema.ProjectEvent{
 		Path:      "/tmp/testproject/abc.txt",
 		Event:     "Delete",
 		EventTime: time.Now(),
@@ -65,7 +92,7 @@ func TestProjectEvents(t *testing.T) {
 		t.Fatalf("Insert ProjectEvent %#v into project_events failed %s", event, err)
 	}
 
-	events := []ProjectEvent{}
+	events := []schema.ProjectEvent{}
 	err = ProjectEvents.Select(&events, "select * from project_events")
 	if err != nil {
 		t.Fatalf("Select of project_events failed: %s", err)
@@ -93,7 +120,7 @@ func TestProjectEvents(t *testing.T) {
 
 func TestDataFiles(t *testing.T) {
 	now := time.Now()
-	datafile := DataFile{
+	datafile := schema.DataFile{
 		MCId:       "def456",
 		Name:       "abc.txt",
 		Path:       "/tmp/testproject/abc.txt",
@@ -113,7 +140,7 @@ func TestDataFiles(t *testing.T) {
 		t.Fatalf("Insert DataFile %#v into datafiles failed %s", datafile, err)
 	}
 
-	datafiles := []DataFile{}
+	datafiles := []schema.DataFile{}
 	err = DataFiles.Select(&datafiles, "select * from datafiles")
 	if err != nil {
 		t.Fatalf("Select of datafiles failed: %s", err)
@@ -162,7 +189,7 @@ func TestDataFiles(t *testing.T) {
 }
 
 func TestDataDirs(t *testing.T) {
-	datadir := DataDir{
+	datadir := schema.DataDir{
 		MCId:       "ghi789",
 		ProjectID:  1,
 		Name:       "testproject",
@@ -177,7 +204,7 @@ func TestDataDirs(t *testing.T) {
 		t.Fatalf("Insert DataDir %#v into datadirs failed %s", datadir, err)
 	}
 
-	datadirs := []DataDir{}
+	datadirs := []schema.DataDir{}
 	err = DataDirs.Select(&datadirs, "select * from datadirs")
 
 	if err != nil {
