@@ -2,7 +2,7 @@ package site
 
 import (
 	"fmt"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials"
 	"io/ioutil"
 	"net/http"
@@ -28,7 +28,7 @@ func TestDeployingSite(t *testing.T) {
 		t.Fatalf("Unable to download materials.tar.gz %s", err.Error())
 	}
 
-	if !handyfile.Exists(downloadedTo) {
+	if !file.Exists(downloadedTo) {
 		t.Fatalf("Download failed, unable to locate materials.tar.gz at %s\n", downloadedTo)
 	}
 

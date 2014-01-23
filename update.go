@@ -4,7 +4,7 @@ import (
 	"bitbucket.org/kardianos/osext"
 	"fmt"
 	"github.com/materials-commons/gohandy/ezhttp"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -87,7 +87,7 @@ func Update(url string) bool {
 // me returns current binary path and checksum.
 func me() (mypath string, mychecksum uint32) {
 	mypath, _ = osext.Executable()
-	mychecksum = handyfile.Checksum32(mypath)
+	mychecksum = file.Checksum32(mypath)
 	return
 }
 
@@ -100,7 +100,7 @@ func downloaded(url string) (dlpath string, dlchecksum uint32, err error) {
 		return
 	}
 
-	dlchecksum = handyfile.Checksum32(dlpath)
+	dlchecksum = file.Checksum32(dlpath)
 	return
 }
 

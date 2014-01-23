@@ -27,3 +27,7 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 func (c *Client) UploadProject(projectName string) {
 
 }
+
+func (c *Client) IndexProject(path string) error {
+	return nil
+}

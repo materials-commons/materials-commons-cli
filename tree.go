@@ -2,7 +2,7 @@ package materials
 
 import (
 	"fmt"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -33,7 +33,7 @@ func (p Project) Tree() ([]*ProjectFileEntry, error) {
 		knownDirectories: make(map[string]*ProjectFileEntry),
 	}
 
-	if !handyfile.Exists(p.Path) {
+	if !file.Exists(p.Path) {
 		return nil, fmt.Errorf("Directory path '%s' doesn't exist for project %s", p.Path, p.Name)
 	}
 

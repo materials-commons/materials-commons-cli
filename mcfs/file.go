@@ -3,7 +3,7 @@ package mcfs
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/mcfs/protocol"
 	"io"
 	"os"
@@ -64,7 +64,7 @@ func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded
 }
 
 func fileInfo(path string) (checksum string, size int64, err error) {
-	checksum, err = handyfile.HashStr(md5.New(), path)
+	checksum, err = file.HashStr(md5.New(), path)
 	if err != nil {
 		return
 	}

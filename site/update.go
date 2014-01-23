@@ -3,7 +3,7 @@ package site
 import (
 	"fmt"
 	"github.com/materials-commons/gohandy/ezhttp"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials"
 	"os"
 	"path/filepath"
@@ -37,12 +37,12 @@ func Download() (to string, err error) {
 // the new one is more recent.
 func IsNew(downloaded string) bool {
 	currentArchivePath := filepath.Join(materials.Config.User.DotMaterialsPath(), materialsArchive)
-	if !handyfile.Exists(currentArchivePath) {
+	if !file.Exists(currentArchivePath) {
 		return true
 	}
 
-	downloadedChecksum := handyfile.Checksum32(downloaded)
-	currentArchiveChecksum := handyfile.Checksum32(currentArchivePath)
+	downloadedChecksum := file.Checksum32(downloaded)
+	currentArchiveChecksum := file.Checksum32(currentArchivePath)
 	if currentArchiveChecksum != downloadedChecksum {
 		return true
 	}
@@ -59,7 +59,7 @@ func Deploy(downloaded string) bool {
 		return false
 	}
 
-	tr, err := handyfile.NewTarGz(currentArchivePath)
+	tr, err := file.NewTarGz(currentArchivePath)
 	if err != nil {
 		return false
 	}
@@ -71,7 +71,7 @@ func Deploy(downloaded string) bool {
 }
 
 func moveFile(src, dest string) error {
-	err := handyfile.Copy(src, dest)
+	err := file.Copy(src, dest)
 	if err != nil {
 		return err
 	}

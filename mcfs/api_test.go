@@ -5,7 +5,7 @@ import (
 	"fmt"
 	r "github.com/dancannon/gorethink"
 	"github.com/materials-commons/contrib/model"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/gohandy/marshaling"
 	"github.com/materials-commons/materials/util"
 	"github.com/materials-commons/mcfs/request"
@@ -97,7 +97,7 @@ func TestRestartFileUpload(t *testing.T) {
 	ioutil.WriteFile(filePath, []byte(fileData), 0777)
 	filePathPartial := filepath.Join(MCDir, "testnewfilerestartpartial.txt")
 	ioutil.WriteFile(filePathPartial, []byte(fileData[:10]), 0777)
-	realChecksum, err := handyfile.HashStr(md5.New(), filePath)
+	realChecksum, err := file.HashStr(md5.New(), filePath)
 	var _ = realChecksum
 	realSize := len(fileData)
 	var _ = realSize

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/materials-commons/gohandy/handyfile"
+	"github.com/materials-commons/gohandy/file"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -57,7 +57,7 @@ func (p *ProjectDB) Reload() error {
 
 // loadProjects reads the projects directory, and loads each *.project file found in it.
 func (p *ProjectDB) loadProjects() error {
-	if !handyfile.IsDir(p.path) {
+	if !file.IsDir(p.path) {
 		return fmt.Errorf("ProjectDB must be a directory: '%s'", p.path)
 	}
 
