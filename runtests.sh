@@ -3,6 +3,7 @@
 rm -rf test_data/.materials
 rm -rf test_data/corrupted
 rm -rf test_data/conversion
+rm -f /tmp/sqltest*.db
 mkdir -p test_data/.materials/projectdb
 mkdir -p test_data/conversion/.materials
 cp test_data/*.project test_data/.materials/projectdb

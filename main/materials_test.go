@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bitbucket.org/kardianos/osext"
 	"github.com/materials-commons/materials"
+	"path/filepath"
 	"testing"
 )
 
@@ -37,4 +39,30 @@ func verify(project *materials.Project, path, status string, t *testing.T) {
 	if project.Status != status {
 		t.Fatalf("Status don't match, expected %s, got %s\n", project.Status, status)
 	}
+}
+
+func TestAddProject(t *testing.T) {
+	u, _ := materials.NewUserFrom("../test_data")
+	materials.ConfigInitialize(u)
+
+	// Test add new project
+	folderPath, _ := osext.ExecutableFolder()
+
+	projectName := filepath.Base(folderPath)
+	err := addProject(projectName, folderPath)
+	if err != nil {
+		t.Errorf("Unable to create a valid project %s:%s", projectName, folderPath)
+	}
+
+	// Test add existing project
+
+	// Test add with blank project name
+
+	// Test add with blank project path
+
+	// Test add with path that doesn't exist
+
+	// Test add relative path
+
+	// Test add where last element of project path != project name
 }

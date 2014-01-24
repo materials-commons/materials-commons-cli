@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
+	"github.com/materials-commons/contrib/mc"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/autoupdate"
 	_ "github.com/materials-commons/materials/db"
+	"github.com/materials-commons/materials/mcfs"
 	"github.com/materials-commons/materials/site"
 	"github.com/materials-commons/materials/wsmaterials"
 	"io/ioutil"
@@ -17,7 +19,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"github.com/materials-commons/materials/mcfs"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
@@ -78,6 +79,27 @@ func listProjects() {
 	}
 }
 
+func addProject(projectName, projectPath string) error {
+	if materials.CurrentUserProjectDB().Exists(projectName) {
+		fmt.Printf("Project %s already exists\n", projectName)
+		return mc.ErrExists
+	}
+
+	p, err := materials.NewProject(projectName, projectPath, "Unloaded")
+	if err != nil {
+		fmt.Printf("Unable to create project %s: %s\n", projectName, err)
+		return err
+	}
+
+	if err = materials.CurrentUserProjectDB().Add(*p); err != nil {
+		fmt.Printf("Unable to add project %s: %s\n", projectName, err)
+		return err
+	}
+
+	fmt.Println("Create new project:", projectName)
+	return nil
+}
+
 func convertProjects() {
 	setupProjectsDir()
 	convertProjectsFile()
@@ -123,8 +145,7 @@ func convertProjectsFile() {
 
 func uploadProject(projectName string) {
 
-	fmt.Println("projectName = ", projectName)
-	c, err := mcfs.NewClient("localhost", 35862)
+	c, err := mcfs.NewClient("materialscommons.org", 35862)
 	if err != nil {
 		fmt.Println("Unable create client", err)
 	}
@@ -229,6 +250,8 @@ func main() {
 		initialize()
 	case opts.Project.List:
 		listProjects()
+	case opts.Project.Add:
+		addProject(opts.Project.Project, opts.Project.Directory)
 	case opts.Project.Convert:
 		convertProjects()
 	case opts.Project.Upload:

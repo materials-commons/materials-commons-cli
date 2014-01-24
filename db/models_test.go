@@ -23,7 +23,7 @@ func init() {
 	}
 	err = schema.Create(db)
 	if err != nil {
-		panic("Couldn't create test db")
+		panic(fmt.Sprintf("Couldn't create test db: %s", err))
 	}
 	db.Close()
 	tdb, err = sqlx.Open("sqlite3", dbArgs)
