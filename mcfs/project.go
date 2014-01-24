@@ -29,9 +29,6 @@ func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesRes
 	case protocol.ProjectEntriesResp:
 		fmt.Println("not pointer")
 		return &t, nil
-	case *protocol.ProjectEntriesResp:
-		fmt.Println("pointer")
-		return t, nil
 	default:
 		return nil, ErrBadResponseType
 	}

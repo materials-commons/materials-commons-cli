@@ -26,8 +26,6 @@ func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID strin
 	switch t := resp.(type) {
 	case protocol.CreateResp:
 		return t.ID, nil
-	case *protocol.CreateResp:
-		return t.ID, nil
 	default:
 		fmt.Printf("2 %s %T\n", ErrBadResponseType, t)
 		return "", ErrBadResponseType

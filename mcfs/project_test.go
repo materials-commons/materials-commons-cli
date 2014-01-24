@@ -62,11 +62,11 @@ func TestProjectExistence(t *testing.T) {
 }
 
 func TestUploadNewProject(t *testing.T) {
+	// Test large upload
 	if true {
 		return
 	}
-	// Test large upload
-	err := c.UploadNewProject("/home/gtarcea/Synthetic Tooth")
+	err := c.UploadNewProject("/home/gtarcea/ST1")
 	if err != nil {
 		t.Errorf("Failed to upload %s", err)
 	}

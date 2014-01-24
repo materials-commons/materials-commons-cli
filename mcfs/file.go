@@ -19,27 +19,6 @@ func (c *Client) RestartFileUpload(dataFileID, path string) (bytesUploaded int64
 	return c.uploadFile(dataFileID, path, checksum, size)
 }
 
-func (c *Client) uploadFile(dataFileID, path, checksum string, size int64) (bytesUploaded int64, err error) {
-	uploadReq := &protocol.UploadReq{
-		DataFileID: dataFileID,
-		Checksum:   checksum,
-		Size:       size,
-	}
-
-	uploadResp, err := c.startUpload(uploadReq)
-	switch {
-	case err != nil:
-		return 0, err
-	case uploadResp.DataFileID != dataFileID:
-		return 0, fmt.Errorf("DataFileIDs don't match")
-	default:
-		n, err := c.sendFile(dataFileID, path, uploadResp.Offset)
-		c.endUpload()
-		return n, err
-	}
-
-}
-
 func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded int64, dataFileID string, err error) {
 	checksum, size, err := fileInfo(path)
 	if err != nil {
@@ -86,12 +65,31 @@ func (c *Client) createFile(req *protocol.CreateFileReq) (dataFileID string, err
 	switch t := resp.(type) {
 	case protocol.CreateResp:
 		return t.ID, nil
-	case *protocol.CreateResp:
-		return t.ID, nil
 	default:
 		fmt.Printf("3 %s %T\n", ErrBadResponseType, t)
 		return "", ErrBadResponseType
 	}
+}
+
+func (c *Client) uploadFile(dataFileID, path, checksum string, size int64) (bytesUploaded int64, err error) {
+	uploadReq := &protocol.UploadReq{
+		DataFileID: dataFileID,
+		Checksum:   checksum,
+		Size:       size,
+	}
+
+	uploadResp, err := c.startUpload(uploadReq)
+	switch {
+	case err != nil:
+		return 0, err
+	case uploadResp.DataFileID != dataFileID:
+		return 0, fmt.Errorf("DataFileIDs don't match")
+	default:
+		n, err := c.sendFile(dataFileID, path, uploadResp.Offset)
+		c.endUpload()
+		return n, err
+	}
+
 }
 
 func (c *Client) startUpload(req *protocol.UploadReq) (*protocol.UploadResp, error) {
@@ -103,8 +101,6 @@ func (c *Client) startUpload(req *protocol.UploadReq) (*protocol.UploadResp, err
 	switch t := resp.(type) {
 	case protocol.UploadResp:
 		return &t, nil
-	case *protocol.UploadResp:
-		return t, nil
 	default:
 		fmt.Printf("4 %s %T\n", ErrBadResponseType, t)
 		return nil, ErrBadResponseType
@@ -167,8 +163,6 @@ func (c *Client) sendBytes(sendReq *protocol.SendReq) (bytesSent int, err error)
 
 	switch t := resp.(type) {
 	case protocol.SendResp:
-		return t.BytesWritten, nil
-	case *protocol.SendResp:
 		return t.BytesWritten, nil
 	default:
 		fmt.Printf("5 %s %T\n", ErrBadResponseType, t)

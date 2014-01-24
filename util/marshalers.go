@@ -87,15 +87,26 @@ func (m *ChannelMarshaler) Marshal(data interface{}) error {
 	if m.err != nil {
 		return m.err
 	}
+	var req protocol.Request
+	var resp protocol.Response
+
 	switch t := data.(type) {
 	case *protocol.Request:
-		m.request <- *t
+		m.encoder.Encode(t)
+		m.decoder.Decode(&req)
+		m.request <- req
 	case protocol.Request:
-		m.request <- t
+		m.encoder.Encode(t)
+		m.decoder.Decode(&req)
+		m.request <- req
 	case *protocol.Response:
-		m.response <- *t
+		m.encoder.Encode(t)
+		m.decoder.Decode(&resp)
+		m.response <- resp
 	case protocol.Response:
-		m.response <- t
+		m.encoder.Encode(t)
+		m.decoder.Decode(&resp)
+		m.response <- resp
 	}
 	return nil
 }
