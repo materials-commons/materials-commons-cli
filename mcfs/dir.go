@@ -3,12 +3,19 @@ package mcfs
 import (
 	"fmt"
 	"github.com/materials-commons/mcfs/protocol"
+	"strings"
 )
 
-func (c *Client) CreateDir(projectID, path string) (dataDirID string, err error) {
-	req := &protocol.CreateDirReq{
+func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID string, err error) {
+	i := strings.Index(path, projectName)
+	if i == -1 {
+		return "", fmt.Errorf("Invalid path for project")
+	}
+	
+	properPath := path[i:] // only send up portion starting from project
+	req := protocol.CreateDirReq{
 		ProjectID: projectID,
-		Path:      path,
+		Path:      properPath,
 	}
 
 	resp, err := c.doRequest(req)
@@ -18,6 +25,8 @@ func (c *Client) CreateDir(projectID, path string) (dataDirID string, err error)
 
 	switch t := resp.(type) {
 	case protocol.CreateResp:
+		return t.ID, nil
+	case *protocol.CreateResp:
 		return t.ID, nil
 	default:
 		fmt.Printf("2 %s %T\n", ErrBadResponseType, t)

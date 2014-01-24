@@ -8,6 +8,7 @@ import (
 	"github.com/materials-commons/materials/db/schema"
 	"github.com/materials-commons/mcfs/protocol"
 	"path/filepath"
+	"os"
 )
 
 var (
@@ -55,8 +56,41 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 	}
 }
 
-func (c *Client) UploadProject(projectName string) {
+func (c *Client) UploadNewProject(path string) error {
+	projectName := filepath.Base(path)
+	project, err := c.CreateProject(projectName)
+	if err != nil {
+		return err
+	}
 
+	var dataDirs = map[string]string{}
+	
+	filepath.Walk(path, func(fpath string, info os.FileInfo, err error) error {
+		switch info.IsDir() {
+		case true:
+			// Create Directory
+			dataDirID, err := c.CreateDir(project.ProjectID, projectName, fpath)
+			if err != nil {
+				fmt.Println("CreateDir failure")
+			} else {
+				dataDirs[fpath] = dataDirID				
+			}
+		case false:
+			// Upload File
+			dir := filepath.Dir(fpath)
+			dataDirID, ok := dataDirs[dir]
+			if !ok {
+				return nil
+			}
+			_, _, err := c.UploadNewFile(project.ProjectID, dataDirID, fpath)
+			if err != nil {
+				fmt.Printf("Upload file %s failed\n", fpath)
+			}
+		}
+		return nil
+	})
+
+	return nil
 }
 
 func (c *Client) LoadFromRemote(path string) error {

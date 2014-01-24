@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/materials-commons/mcfs/protocol"
 	"io"
+	"bytes"
 )
 
 var _ = fmt.Println
@@ -68,12 +69,17 @@ type ChannelMarshaler struct {
 	request  chan protocol.Request
 	response chan protocol.Response
 	err      error
+	encoder *gob.Encoder
+	decoder *gob.Decoder
 }
 
 func NewChannelMarshaler() *ChannelMarshaler {
+	var buf bytes.Buffer
 	return &ChannelMarshaler{
 		request:  make(chan protocol.Request),
 		response: make(chan protocol.Response),
+		encoder: gob.NewEncoder(&buf),
+		decoder: gob.NewDecoder(&buf),
 	}
 }
 
