@@ -38,7 +38,7 @@ func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesRes
 }
 
 func (c *Client) CreateProject(projectName string) (*Project, error) {
-	req := &protocol.CreateProjectReq{
+	req := protocol.CreateProjectReq{
 		Name: projectName,
 	}
 
@@ -50,6 +50,8 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 	switch t := resp.(type) {
 	case protocol.CreateProjectResp:
 		return &Project{t.ProjectID, t.DataDirID}, nil
+	case *protocol.CreateProjectResp:
+		return &Project{t.ProjectID, t.DataDirID}, nil
 	default:
 		fmt.Printf("1 %s %T\n", ErrBadResponseType, t)
 		return nil, ErrBadResponseType
@@ -57,35 +59,46 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 }
 
 func (c *Client) UploadNewProject(path string) error {
+	var dataDirs = map[string]string{}
 	projectName := filepath.Base(path)
 	project, err := c.CreateProject(projectName)
 	if err != nil {
 		return err
 	}
 
-	var dataDirs = map[string]string{}
+	dataDirs[path] = project.DataDirID
 
 	filepath.Walk(path, func(fpath string, info os.FileInfo, err error) error {
 		switch info.IsDir() {
 		case true:
+			if fpath == path {
+				// Top level project dir already created
+				return nil
+			}
 			// Create Directory
 			dataDirID, err := c.CreateDir(project.ProjectID, projectName, fpath)
+
 			if err != nil {
-				fmt.Println("CreateDir failure")
+				fmt.Println("CreateDir failure", err)
 			} else {
+				fmt.Printf("Created New Directory %s with ID %s\n", fpath, dataDirID)
 				dataDirs[fpath] = dataDirID
 			}
 		case false:
 			// Upload File
 			dir := filepath.Dir(fpath)
+			fmt.Println("Upload file looking up directory", dir)
 			dataDirID, ok := dataDirs[dir]
 			if !ok {
+				fmt.Println("  Couldn't find directory id for", dir)
 				return nil
 			}
-			_, _, err := c.UploadNewFile(project.ProjectID, dataDirID, fpath)
+			fmt.Printf("  Uploading file %s for dataDir %s and project %s\n", fpath, dataDirID, project.ProjectID)
+			bytes, dataFileID, err := c.UploadNewFile(project.ProjectID, dataDirID, fpath)
 			if err != nil {
 				fmt.Printf("Upload file %s failed\n", fpath)
 			}
+			fmt.Printf("  Done with upload of %s datafileid %s bytes %d\n", fpath, dataFileID, bytes)
 		}
 		return nil
 	})

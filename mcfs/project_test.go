@@ -60,3 +60,11 @@ func TestProjectExistence(t *testing.T) {
 		t.Errorf("Retrieve project differs from inserted version i/r %#v/%#v", p, proj)
 	}
 }
+
+func TestUploadNewProject(t *testing.T) {
+	// Test large upload
+	err := c.UploadNewProject("/home/gtarcea/Synthetic Tooth")
+	if err != nil {
+		t.Errorf("Failed to upload %s", err)
+	}
+}

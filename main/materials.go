@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"github.com/materials-commons/materials/mcfs"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
@@ -121,9 +122,28 @@ func convertProjectsFile() {
 }
 
 func uploadProject(projectName string) {
+
+	fmt.Println("projectName = ", projectName)
+	c, err := mcfs.NewClient("localhost", 35862)
+	if err != nil {
+		fmt.Println("Unable create client", err)
+	}
+	err = c.Login("gtarcea@umich.edu", "472abe203cd411e3a280ac162d80f1bf")
+	if err != nil {
+		fmt.Println("Unable to login", err)
+	} else {
+		err = c.UploadNewProject(projectName)
+		if err != nil {
+			fmt.Println("Error on upload", err)
+		}
+	}
+
+	if true {
+		return
+	}
 	projects := materials.CurrentUserProjectDB()
 	project, _ := projects.Find(projectName)
-	err := project.Upload()
+	err = project.Upload()
 	if err != nil {
 		fmt.Println(err)
 	} else {
