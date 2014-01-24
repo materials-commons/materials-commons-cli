@@ -11,7 +11,7 @@ func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID strin
 	if i == -1 {
 		return "", fmt.Errorf("Invalid path for project")
 	}
-	
+
 	properPath := path[i:] // only send up portion starting from project
 	req := protocol.CreateDirReq{
 		ProjectID: projectID,

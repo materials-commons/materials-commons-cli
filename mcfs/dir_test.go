@@ -7,11 +7,11 @@ import (
 
 var _ = fmt.Println
 
-var createDirTests = []struct{
-	projectID string
+var createDirTests = []struct {
+	projectID   string
 	projectName string
-	path string
-	errorNil bool
+	path        string
+	errorNil    bool
 	description string
 }{
 	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/abc.txt", false, "Valid project bad path"},
@@ -42,4 +42,3 @@ func TestCreateDir(t *testing.T) {
 
 	// Test CreateDir with a good project ID and wrong path (can't test right now)
 }
-

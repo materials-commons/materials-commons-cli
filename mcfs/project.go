@@ -7,8 +7,8 @@ import (
 	"github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/db/schema"
 	"github.com/materials-commons/mcfs/protocol"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
 
 var (
@@ -64,7 +64,7 @@ func (c *Client) UploadNewProject(path string) error {
 	}
 
 	var dataDirs = map[string]string{}
-	
+
 	filepath.Walk(path, func(fpath string, info os.FileInfo, err error) error {
 		switch info.IsDir() {
 		case true:
@@ -73,7 +73,7 @@ func (c *Client) UploadNewProject(path string) error {
 			if err != nil {
 				fmt.Println("CreateDir failure")
 			} else {
-				dataDirs[fpath] = dataDirID				
+				dataDirs[fpath] = dataDirID
 			}
 		case false:
 			// Upload File
