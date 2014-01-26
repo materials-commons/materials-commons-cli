@@ -1,9 +1,6 @@
 angular.module('materialsApp')
     .controller('ProjectsCtrl', function ($scope, materials) {
         'use strict';
-
-
-
         $scope.projectsData = [];
 
         $scope.getAllProjects = function () {
@@ -73,6 +70,21 @@ angular.module('materialsApp')
                 .put(proj);
         };
 
+        $scope.trail = [];
+
+        $scope.showProject2 = function(project) {
+            console.log("showProject2")
+            $scope.projectName = project.Name;
+            $scope.projectStatus = project.Status;
+            materials('/projects/%/tree', $scope.projectName)
+                .success(function(tree) {
+                    console.log("success")
+                    $scope.trail.push(tree[0]);
+                    $scope.tree = tree;
+                    $scope.dir = $scope.tree[0].children;
+                    $scope.displayProject2 = true;
+                }).getJson();
+        }
         $scope.showProject = function (project) {
             $scope.projectName = project.Name;
             $scope.projectStatus = project.Status;
@@ -108,4 +120,25 @@ angular.module('materialsApp')
             });
             return flatTree;
         };
+
+        $scope.openFolder = function(item) {
+            console.log("openFolder item =");
+            console.dir(item)
+            var e = _.find($scope.trail, function(item1) {
+                console.dir(item1);
+                item1.id === item.id;
+            });
+
+            console.dir(e)
+            if (typeof e === 'undefined') {
+                console.log("adding item")
+                $scope.trail.push(item);
+            }
+
+            $scope.dir = item.children;
+        }
+
+        $scope.backToFolder = function(item) {
+            $scope.dir = item.children;
+        }
     });
