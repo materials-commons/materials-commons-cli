@@ -12,6 +12,7 @@ import (
 type ProjectFileEntry struct {
 	Id          string              `json:"id"`
 	ParentId    string              `json:"parent_id"`
+	Level       int                 `json:"level"`
 	Path        string              `json:"path"`
 	HrefPath    string              `json:"hrefpath"`
 	DisplayName string              `json:"displayname"`
@@ -76,6 +77,7 @@ func (ts *treeState) addChild(path string, info os.FileInfo) {
 	// Create the entry to add
 	item := &ProjectFileEntry{
 		Id:          strconv.Itoa(ts.nextId),
+		Level:       ts.currentDir.Level + 1,
 		ParentId:    d.Id,
 		Path:        path,
 		DisplayName: filepath.Base(path),
@@ -91,6 +93,7 @@ func (ts *treeState) addChild(path string, info os.FileInfo) {
 	} else {
 		item.HrefPath = ts.hrefPath(path)
 		item.Type = "datafile"
+		item.Level = 0
 	}
 
 	// Update the currentDir if needed
