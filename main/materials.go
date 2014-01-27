@@ -144,30 +144,29 @@ func convertProjectsFile() {
 }
 
 func uploadProject(projectName string) {
+	project, found := materials.CurrentUserProjectDB().Find(projectName)
+	if !found {
+		fmt.Println("No such project:", projectName)
+		return
+	}
 
 	c, err := mcfs.NewClient("materialscommons.org", 35862)
 	if err != nil {
 		fmt.Println("Unable create client", err)
+		return
 	}
-	err = c.Login("gtarcea@umich.edu", "472abe203cd411e3a280ac162d80f1bf")
+
+	err = c.Login(materials.Config.User.Username, materials.Config.User.Apikey)
+
 	if err != nil {
 		fmt.Println("Unable to login", err)
+		return
 	} else {
-		err = c.UploadNewProject(projectName)
+		err = c.UploadNewProject(project.Path)
 		if err != nil {
 			fmt.Println("Error on upload", err)
 		}
-	}
-
-	if true {
-		return
-	}
-	projects := materials.CurrentUserProjectDB()
-	project, _ := projects.Find(projectName)
-	err = project.Upload()
-	if err != nil {
-		fmt.Println(err)
-	} else {
+		projects := materials.CurrentUserProjectDB()
 		projects.Update(func() *materials.Project {
 			project.Status = "Loaded"
 			return project
