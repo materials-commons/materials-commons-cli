@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-func NewClient(host string, port uint) (*Client, error) {
+func NewClient(host string, port int) (*Client, error) {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, err
