@@ -93,7 +93,7 @@ func (c *Client) UploadNewProject(path string) error {
 			fmt.Printf("  Uploading file %s for dataDir %s and project %s\n", fpath, dataDirID, project.ProjectID)
 			bytes, dataFileID, err := c.UploadNewFile(project.ProjectID, dataDirID, fpath)
 			if err != nil {
-				fmt.Printf("Upload file %s failed\n", fpath)
+				fmt.Printf("Upload file %s failed %s\n", fpath, err)
 			}
 			fmt.Printf("  Done with upload of %s datafileid %s bytes %d\n", fpath, dataFileID, bytes)
 		}

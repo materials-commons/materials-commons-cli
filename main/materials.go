@@ -96,7 +96,7 @@ func addProject(projectName, projectPath string) error {
 		return err
 	}
 
-	fmt.Println("Create new project:", projectName)
+	fmt.Println("Created new project:", projectName)
 	return nil
 }
 
@@ -150,7 +150,7 @@ func uploadProject(projectName string) {
 		return
 	}
 
-	c, err := mcfs.NewClient("materialscommons.org", 35862)
+	c, err := mcfs.NewClient("localhost", 35862)
 	if err != nil {
 		fmt.Println("Unable create client", err)
 		return

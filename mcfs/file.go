@@ -83,7 +83,7 @@ func (c *Client) uploadFile(dataFileID, path, checksum string, size int64) (byte
 	case err != nil:
 		return 0, err
 	case uploadResp.DataFileID != dataFileID:
-		return 0, fmt.Errorf("DataFileIDs don't match")
+		return 0, fmt.Errorf("DataFileIDs don't match %d %#v %s", size, uploadResp, dataFileID)
 	default:
 		n, err := c.sendFile(dataFileID, path, uploadResp.Offset)
 		c.endUpload()
