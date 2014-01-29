@@ -88,7 +88,7 @@ func (c *Client) uploadFile(dataFileID, path, checksum string, size int64) (byte
 		if uploadResp.DataFileID != dataFileID {
 			fmt.Printf("Using an existing datafile %s for id %s\n", uploadResp.DataFileID, dataFileID)
 		}
-		n, err := c.sendFile(dataFileID, path, uploadResp.Offset)
+		n, err := c.sendFile(uploadResp.DataFileID, path, uploadResp.Offset)
 		c.endUpload()
 		return n, err
 	}

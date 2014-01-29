@@ -27,7 +27,6 @@ func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesRes
 
 	switch t := resp.(type) {
 	case protocol.ProjectEntriesResp:
-		fmt.Println("not pointer")
 		return &t, nil
 	default:
 		return nil, ErrBadResponseType
@@ -46,8 +45,6 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 
 	switch t := resp.(type) {
 	case protocol.CreateProjectResp:
-		return &Project{t.ProjectID, t.DataDirID}, nil
-	case *protocol.CreateProjectResp:
 		return &Project{t.ProjectID, t.DataDirID}, nil
 	default:
 		fmt.Printf("1 %s %T\n", ErrBadResponseType, t)
