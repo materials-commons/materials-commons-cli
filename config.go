@@ -10,9 +10,11 @@ import (
 )
 
 type MaterialscommonsConfig struct {
-	Api      string
-	Url      string
-	Download string
+	Api        string
+	Url        string
+	Download   string
+	UploadHost string
+	UploadPort int
 }
 
 type ServerConfig struct {
@@ -45,6 +47,8 @@ var defaultSettings = map[string]interface{}{
 	"server_port":           uint(8081),
 	"socketio_port":         uint(8082),
 	"update_check_interval": 4 * time.Hour,
+	"MCFS_HOST":             "materialscommons.org",
+	"MCFS_PORT":             35862,
 	"MCURL":                 "https://materialscommons.org",
 	"MCAPIURL":              "https://api.materialscommons.org",
 	"MCDOWNLOADURL":         "https://download.materialscommons.org",
@@ -55,7 +59,7 @@ var Config ConfigSettings
 var EnvironmentVariables = []string{
 	"MATERIALS_PORT", "MATERIALS_ADDRESS", "MATERIALS_SOCKETIO_PORT",
 	"MATERIALS_UPDATE_CHECK_INTERVAL", "MATERIALS_WEBDIR", "MCAPIURL",
-	"MCURL", "MCDOWNLOADURL",
+	"MCURL", "MCDOWNLOADURL", "MCFS_HOST", "MCFS_PORT",
 }
 
 //*********************************************************
@@ -78,7 +82,8 @@ func (c *ConfigSettings) setConfigOverrides() {
 	c.Materialscommons.Api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
 	c.Materialscommons.Url = getDefaultedConfigStr("MCURL", "MCURL")
 	c.Materialscommons.Download = getDefaultedConfigStr("MCDOWNLOADURL", "MCDOWNLOADURL")
-
+	c.Materialscommons.UploadHost = getDefaultedConfigStr("MCFS_HOST", "MCFS_HOST")
+	c.Materialscommons.UploadPort = getDefaultedConfigInt("MCFS_PORT", "MCFS_PORT")
 	webdir := os.Getenv("MATERIALS_WEBDIR")
 	if webdir == "" {
 		webdir = filepath.Join(c.User.DotMaterialsPath(), "website")
@@ -145,6 +150,16 @@ func getDefaultedConfigStr(envName, settingsName string) string {
 	}
 
 	return envVal
+}
+
+func getDefaultedConfigInt(envName, settingsName string) int {
+	envVal := os.Getenv(envName)
+	if envVal == "" {
+		return defaultSettings[settingsName].(int)
+	}
+
+	i, _ := strconv.Atoi(envVal)
+	return i
 }
 
 func readConfigFile(dotmaterialsPath string) (cf configFile, err error) {
