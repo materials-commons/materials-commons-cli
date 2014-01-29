@@ -1,9 +1,6 @@
 angular.module('materialsApp')
     .controller('ProjectsCtrl', function ($scope, materials) {
         'use strict';
-
-
-
         $scope.projectsData = [];
 
         $scope.getAllProjects = function () {
@@ -73,6 +70,19 @@ angular.module('materialsApp')
                 .put(proj);
         };
 
+        $scope.trail = [];
+
+        $scope.showProject2 = function (project) {
+            $scope.projectName = project.Name;
+            $scope.projectStatus = project.Status;
+            materials('/projects/%/tree', $scope.projectName)
+                .success(function (tree) {
+                    $scope.trail.push(tree[0]);
+                    $scope.tree = tree;
+                    $scope.dir = $scope.tree[0].children;
+                    $scope.displayProject2 = true;
+                }).getJson();
+        }
         $scope.showProject = function (project) {
             $scope.projectName = project.Name;
             $scope.projectStatus = project.Status;
@@ -82,7 +92,7 @@ angular.module('materialsApp')
                     $scope.projectTree = flattened;
                     $scope.displayProject = true;
                 })
-                .error(function() {
+                .error(function () {
                     $scope.projectTree = [];
                     $scope.displayProject = false;
                 })
@@ -108,4 +118,25 @@ angular.module('materialsApp')
             });
             return flatTree;
         };
+
+        $scope.openFolder = function (item) {
+            var e = _.find($scope.trail, function (item1) {
+                return item1.id === item.id;
+            });
+
+            if (typeof e === 'undefined') {
+                // first level is 0 so we need to add 1 to our test
+                if (item.level+1 <= $scope.trail.length) {
+                    // Remove everything at this level and above
+                    $scope.trail = $scope.trail.splice(0, item.level);
+                }
+                $scope.trail.push(item);
+            }
+
+            $scope.dir = item.children;
+        }
+
+        $scope.backToFolder = function (item) {
+            $scope.dir = item.children;
+        }
     });
