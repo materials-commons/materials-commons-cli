@@ -2,6 +2,7 @@ package mcfs
 
 import (
 	"fmt"
+	"github.com/materials-commons/contrib/mc"
 	"github.com/materials-commons/materials/util"
 	"github.com/materials-commons/mcfs/protocol"
 	"net"
@@ -56,8 +57,8 @@ func (c *Client) doRequest(arg interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	if resp.Type != protocol.ROk {
-		return nil, fmt.Errorf("%s", resp.Status)
+	if resp.Status != mc.ErrorCodeSuccess {
+		return nil, mc.ErrorCodeToError(resp.Status)
 	}
 
 	return resp.Resp, nil
