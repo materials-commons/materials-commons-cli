@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"github.com/materials-commons/gohandy/file"
+	"github.com/dustin/go-humanize"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
@@ -41,6 +43,7 @@ type ProjectOptions struct {
 	Files     []string `long:"file" description:"comma separated list of files to operate on"`
 	Tracking  bool     `long:"tracking" description:"Display tracking information for specified files"`
 	Options   []string `long:"option" description:"Options for tracking"`
+	FindDups bool `long:"find-dups" description:"Find duplicates in directory"`
 }
 
 type Options struct {
@@ -241,6 +244,55 @@ func showTracking(projectName string, files []string) {
 	}
 }
 
+type fileEntry struct {
+	filePaths []string
+	size int64
+	matchCount int
+}
+
+func findDups(dirPath string) {
+	var checksums map[string]*fileEntry
+	checksums = make(map[string]*fileEntry)
+	filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+
+		checksum, err := file.HashStr(md5.New(), path)
+		entry, found := checksums[checksum]
+		if !found {
+			entry := &fileEntry {
+				filePaths: []string{},
+				size: info.Size(),
+				matchCount: 1,
+			}
+			entry.filePaths = append(entry.filePaths, path)
+			checksums[checksum] = entry
+		} else {
+			if entry.size != info.Size() {
+				fmt.Println("Fatal error: 2 files with same checksum and different sizes")
+				fmt.Println("New file", path, checksum, info.Size())
+				fmt.Println("Existing file", entry.filePaths[0], entry.size)
+				os.Exit(1)
+			}
+
+			entry.filePaths = append(entry.filePaths, path)
+			entry.matchCount++
+		}
+
+		return nil
+	})
+
+	for key, value := range checksums {
+		if value.matchCount > 1 {
+			fmt.Printf("The following entries are duplicates (size: %s, checksum: %s):\n", humanize.Bytes(uint64(value.size)), key)
+			for _, filePath := range value.filePaths {
+				fmt.Println("  ", filePath)
+			}
+		}
+	}
+}
+
 func main() {
 	materials.ConfigInitialize(mcuser)
 	var opts Options
@@ -261,6 +313,8 @@ func main() {
 		startServer(opts.Server)
 	case opts.Config:
 		showConfig()
+	case opts.Project.FindDups:
+		findDups(opts.Project.Directory)
 	case opts.Project.Tracking:
 		showTracking(opts.Project.Project, opts.Project.Files)
 	}
