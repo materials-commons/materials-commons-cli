@@ -15,7 +15,7 @@ func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID strin
 	properPath := path[i:] // only send up portion starting from project
 	req := protocol.CreateDirReq{
 		ProjectID: projectID,
-		Path:      properPath,
+		Path:      transformPath(properPath),
 	}
 
 	resp, err := c.doRequest(req)

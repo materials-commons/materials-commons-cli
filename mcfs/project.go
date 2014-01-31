@@ -76,11 +76,11 @@ func (c *Client) UploadNewProject(path string) error {
 				fmt.Println("CreateDir failure", err)
 			} else {
 				fmt.Printf("Created New Directory %s with ID %s\n", fpath, dataDirID)
-				dataDirs[fpath] = dataDirID
+				dataDirs[transformPath(fpath)] = dataDirID
 			}
 		case false:
 			// Upload File
-			dir := filepath.Dir(fpath)
+			dir := transformPath(filepath.Dir(fpath))
 			fmt.Println("Upload file looking up directory", dir)
 			dataDirID, ok := dataDirs[dir]
 			if !ok {
