@@ -5,8 +5,10 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
 	"github.com/materials-commons/contrib/mc"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/autoupdate"
 	_ "github.com/materials-commons/materials/db"
@@ -19,8 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"github.com/materials-commons/gohandy/file"
-	"github.com/dustin/go-humanize"
 )
 
 var mcuser, _ = materials.NewCurrentUser()
@@ -43,7 +43,7 @@ type ProjectOptions struct {
 	Files     []string `long:"file" description:"comma separated list of files to operate on"`
 	Tracking  bool     `long:"tracking" description:"Display tracking information for specified files"`
 	Options   []string `long:"option" description:"Options for tracking"`
-	FindDups bool `long:"find-dups" description:"Find duplicates in directory"`
+	FindDups  bool     `long:"find-dups" description:"Find duplicates in directory"`
 }
 
 type Options struct {
@@ -245,8 +245,8 @@ func showTracking(projectName string, files []string) {
 }
 
 type fileEntry struct {
-	filePaths []string
-	size int64
+	filePaths  []string
+	size       int64
 	matchCount int
 }
 
@@ -261,9 +261,9 @@ func findDups(dirPath string) {
 		checksum, err := file.HashStr(md5.New(), path)
 		entry, found := checksums[checksum]
 		if !found {
-			entry := &fileEntry {
-				filePaths: []string{},
-				size: info.Size(),
+			entry := &fileEntry{
+				filePaths:  []string{},
+				size:       info.Size(),
 				matchCount: 1,
 			}
 			entry.filePaths = append(entry.filePaths, path)
