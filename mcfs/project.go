@@ -55,7 +55,7 @@ func (c *Client) UploadNewProject(path string) error {
 	var dataDirs = map[string]string{}
 	projectName := filepath.Base(path)
 	project, err := c.CreateProject(projectName)
-	if err != nil {
+	if err != nil && err != mc.ErrExists {
 		return err
 	}
 
