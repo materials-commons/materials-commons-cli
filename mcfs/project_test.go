@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/materials-commons/contrib/mc"
+	"github.com/materials-commons/contrib/model"
 	"github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/db/schema"
 	"os"
@@ -69,5 +71,39 @@ func TestUploadNewProject(t *testing.T) {
 	err := c.UploadNewProject("/home/gtarcea/ST1")
 	if err != nil {
 		t.Errorf("Failed to upload %s", err)
+	}
+}
+
+func TestCreateProject(t *testing.T) {
+	// Test Create New Project
+	proj, err := c.CreateProject("NewProject")
+	if err != nil {
+		t.Errorf("Failed to create a new project")
+	}
+
+	projectID := proj.ProjectID
+	dataDirID := proj.DataDirID
+
+	// Test Create Existing Project
+	proj2, err := c.CreateProject("NewProject")
+
+	// Delete before testing
+	model.Delete("projects", projectID, session)
+	model.Delete("datadirs", dataDirID, session)
+
+	if err != mc.ErrExists {
+		t.Errorf("Creating an existing project should have returned mc.ErrExists")
+	}
+
+	if proj2 == nil {
+		t.Fatalf("Create existing project should have returned project")
+	}
+
+	if proj2.ProjectID != proj.ProjectID {
+		t.Errorf("Create existing project returned wrong project id")
+	}
+
+	if proj2.DataDirID != proj.DataDirID {
+		t.Errorf("Create existing project returned wrong datadir id")
 	}
 }

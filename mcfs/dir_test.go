@@ -14,10 +14,11 @@ var createDirTests = []struct {
 	errorNil    bool
 	description string
 }{
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/abc.txt", false, "Valid project bad path"},
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "Test_Proj/abc.txt", true, "Valid project path starts with project"},
+	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/abc", false, "Valid project bad path"},
+	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "Test_Proj/abc", true, "Valid project path starts with project"},
 	{"does not exist", "Test_Proj", "Test_Proj/abc.txt", false, "Valid project path bad project id"},
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/Test_Proj/abc.txt", true, "Valid project full path containing project name"},
+	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/Test_Proj/abc", true, "Valid project full path containing project name"},
+	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/Test_Proj/abc", true, "Valid project full path containing project name"},
 }
 
 func TestCreateDir(t *testing.T) {
@@ -32,13 +33,15 @@ func TestCreateDir(t *testing.T) {
 		}
 	}
 
-	// Test CreateDir with wrong path
-
-	// Test CreateDir with complete path, as opposed to just the Project Portion
-
-	// Test CreateDir with just the Project Portion of the path
-
-	// Test CreateDir with a bad project ID
-
-	// Test CreateDir with a good project ID and wrong path (can't test right now)
+	// Test creating an existing directory
+	projId := "c33edab7-a65f-478e-9fa6-9013271c73ea"
+	projName := "Test_Proj"
+	dirPath := "/tmp/Test_Proj/abc"
+	dataDirID, err := c.CreateDir(projId, projName, dirPath)
+	if err != nil {
+		t.Errorf("Creating a directory that already exists returned wrong error code: %s", err)
+	}
+	if dataDirID == "" {
+		t.Errorf("Creating an existing directory should have returned the id of the already created directory.")
+	}
 }

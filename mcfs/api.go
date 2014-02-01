@@ -58,7 +58,7 @@ func (c *Client) doRequest(arg interface{}) (interface{}, error) {
 	}
 
 	if resp.Status != mc.ErrorCodeSuccess {
-		return nil, mc.ErrorCodeToError(resp.Status)
+		return resp.Resp, mc.ErrorCodeToError(resp.Status)
 	}
 
 	return resp.Resp, nil

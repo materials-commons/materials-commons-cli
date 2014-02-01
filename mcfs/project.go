@@ -39,15 +39,14 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 	}
 
 	resp, err := c.doRequest(req)
-	if err != nil {
+	if resp == nil {
 		return nil, err
 	}
 
 	switch t := resp.(type) {
 	case protocol.CreateProjectResp:
-		return &Project{t.ProjectID, t.DataDirID}, nil
+		return &Project{t.ProjectID, t.DataDirID}, err
 	default:
-		fmt.Printf("1 %s %T\n", ErrBadResponseType, t)
 		return nil, ErrBadResponseType
 	}
 }
