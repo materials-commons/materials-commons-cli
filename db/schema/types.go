@@ -31,16 +31,16 @@ type DataDir struct {
 
 type DataFile struct {
 	Id         int
-	MCId       string `db:"mcid"`
-	Name       string
-	Path       string
-	DataDirID  int `db:"datadir_id"`
-	ProjectID  int `db:"project_id"`
-	Size       int
-	Checksum   string
+	MCId       string    `db:"mcid"`
+	DataDirID  int       `db:"datadir_id"`
+	ProjectID  int       `db:"project_id"`
 	LastUpload time.Time `db:"last_upload"`
 	MTime      time.Time `db:"mtime"`
-	Version    int
-	ParentMCId string `db:"parent_mcid"`
+	ParentMCId string    `db:"parent_mcid"`
 	Parent     int
+	Name       string
+	Path       string
+	Size       int
+	Checksum   string
+	Version    int
 }

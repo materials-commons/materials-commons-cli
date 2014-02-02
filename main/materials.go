@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
-	"github.com/materials-commons/contrib/mc"
+	"github.com/materials-commons/base/mc"
 	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials"
 	"github.com/materials-commons/materials/autoupdate"

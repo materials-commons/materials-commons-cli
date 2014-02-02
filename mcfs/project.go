@@ -3,7 +3,7 @@ package mcfs
 import (
 	"errors"
 	"fmt"
-	"github.com/materials-commons/contrib/mc"
+	"github.com/materials-commons/base/mc"
 	"github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/db/schema"
 	"github.com/materials-commons/mcfs/protocol"

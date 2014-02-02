@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	r "github.com/dancannon/gorethink"
-	"github.com/materials-commons/contrib/model"
+	"github.com/materials-commons/base/model"
 	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/gohandy/marshaling"
 	"github.com/materials-commons/materials/util"
