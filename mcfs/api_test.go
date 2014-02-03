@@ -58,7 +58,7 @@ func TestUploadNewFile(t *testing.T) {
 	filePath := filepath.Join(MCDir, "testnewfile.txt")
 	ioutil.WriteFile(filePath, []byte(fileData), 0777)
 	projectID := "c33edab7-a65f-478e-9fa6-9013271c73ea"
-	dataDirID := "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data"
+	dataDirID := "643b2a54-44ef-4864-9370-18fb529f5609"
 	uploaded, dataFileID, err := c.UploadNewFile(projectID, dataDirID, filePath)
 	fmt.Printf("%d/%s/%s\n", uploaded, dataFileID, err)
 	if err != nil {
@@ -102,7 +102,7 @@ func TestRestartFileUpload(t *testing.T) {
 	realSize := len(fileData)
 	var _ = realSize
 	projectID := "c33edab7-a65f-478e-9fa6-9013271c73ea"
-	dataDirID := "gtarcea@umich.edu$Test_Proj_6111_Aluminum_Alloys_Data"
+	dataDirID := "643b2a54-44ef-4864-9370-18fb529f5609"
 	uploaded, dataFileID, err := c.UploadNewFile(projectID, dataDirID, filePathPartial)
 
 	if err != nil {
