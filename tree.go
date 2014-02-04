@@ -39,10 +39,11 @@ func (p Project) Tree() ([]*ProjectFileEntry, error) {
 	}
 
 	filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
-		if path == p.Path {
-			ts.createTopLevelEntry(path)
+		normalizedPath := file.NormalizePath(path)
+		if normalizedPath == p.Path {
+			ts.createTopLevelEntry(normalizedPath)
 		} else {
-			ts.addChild(path, info)
+			ts.addChild(normalizedPath, info)
 		}
 		return nil
 	})
