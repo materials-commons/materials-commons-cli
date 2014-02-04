@@ -67,7 +67,7 @@ func (ts *treeState) createTopLevelEntry(path string) {
 }
 
 func (ts *treeState) addChild(path string, info os.FileInfo) {
-	parent := filepath.Dir(path)
+	parent := file.NormalizePath(filepath.Dir(path))
 	d, found := ts.knownDirectories[parent]
 
 	// There should always be a parent
