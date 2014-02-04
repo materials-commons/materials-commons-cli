@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func (c *Client) RestartFileUpload(dataFileID, path string) (bytesUploaded int64, err error) {
@@ -29,7 +28,7 @@ func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded
 	createFileReq := &protocol.CreateFileReq{
 		ProjectID: projectID,
 		DataDirID: dataDirID,
-		Name:      transformPath(filepath.Base(path)),
+		Name:      file.NormalizePath(filepath.Base(path)),
 		Checksum:  checksum,
 		Size:      size,
 	}
@@ -41,10 +40,6 @@ func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded
 
 	n, err := c.uploadFile(dataFileID, path, checksum, size)
 	return n, dataFileID, err
-}
-
-func transformPath(path string) string {
-	return strings.Replace(path, "\\", "/", -1)
 }
 
 func fileInfo(path string) (checksum string, size int64, err error) {

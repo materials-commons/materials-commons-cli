@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/materials-commons/base/mc"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/db/schema"
 	"github.com/materials-commons/mcfs/protocol"
@@ -75,11 +76,11 @@ func (c *Client) UploadNewProject(path string) error {
 				fmt.Println("CreateDir failure", err)
 			} else {
 				fmt.Printf("Created New Directory %s with ID %s\n", fpath, dataDirID)
-				dataDirs[transformPath(fpath)] = dataDirID
+				dataDirs[file.NormalizePath(fpath)] = dataDirID
 			}
 		case false:
 			// Upload File
-			dir := transformPath(filepath.Dir(fpath))
+			dir := file.NormalizePath(filepath.Dir(fpath))
 			fmt.Println("Upload file looking up directory", dir)
 			dataDirID, ok := dataDirs[dir]
 			if !ok {

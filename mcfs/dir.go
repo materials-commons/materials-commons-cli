@@ -3,6 +3,7 @@ package mcfs
 import (
 	"fmt"
 	"github.com/materials-commons/base/mc"
+	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/mcfs/protocol"
 	"strings"
 )
@@ -16,7 +17,7 @@ func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID strin
 	properPath := path[i:] // only send up portion starting from project
 	req := protocol.CreateDirReq{
 		ProjectID: projectID,
-		Path:      transformPath(properPath),
+		Path:      file.NormalizePath(properPath),
 	}
 
 	resp, err := c.doRequest(req)
