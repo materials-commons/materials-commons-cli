@@ -57,7 +57,7 @@ func initialize() {
 	usr, err := user.Current()
 	checkError(err)
 
-	dirPath := filepath.Join(usr.HomeDir, ".materials")
+	dirPath := filepath.Join(usr.HomeDir, ".materials", "projectdb")
 	err = os.MkdirAll(dirPath, 0777)
 	checkError(err)
 
