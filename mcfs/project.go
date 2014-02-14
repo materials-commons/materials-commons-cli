@@ -148,7 +148,7 @@ func (c *Client) loadNewProject(path string) error {
 			}
 			err := db.DataDirs.Insert(dataDir)
 			if err != nil {
-				fmt.Println("err on insert into database %s", err)
+				fmt.Printf("err on insert into database %s\n", err)
 			}
 		default:
 			// This is a datafile
