@@ -28,6 +28,9 @@ type projectFileStatus struct {
 // startMonitor starts the monitor service and the HTTP and SocketIO connections.
 func startMonitor() {
 	sio := socketio.NewSocketIOServer(&socketio.Config{})
+	sio.On("connect", func (ns *socketio.NameSpace) {
+		fmt.Println("connect")
+	})
 	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		// Nothing to do
 	})
@@ -41,7 +44,7 @@ func startMonitor() {
 func startHttp(retryCount int, sio *socketio.SocketIOServer) {
 	for i := 0; i < retryCount; i++ {
 		address := fmt.Sprintf(":%d", materials.Config.Server.SocketIOPort)
-		fmt.Println(http.ListenAndServe(address, sio))
+		fmt.Println(http.ListenAndServeTLS(address, "/tmp/cert.pem", "/tmp/key.pem", sio))
 		time.Sleep(1000 * time.Millisecond)
 	}
 	os.Exit(1)
