@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+var _ = fmt.Println
+
 // projectFileStatus communicates the types of changes that
 // have occured.
 type projectFileStatus struct {
@@ -26,6 +28,9 @@ type projectFileStatus struct {
 // startMonitor starts the monitor service and the HTTP and SocketIO connections.
 func startMonitor() {
 	sio := socketio.NewSocketIOServer(&socketio.Config{})
+	sio.On("connect", func (ns *socketio.NameSpace) {
+		fmt.Println("Connect on socket")
+	});
 	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		// Nothing to do
 	})
@@ -88,6 +93,7 @@ func broadcastEvent(event fs.Event, projectName string, sio *socketio.SocketIOSe
 		FilePath: event.Name,
 		Event:    eventType,
 	}
+	fmt.Printf("%#v\n", pfs)
 	sio.Broadcast("file", pfs)
 }
 
