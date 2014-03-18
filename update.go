@@ -95,7 +95,7 @@ func me() (mypath string, mychecksum uint32) {
 // an error condition. The error is nil if no error occurred.
 func downloaded(url string) (dlpath string, dlchecksum uint32, err error) {
 	dlchecksum = 0
-	dlpath, err = downloadNewBinary(binaryUrl(url))
+	dlpath, err = downloadNewBinary(binaryURL(url))
 	if err != nil {
 		return
 	}
@@ -105,12 +105,12 @@ func downloaded(url string) (dlpath string, dlchecksum uint32, err error) {
 }
 
 // binaryUrl returns the url to download the binary for the current OS.
-func binaryUrl(url string) string {
-	return binaryUrlForRuntime(url, runtime.GOOS)
+func binaryURL(url string) string {
+	return binaryURLForRuntime(url, runtime.GOOS)
 }
 
 // binaryUrlForRuntime returns the url to download the binary for a given OS.
-func binaryUrlForRuntime(url, whichRuntime string) string {
+func binaryURLForRuntime(url, whichRuntime string) string {
 	exe, ok := executable[whichRuntime]
 	if !ok {
 		panic(fmt.Sprintf("Unknown runtime: %s", whichRuntime))
@@ -132,7 +132,7 @@ func downloadNewBinary(url string) (string, error) {
 	case err != nil:
 		return "", err
 	case status != 200:
-		return "", fmt.Errorf("Unable to download file, status code %d", status)
+		return "", fmt.Errorf("unable to download file, status code %d", status)
 	default:
 		return path, nil
 	}
