@@ -25,14 +25,14 @@ import (
 
 var mcuser, _ = materials.NewCurrentUser()
 
-type ServerOptions struct {
+type serverOptions struct {
 	AsServer bool   `long:"server" description:"Run as webserver"`
 	Port     uint   `long:"port" description:"The port the server listens on"`
 	Address  string `long:"address" description:"The address to bind to"`
 	Retry    int    `long:"retry" description:"Number of times to retry connecting to address/port"`
 }
 
-type ProjectOptions struct {
+type projectOptions struct {
 	Project   string   `long:"project" description:"Specify the project"`
 	Directory string   `long:"directory" description:"The directory path to the project"`
 	Add       bool     `long:"add" description:"Add the project to the project config file"`
@@ -46,9 +46,9 @@ type ProjectOptions struct {
 	FindDups  bool     `long:"find-dups" description:"Find duplicates in directory"`
 }
 
-type Options struct {
-	Server     ServerOptions  `group:"Server Options"`
-	Project    ProjectOptions `group:"Project Options"`
+type options struct {
+	Server     serverOptions  `group:"Server Options"`
+	Project    projectOptions `group:"Project Options"`
 	Initialize bool           `long:"init" description:"Create configuration"`
 	Config     bool           `long:"config" description:"Show server configuration"`
 }
@@ -166,20 +166,19 @@ func uploadProject(projectName string) {
 	if err != nil {
 		fmt.Println("Unable to login", err)
 		return
-	} else {
-		err = c.UploadNewProject(project.Path)
-		if err != nil {
-			fmt.Println("Error on upload", err)
-		}
-		projects := materials.CurrentUserProjectDB()
-		projects.Update(func() *materials.Project {
-			project.Status = "Loaded"
-			return project
-		})
 	}
+	err = c.UploadNewProject(project.Path)
+	if err != nil {
+		fmt.Println("Error on upload", err)
+	}
+	projects := materials.CurrentUserProjectDB()
+	projects.Update(func() *materials.Project {
+		project.Status = "Loaded"
+		return project
+	})
 }
 
-func startServer(serverOpts ServerOptions) {
+func startServer(serverOpts serverOptions) {
 	autoupdate.StartUpdateMonitor()
 
 	if serverOpts.Address != "" {
@@ -295,7 +294,7 @@ func findDups(dirPath string) {
 
 func main() {
 	materials.ConfigInitialize(mcuser)
-	var opts Options
+	var opts options
 	flags.Parse(&opts)
 
 	switch {
