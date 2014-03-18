@@ -2,6 +2,7 @@ package materials
 
 import (
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	"path/filepath"
 	"time"
 )
@@ -68,7 +69,7 @@ func (p *Project) OpenDB() error {
 	var err error
 	p.DB, err = leveldb.OpenFile(path, nil)
 	if err == nil {
-		p.CompactRange(leveldb.Range{nil, nil})
+		p.CompactRange(util.Range{nil, nil})
 	}
 	return err
 }

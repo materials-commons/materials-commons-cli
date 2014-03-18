@@ -28,7 +28,7 @@ type projectFileStatus struct {
 // startMonitor starts the monitor service and the HTTP and SocketIO connections.
 func startMonitor() {
 	sio := socketio.NewSocketIOServer(&socketio.Config{})
-	sio.On("connect", func (ns *socketio.NameSpace) {
+	sio.On("connect", func(ns *socketio.NameSpace) {
 		fmt.Println("connect")
 	})
 	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
