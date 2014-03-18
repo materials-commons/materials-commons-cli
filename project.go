@@ -31,6 +31,7 @@ type Project struct {
 	*leveldb.DB `json:"-"`
 }
 
+// NewProject creates a new project instance.
 func NewProject(name, path, status string) (*Project, error) {
 	p := &Project{
 		Name:    name,
@@ -48,6 +49,7 @@ func NewProject(name, path, status string) (*Project, error) {
 	return p, nil
 }
 
+// AddFileChange adds a file change event to the project.
 func (p *Project) AddFileChange(fileChange ProjectFileChange) {
 	entry, found := p.Changes[fileChange.Path]
 	switch {
@@ -60,16 +62,18 @@ func (p *Project) AddFileChange(fileChange ProjectFileChange) {
 	}
 }
 
+// RemoveFileChange removes the change for a file path.
 func (p *Project) RemoveFileChange(path string) {
 	delete(p.Changes, path)
 }
 
+// OpenDB opens the project database for a project.
 func (p *Project) OpenDB() error {
 	path := filepath.Join(Config.User.DotMaterialsPath(), "projectdb", p.Name+".db")
 	var err error
 	p.DB, err = leveldb.OpenFile(path, nil)
 	if err == nil {
-		p.CompactRange(util.Range{nil, nil})
+		p.CompactRange(util.Range{Start: nil, Limit: nil})
 	}
 	return err
 }
