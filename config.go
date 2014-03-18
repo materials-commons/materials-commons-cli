@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// MateralsCommonsConfig holds all the configuration information
+// MaterialsCommonsConfig holds all the configuration information
 // for accessing Materials Commons services.
 type MaterialsCommonsConfig struct {
 	API        string
@@ -197,7 +197,7 @@ func writeConfigFile(config configFile, dotmaterialsPath string) error {
 	return nil
 }
 
-// Constructs the url to access an api service. Includes the
+// APIURLPath constructs the url to access an api service. Includes the
 // apikey. Prepends a "/" if needed.
 func (c ConfigSettings) APIURLPath(service string) string {
 	if string(service[0]) != "/" {
