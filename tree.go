@@ -9,9 +9,10 @@ import (
 	"strings"
 )
 
+// ProjectFileEntry is a file entry in a project.
 type ProjectFileEntry struct {
-	Id          string              `json:"id"`
-	ParentId    string              `json:"parent_id"`
+	ID          string              `json:"id"`
+	ParentID    string              `json:"parent_id"`
 	Level       int                 `json:"level"`
 	Path        string              `json:"path"`
 	HrefPath    string              `json:"hrefpath"`
@@ -21,13 +22,15 @@ type ProjectFileEntry struct {
 }
 
 type treeState struct {
-	nextId           int
+	nextID           int
 	projectName      string
 	knownDirectories map[string]*ProjectFileEntry
 	currentDir       *ProjectFileEntry
 	topLevelDirs     []*ProjectFileEntry
 }
 
+// Tree builds the tree for a project that can be used to traverse and display the files
+// and directories in a project.
 func (p Project) Tree() ([]*ProjectFileEntry, error) {
 	ts := &treeState{
 		projectName:      p.Name,
@@ -35,7 +38,7 @@ func (p Project) Tree() ([]*ProjectFileEntry, error) {
 	}
 
 	if !file.Exists(p.Path) {
-		return nil, fmt.Errorf("Directory path '%s' doesn't exist for project %s", p.Path, p.Name)
+		return nil, fmt.Errorf("directory path '%s' doesn't exist for project %s", p.Path, p.Name)
 	}
 
 	filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
@@ -53,14 +56,14 @@ func (p Project) Tree() ([]*ProjectFileEntry, error) {
 
 func (ts *treeState) createTopLevelEntry(path string) {
 	item := &ProjectFileEntry{
-		Id:          strconv.Itoa(ts.nextId),
+		ID:          strconv.Itoa(ts.nextID),
 		Path:        path,
 		DisplayName: path,
 		Type:        "datadir",
 		Children:    []*ProjectFileEntry{},
 	}
 
-	ts.nextId++
+	ts.nextID++
 	ts.knownDirectories[path] = item
 	ts.currentDir = item
 	ts.topLevelDirs = append(ts.topLevelDirs, item)
@@ -77,15 +80,15 @@ func (ts *treeState) addChild(path string, info os.FileInfo) {
 
 	// Create the entry to add
 	item := &ProjectFileEntry{
-		Id:          strconv.Itoa(ts.nextId),
+		ID:          strconv.Itoa(ts.nextID),
 		Level:       ts.currentDir.Level + 1,
-		ParentId:    d.Id,
+		ParentID:    d.ID,
 		Path:        path,
 		DisplayName: filepath.Base(path),
 		Children:    []*ProjectFileEntry{},
 	}
 
-	ts.nextId++
+	ts.nextID++
 
 	// What type of entry is this?
 	if info.IsDir() {
