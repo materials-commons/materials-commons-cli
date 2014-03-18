@@ -4,39 +4,43 @@ import (
 	"time"
 )
 
+// A Project is an instance of a users project.
 type Project struct {
-	Id   int
+	ID   int
 	Name string
 	Path string
-	MCId string `db:"mcid"`
+	MCID string `db:"mcid"`
 }
 
+// A ProjectEvent is a file change event in the project.
 type ProjectEvent struct {
-	Id        int
+	ID        int
 	Path      string
 	Event     string
 	EventTime time.Time `db:"event_time"`
-	ProjectId int       `db:"project_id"`
+	ProjectID int       `db:"project_id"`
 }
 
+// A DataDir is a directory in a project.
 type DataDir struct {
-	Id         int
+	ID         int
 	ProjectID  int    `db:"project_id"`
-	MCId       string `db:"mcid"`
+	MCID       string `db:"mcid"`
 	Name       string
 	Path       string
-	ParentMCId string `db:"parent_mcid"`
+	ParentMCID string `db:"parent_mcid"`
 	Parent     int
 }
 
+// A DataFile is a file in a directory in a project.
 type DataFile struct {
-	Id         int
-	MCId       string    `db:"mcid"`
+	ID         int
+	MCID       string    `db:"mcid"`
 	DataDirID  int       `db:"datadir_id"`
 	ProjectID  int       `db:"project_id"`
 	LastUpload time.Time `db:"last_upload"`
 	MTime      time.Time `db:"mtime"`
-	ParentMCId string    `db:"parent_mcid"`
+	ParentMCID string    `db:"parent_mcid"`
 	Parent     int
 	Name       string
 	Path       string

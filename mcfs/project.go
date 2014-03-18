@@ -138,11 +138,11 @@ func (c *Client) loadNewProject(path string) error {
 		case entry.DataFileName == "":
 			// This is just a datadir
 			dataDir := schema.DataDir{
-				ProjectID:  project.Id,
-				MCId:       entry.DataDirID,
+				ProjectID:  project.ID,
+				MCID:       entry.DataDirID,
 				Name:       entry.DataDirName,
 				Path:       "", // TODO: Create the path
-				ParentMCId: "", //TODO: We aren't sending this yet
+				ParentMCID: "", //TODO: We aren't sending this yet
 				Parent:     0,  // This needs to be computed...
 
 			}

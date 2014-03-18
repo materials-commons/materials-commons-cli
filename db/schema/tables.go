@@ -119,11 +119,12 @@ var schemas = []schemaCommand{
 	},
 }
 
+// Create creates the sql database by creating the tables and triggers.
 func Create(db *sql.DB) error {
 	for _, schema := range schemas {
 		_, err := db.Exec(schema.create)
 		if err != nil {
-			return fmt.Errorf("Failed on create for %s: %s", schema.description, err)
+			return fmt.Errorf("failed on create for %s: %s", schema.description, err)
 		}
 	}
 
