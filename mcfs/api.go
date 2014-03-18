@@ -29,7 +29,7 @@ func (c *Client) Close() {
 func (c *Client) Login(user, apikey string) error {
 	req := protocol.LoginReq{
 		User:   user,
-		ApiKey: apikey,
+		APIKey: apikey,
 	}
 
 	_, err := c.doRequest(req)
