@@ -24,7 +24,7 @@ func Download() (to string, err error) {
 	case err != nil:
 		return
 	case status != 200:
-		return to, fmt.Errorf("Download failed with HTTP status code %d", status)
+		return to, fmt.Errorf("download failed with HTTP status code %d", status)
 	default:
 		return to, nil
 	}
