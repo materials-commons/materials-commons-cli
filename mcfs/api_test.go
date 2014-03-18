@@ -36,12 +36,12 @@ func init() {
 
 func TestLoginLogout(t *testing.T) {
 
-	err := c.Login("gtarcea@umich.edu", "abc123")
+	err := c.Login("test@mc.org", "abc123")
 	if err == nil {
 		t.Fatalf("Login accepted with bad key")
 	}
 
-	err = c.Login("gtarcea@umich.edu", "472abe203cd411e3a280ac162d80f1bf")
+	err = c.Login("test@mc.org", "test")
 	if err != nil {
 		t.Fatalf("Login should have succeeded %s", err)
 	}
@@ -53,12 +53,12 @@ func TestLoginLogout(t *testing.T) {
 }
 
 func TestUploadNewFile(t *testing.T) {
-	c.Login("gtarcea@umich.edu", "472abe203cd411e3a280ac162d80f1bf")
+	c.Login("test@mc.org", "test")
 	fileData := "Hello world from Materials Commons"
 	filePath := filepath.Join(MCDir, "testnewfile.txt")
 	ioutil.WriteFile(filePath, []byte(fileData), 0777)
-	projectID := "c33edab7-a65f-478e-9fa6-9013271c73ea"
-	dataDirID := "643b2a54-44ef-4864-9370-18fb529f5609"
+	projectID := "9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3"
+	dataDirID := "f0ebb733-c75d-4983-8d68-242d688fcf73"
 	uploaded, dataFileID, err := c.UploadNewFile(projectID, dataDirID, filePath)
 	fmt.Printf("%d/%s/%s\n", uploaded, dataFileID, err)
 	if err != nil {
@@ -101,8 +101,8 @@ func TestRestartFileUpload(t *testing.T) {
 	var _ = realChecksum
 	realSize := len(fileData)
 	var _ = realSize
-	projectID := "c33edab7-a65f-478e-9fa6-9013271c73ea"
-	dataDirID := "643b2a54-44ef-4864-9370-18fb529f5609"
+	projectID := "9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3"
+	dataDirID := "f0ebb733-c75d-4983-8d68-242d688fcf73"
 	uploaded, dataFileID, err := c.UploadNewFile(projectID, dataDirID, filePathPartial)
 
 	if err != nil {

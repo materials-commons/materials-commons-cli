@@ -14,11 +14,10 @@ var createDirTests = []struct {
 	errorNil    bool
 	description string
 }{
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/abc", false, "Valid project bad path"},
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "Test_Proj/abc", true, "Valid project path starts with project"},
-	{"does not exist", "Test_Proj", "Test_Proj/abc.txt", false, "Valid project path bad project id"},
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/Test_Proj/abc", true, "Valid project full path containing project name"},
-	{"c33edab7-a65f-478e-9fa6-9013271c73ea", "Test_Proj", "/tmp/Test_Proj/abc", true, "Valid project full path containing project name"},
+	{"9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3", "Test", "/tmp/abc", false, "Valid project bad path"},
+	{"9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3", "Test", "Test/abc", true, "Valid project path starts with project"},
+	{"does not exist", "Test", "Test/abc.txt", false, "Valid project path bad project id"},
+	{"9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3", "Test", "/tmp/Test/abc", true, "Valid project full path containing project name"},
 }
 
 func TestCreateDir(t *testing.T) {
@@ -34,9 +33,9 @@ func TestCreateDir(t *testing.T) {
 	}
 
 	// Test creating an existing directory
-	projID := "c33edab7-a65f-478e-9fa6-9013271c73ea"
-	projName := "Test_Proj"
-	dirPath := "/tmp/Test_Proj/abc"
+	projID := "9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3"
+	projName := "Test"
+	dirPath := "/tmp/Test/abc"
 	dataDirID, err := c.CreateDir(projID, projName, dirPath)
 	if err != nil {
 		t.Errorf("Creating a directory that already exists returned wrong error code: %s", err)
