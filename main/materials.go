@@ -153,15 +153,15 @@ func uploadProject(projectName string) {
 		return
 	}
 
-	host := materials.Config.Materialscommons.UploadHost
-	port := materials.Config.Materialscommons.UploadPort
+	host := materials.Config.MaterialsCommons.UploadHost
+	port := materials.Config.MaterialsCommons.UploadPort
 	c, err := mcfs.NewClient(host, port)
 	if err != nil {
 		fmt.Println("Unable create client", err)
 		return
 	}
 
-	err = c.Login(materials.Config.User.Username, materials.Config.User.Apikey)
+	err = c.Login(materials.Config.User.Username, materials.Config.User.APIKey)
 
 	if err != nil {
 		fmt.Println("Unable to login", err)

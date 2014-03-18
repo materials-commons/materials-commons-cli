@@ -17,7 +17,7 @@ const materialsArchive = "materials.tar.gz"
 // the downloaded file. It downloads to the OS TempDir.
 func Download() (to string, err error) {
 	client := ezhttp.NewClient()
-	url := fmt.Sprintf("%s/%s", materials.Config.Materialscommons.Download, materialsArchive)
+	url := fmt.Sprintf("%s/%s", materials.Config.MaterialsCommons.Download, materialsArchive)
 	to = filepath.Join(os.TempDir(), materialsArchive)
 	status, err := client.FileGet(url, to)
 	switch {

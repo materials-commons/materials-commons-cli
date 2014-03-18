@@ -34,7 +34,7 @@ func (u *Updater) UpdatesAvailable() bool {
 		}
 	}
 
-	if materials.Update(materials.Config.Materialscommons.Download) {
+	if materials.Update(materials.Config.MaterialsCommons.Download) {
 		updateAvailable = true
 		u.binaryUpdated = true
 	}

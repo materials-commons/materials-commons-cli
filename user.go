@@ -14,7 +14,7 @@ import (
 // a user in order to use the materials commons web services.
 type User struct {
 	Username string
-	Apikey   string
+	APIKey   string
 	path     string
 }
 
@@ -58,7 +58,7 @@ func (u *User) readUser() error {
 	}
 
 	u.Username = strings.TrimSpace(pieces[0])
-	u.Apikey = strings.TrimSpace(pieces[1])
+	u.APIKey = strings.TrimSpace(pieces[1])
 	return nil
 }
 
@@ -80,7 +80,7 @@ func (u *User) Save() error {
 	}
 	defer file.Close()
 
-	userLine := fmt.Sprintf("%s|%s", u.Username, u.Apikey)
+	userLine := fmt.Sprintf("%s|%s", u.Username, u.APIKey)
 	file.WriteString(userLine)
 	return nil
 }

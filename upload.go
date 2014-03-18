@@ -42,7 +42,7 @@ func (p Project) Upload() error {
 			// Loading a file
 			ddirid := dir2id[filepath.Dir(path)]
 			if !fileAlreadyUploaded(ddirid, path) {
-				uri := Config.ApiUrlPath("/import")
+				uri := Config.APIURLPath("/import")
 				var params = map[string]string{
 					"datadir": ddirid,
 					"project": ids.ProjectId,
@@ -67,7 +67,7 @@ func (p Project) Upload() error {
 func createProject(projectName string) (*Project2DatadirIds, error) {
 	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
 
-	uri := Config.ApiUrlPath("/projects")
+	uri := Config.APIURLPath("/projects")
 	var data Project2DatadirIds
 	_, err := client.JSONStr(j).JSONPost(uri, &data)
 
@@ -82,7 +82,7 @@ func createDataDir(projectId, projectPath, dirPath, parentId string) (string, er
 	ddirName := makeDatadirName(projectPath, dirPath)
 	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
 	var data MCId
-	uri := Config.ApiUrlPath("/datadirs")
+	uri := Config.APIURLPath("/datadirs")
 	_, err := client.JSONStr(j).JSONPost(uri, &data)
 
 	if err != nil {
@@ -98,7 +98,7 @@ func makeDatadirName(projectPath, dirPath string) string {
 }
 
 func fileAlreadyUploaded(ddirId, filename string) bool {
-	uri := Config.ApiUrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
+	uri := Config.APIURLPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
 	var rv map[string]interface{}
 	status, err := client.JSONGet(uri, &rv)
 

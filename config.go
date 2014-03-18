@@ -9,14 +9,17 @@ import (
 	"time"
 )
 
-type MaterialscommonsConfig struct {
-	Api        string
-	Url        string
+// MateralsCommonsConfig holds all the configuration information
+// for accessing Materials Commons services.
+type MaterialsCommonsConfig struct {
+	API        string
+	URL        string
 	Download   string
 	UploadHost string
 	UploadPort int
 }
 
+// ServerConfig holds all the configuration for this server.
 type ServerConfig struct {
 	Port                uint
 	SocketIOPort        uint
@@ -29,13 +32,15 @@ type ServerConfig struct {
 	LastServerUpdate    string
 }
 
+// UserConfig hold configuration for the user.
 type UserConfig struct {
 	*User
 	DefaultProject string
 }
 
+// ConfigSettings holds all the individual configuration items.
 type ConfigSettings struct {
-	Materialscommons MaterialscommonsConfig
+	MaterialsCommons MaterialsCommonsConfig
 	Server           ServerConfig
 	User             UserConfig
 }
@@ -54,8 +59,11 @@ var defaultSettings = map[string]interface{}{
 	"MCDOWNLOADURL":         "https://download.materialscommons.org",
 }
 
+// Config is the single instance of the servers configuration settings.
 var Config ConfigSettings
 
+// EnvironmentVariables is a list of the environment variables the server looks for
+// to override default settings.
 var EnvironmentVariables = []string{
 	"MATERIALS_PORT", "MATERIALS_ADDRESS", "MATERIALS_SOCKETIO_PORT",
 	"MATERIALS_UPDATE_CHECK_INTERVAL", "MATERIALS_WEBDIR", "MCAPIURL",
@@ -63,10 +71,12 @@ var EnvironmentVariables = []string{
 }
 
 //*********************************************************
-// Create on Initialize() for the materials package
+// TODO: Create an Initialize() for the materials package
 // that encompasses all the other initialization, such
 // as projects, and .user
 //*********************************************************
+
+// ConfigInitialize initializes the configuration.
 func ConfigInitialize(user *User) {
 	Config.User.User = user
 	Config.setConfigOverrides()
@@ -79,11 +89,11 @@ func (c *ConfigSettings) setConfigOverrides() {
 	c.Server.SocketIOPort = getConfigUint("socketio_port", "MATERIALS_SOCKETIO_PORT", configFromFile)
 	updateCheckInterval := getConfigDuration("update_check_interval", "MATERIALS_UPDATE_CHECK_INTERVAL", configFromFile)
 	c.Server.UpdateCheckInterval = updateCheckInterval
-	c.Materialscommons.Api = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
-	c.Materialscommons.Url = getDefaultedConfigStr("MCURL", "MCURL")
-	c.Materialscommons.Download = getDefaultedConfigStr("MCDOWNLOADURL", "MCDOWNLOADURL")
-	c.Materialscommons.UploadHost = getDefaultedConfigStr("MCFS_HOST", "MCFS_HOST")
-	c.Materialscommons.UploadPort = getDefaultedConfigInt("MCFS_PORT", "MCFS_PORT")
+	c.MaterialsCommons.API = getDefaultedConfigStr("MCAPIURL", "MCAPIURL")
+	c.MaterialsCommons.URL = getDefaultedConfigStr("MCURL", "MCURL")
+	c.MaterialsCommons.Download = getDefaultedConfigStr("MCDOWNLOADURL", "MCDOWNLOADURL")
+	c.MaterialsCommons.UploadHost = getDefaultedConfigStr("MCFS_HOST", "MCFS_HOST")
+	c.MaterialsCommons.UploadPort = getDefaultedConfigInt("MCFS_PORT", "MCFS_PORT")
 	webdir := os.Getenv("MATERIALS_WEBDIR")
 	if webdir == "" {
 		webdir = filepath.Join(c.User.DotMaterialsPath(), "website")
@@ -189,10 +199,10 @@ func writeConfigFile(config configFile, dotmaterialsPath string) error {
 
 // Constructs the url to access an api service. Includes the
 // apikey. Prepends a "/" if needed.
-func (c ConfigSettings) ApiUrlPath(service string) string {
+func (c ConfigSettings) APIURLPath(service string) string {
 	if string(service[0]) != "/" {
 		service = "/" + service
 	}
-	uri := c.Materialscommons.Api + service + "?apikey=" + c.User.Apikey
+	uri := c.MaterialsCommons.API + service + "?apikey=" + c.User.APIKey
 	return uri
 }
