@@ -10,32 +10,36 @@ import (
 
 var _ = fmt.Println
 
+// ChannelReadWriter implements a marshaler for channels.
 type ChannelReadWriter struct {
 	c   chan []byte
 	err error
 }
 
+// NewChannelReadWriter creates a new instance.
 func NewChannelReadWriter() *ChannelReadWriter {
 	return &ChannelReadWriter{
 		c: make(chan []byte),
 	}
 }
 
-func (this *ChannelReadWriter) Write(bytes []byte) (n int, err error) {
-	if this.err != nil {
+// Write writes to the channel.
+func (crw *ChannelReadWriter) Write(bytes []byte) (n int, err error) {
+	if crw.err != nil {
 		return 0, err
 	}
 
-	this.c <- bytes
+	crw.c <- bytes
 	return len(bytes), nil
 }
 
-func (this *ChannelReadWriter) Read(bytes []byte) (n int, err error) {
-	if this.err != nil {
+// Read reads bytes from channel.
+func (crw *ChannelReadWriter) Read(bytes []byte) (n int, err error) {
+	if crw.err != nil {
 		return 0, err
 	}
 
-	bytes = <-this.c
+	bytes = <-crw.c
 	return len(bytes), nil
 }
 
@@ -65,6 +69,7 @@ func (m *GobMarshaler) Unmarshal(data interface{}) error {
 
 /* ******************************************************************* */
 
+// ChannelMarshaler a marshaler for channels.
 type ChannelMarshaler struct {
 	request  chan protocol.Request
 	response chan protocol.Response
@@ -73,6 +78,7 @@ type ChannelMarshaler struct {
 	decoder  *gob.Decoder
 }
 
+// NewChannelMarshaler creates a new instance of a ChannelMarsharler.
 func NewChannelMarshaler() *ChannelMarshaler {
 	var buf bytes.Buffer
 	return &ChannelMarshaler{
@@ -83,6 +89,7 @@ func NewChannelMarshaler() *ChannelMarshaler {
 	}
 }
 
+// Marshal marshals the data.
 func (m *ChannelMarshaler) Marshal(data interface{}) error {
 	if m.err != nil {
 		return m.err
@@ -111,6 +118,7 @@ func (m *ChannelMarshaler) Marshal(data interface{}) error {
 	return nil
 }
 
+// Unmarshal unmarshals the data.
 func (m *ChannelMarshaler) Unmarshal(data interface{}) error {
 	if m.err != nil {
 		return m.err
@@ -122,40 +130,41 @@ func (m *ChannelMarshaler) Unmarshal(data interface{}) error {
 		case *protocol.Request:
 			*t = req
 		default:
-			return fmt.Errorf("Request data needed")
+			return fmt.Errorf("request data needed")
 		}
 	case resp := <-m.response:
 		switch t := data.(type) {
 		case *protocol.Response:
 			*t = resp
 		default:
-			return fmt.Errorf("Response data needed")
+			return fmt.Errorf("response data needed")
 		}
 	}
 	return nil
 }
 
+// SetError allows us to inject an error.
 func (m *ChannelMarshaler) SetError(err error) {
 	m.err = err
 }
 
+// ClearError allows us to clear the error.
 func (m *ChannelMarshaler) ClearError() {
 	m.err = nil
 }
 
 /* ******************************************************************* */
 
-// A IdentityMarshaler saves the data passed and returns it.
+// A RequestResponseMarshaler saves the data passed and returns it.
 // It can be set to return an error instead. This is useful
 // for testing.
-
 type RequestResponseMarshaler struct {
 	request  protocol.Request
 	response protocol.Response
 	err      error
 }
 
-// NewIdentityMarshaler returns a new IdentityMarshaler
+// NewRequestResponseMarshaler returns a new IdentityMarshaler
 func NewRequestResponseMarshaler() *RequestResponseMarshaler {
 	return &RequestResponseMarshaler{}
 }
@@ -174,7 +183,7 @@ func (m *RequestResponseMarshaler) Marshal(data interface{}) error {
 	case *protocol.Response:
 		m.response = *t
 	default:
-		return fmt.Errorf("Not a valid type")
+		return fmt.Errorf("not a valid type")
 	}
 
 	return nil
@@ -194,7 +203,7 @@ func (m *RequestResponseMarshaler) Unmarshal(data interface{}) error {
 	case *protocol.Response:
 		*t = m.response
 	default:
-		return fmt.Errorf("Not a valid type")
+		return fmt.Errorf("not a valid type")
 	}
 
 	return nil
