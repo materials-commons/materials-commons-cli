@@ -39,14 +39,14 @@ func (ar *adminResource) register(container *restful.Container) {
 	ws.Route(ws.GET("/update").To(ar.update).
 		Doc("If updates are available downloads, installs and restarts the server."))
 
-	ws.Route(ws.GET("/updates").Filter(JsonpFilter).To(ar.updates).
+	ws.Route(ws.GET("/updates").Filter(JSONPFilter).To(ar.updates).
 		Doc("List services that are available for update").
 		Writes(updateStatus{}))
 
 	ws.Route(ws.GET("/stop").To(ar.stop).
 		Doc("Stops the server."))
 
-	ws.Route(ws.GET("/config").Filter(JsonpFilter).To(ar.config).
+	ws.Route(ws.GET("/config").Filter(JSONPFilter).To(ar.config).
 		Doc("Returns the configuration settings").
 		Writes(materials.ConfigSettings{}))
 

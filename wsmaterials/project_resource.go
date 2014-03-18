@@ -7,14 +7,14 @@ import (
 	"net/http"
 )
 
-type ProjectResource struct {
+type projectResource struct {
 	*materials.ProjectDB
 }
 
 func newProjectResource(container *restful.Container) error {
 	p := materials.CurrentUserProjectDB()
 
-	projectResource := ProjectResource{
+	projectResource := projectResource{
 		ProjectDB: p,
 	}
 	projectResource.register(container)
@@ -22,22 +22,22 @@ func newProjectResource(container *restful.Container) error {
 	return nil
 }
 
-func (p ProjectResource) register(container *restful.Container) {
+func (p projectResource) register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.Path("/projects").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON, restful.MIME_XML)
 
-	ws.Route(ws.GET("").Filter(JsonpFilter).To(p.allProjects).
+	ws.Route(ws.GET("").Filter(JSONPFilter).To(p.allProjects).
 		Doc("list all projects").
 		Writes([]materials.Project{}))
 
-	ws.Route(ws.GET("/{project-name}").Filter(JsonpFilter).To(p.getProject).
+	ws.Route(ws.GET("/{project-name}").Filter(JSONPFilter).To(p.getProject).
 		Doc("Retrieve a particular project").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
 		Writes(materials.Project{}))
 
-	ws.Route(ws.GET("/{project-name}/tree").Filter(JsonpFilter).To(p.getProjectTree).
+	ws.Route(ws.GET("/{project-name}/tree").Filter(JSONPFilter).To(p.getProjectTree).
 		Doc("Retrieve the directory/file tree for the project").
 		Param(ws.PathParameter("original-project-name", "original name of the project").
 		DataType("string")))
@@ -69,7 +69,7 @@ func (p ProjectResource) register(container *restful.Container) {
 	container.Add(ws)
 }
 
-func (p ProjectResource) allProjects(request *restful.Request, response *restful.Response) {
+func (p projectResource) allProjects(request *restful.Request, response *restful.Response) {
 	if len(p.Projects()) == 0 {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusNotFound, "User has no projects.")
@@ -78,7 +78,7 @@ func (p ProjectResource) allProjects(request *restful.Request, response *restful
 	}
 }
 
-func (p ProjectResource) getProject(request *restful.Request, response *restful.Response) {
+func (p projectResource) getProject(request *restful.Request, response *restful.Response) {
 	projectName := request.PathParameter("project-name")
 	project, found := p.Find(projectName)
 	if found {
@@ -90,7 +90,7 @@ func (p ProjectResource) getProject(request *restful.Request, response *restful.
 	}
 }
 
-func (p ProjectResource) getProjectTree(request *restful.Request, response *restful.Response) {
+func (p projectResource) getProjectTree(request *restful.Request, response *restful.Response) {
 	projectName := request.PathParameter("project-name")
 
 	if project, found := p.Find(projectName); !found {
@@ -103,7 +103,7 @@ func (p ProjectResource) getProjectTree(request *restful.Request, response *rest
 	}
 }
 
-func (p *ProjectResource) newProject(request *restful.Request, response *restful.Response) {
+func (p *projectResource) newProject(request *restful.Request, response *restful.Response) {
 	project := new(materials.Project)
 	err := request.ReadEntity(&project)
 	if err != nil {
@@ -123,7 +123,7 @@ func (p *ProjectResource) newProject(request *restful.Request, response *restful
 	response.WriteEntity(project)
 }
 
-func (p *ProjectResource) updateProject(request *restful.Request, response *restful.Response) {
+func (p *projectResource) updateProject(request *restful.Request, response *restful.Response) {
 	originalProjectName := request.PathParameter("original-project-name")
 	project := new(materials.Project)
 	err := request.ReadEntity(&project)
@@ -158,7 +158,7 @@ func (p *ProjectResource) updateProject(request *restful.Request, response *rest
 	}
 }
 
-func (p *ProjectResource) uploadProject(request *restful.Request, response *restful.Response) {
+func (p *projectResource) uploadProject(request *restful.Request, response *restful.Response) {
 	projectName := request.PathParameter("project-name")
 	project, found := p.Find(projectName)
 	if found {
@@ -179,7 +179,7 @@ func (p *ProjectResource) uploadProject(request *restful.Request, response *rest
 	}
 }
 
-func (p *ProjectResource) getProjectChanges(request *restful.Request, response *restful.Response) {
+func (p *projectResource) getProjectChanges(request *restful.Request, response *restful.Response) {
 	p.performProjectOperation(request, response, func(project *materials.Project) {
 		changes := []materials.ProjectFileChange{}
 		for _, change := range project.Changes {
@@ -189,7 +189,7 @@ func (p *ProjectResource) getProjectChanges(request *restful.Request, response *
 	})
 }
 
-func (p *ProjectResource) updateTracking(request *restful.Request, response *restful.Response) {
+func (p *projectResource) updateTracking(request *restful.Request, response *restful.Response) {
 	trackingOptions := materials.TrackingOptions{}
 	request.ReadEntity(&trackingOptions)
 
@@ -206,7 +206,7 @@ func (p *ProjectResource) updateTracking(request *restful.Request, response *res
 	})
 }
 
-func (p *ProjectResource) performProjectOperation(request *restful.Request, response *restful.Response, f func(project *materials.Project)) {
+func (p *projectResource) performProjectOperation(request *restful.Request, response *restful.Response, f func(project *materials.Project)) {
 	projectName := request.PathParameter("project-name")
 	if project, found := p.Find(projectName); found {
 		f(project)

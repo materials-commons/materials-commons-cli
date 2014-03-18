@@ -26,16 +26,18 @@ func (j *jsonpResponseWriter) Write(bytes []byte) (int, error) {
 	return j.writer.Write(bytes)
 }
 
-func newJsonpResponseWriter(httpWriter http.ResponseWriter, callback string) *jsonpResponseWriter {
+func newJSONPResponseWriter(httpWriter http.ResponseWriter, callback string) *jsonpResponseWriter {
 	jsonpResponseWriter := new(jsonpResponseWriter)
 	jsonpResponseWriter.writer = httpWriter
 	jsonpResponseWriter.callback = callback
 	return jsonpResponseWriter
 }
 
-func JsonpFilter(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+// JSONPFilter implements JSONP handling. It looks for a callback argument and modifies the
+// returned response to wrap it in the callback.
+func JSONPFilter(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	callback := req.Request.FormValue("callback")
-	jsonpResponseWriter := newJsonpResponseWriter(resp.ResponseWriter, callback)
+	jsonpResponseWriter := newJSONPResponseWriter(resp.ResponseWriter, callback)
 	resp.ResponseWriter = jsonpResponseWriter
 	chain.ProcessFilter(req, resp)
 }

@@ -35,13 +35,13 @@ func startMonitor() {
 		// Nothing to do
 	})
 	go monitorProjectChanges(sio)
-	go startHttp(10, sio)
+	go startHTTP(10, sio)
 }
 
 // startHttp starts up a HTTP server. It will attempt to start the server
 // retryCount times. The retry on server startup handles the case where
 // the old materials service is stopping, and the new one is starting.
-func startHttp(retryCount int, sio *socketio.SocketIOServer) {
+func startHTTP(retryCount int, sio *socketio.SocketIOServer) {
 	for i := 0; i < retryCount; i++ {
 		address := fmt.Sprintf(":%d", materials.Config.Server.SocketIOPort)
 		fmt.Println(http.ListenAndServe(address, sio))
