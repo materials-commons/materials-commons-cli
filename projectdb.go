@@ -2,7 +2,6 @@ package materials
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/materials-commons/gohandy/file"
 	"io/ioutil"
@@ -11,7 +10,7 @@ import (
 	"sync"
 )
 
-// MaterialsProjects contains a list of user projects and information that
+// ProjectDB contains a list of user projects and information that
 // is needed by the methods to load the projects file.
 type ProjectDB struct {
 	path     string
@@ -37,7 +36,7 @@ func CurrentUserProjectDB() *ProjectDB {
 	return currentUserDB
 }
 
-// Load projects from the database directory at path. Project files are
+// OpenProjectDB loads projects from the database directory at path. Project files are
 // JSON files ending with a .project extension.
 func OpenProjectDB(path string) (*ProjectDB, error) {
 	projectDB := ProjectDB{path: path}
@@ -58,7 +57,7 @@ func (p *ProjectDB) Reload() error {
 // loadProjects reads the projects directory, and loads each *.project file found in it.
 func (p *ProjectDB) loadProjects() error {
 	if !file.IsDir(p.path) {
-		return fmt.Errorf("ProjectDB must be a directory: '%s'", p.path)
+		return fmt.Errorf("projectdb must be a directory: '%s'", p.path)
 	}
 
 	finfos, err := ioutil.ReadDir(p.path)
@@ -125,7 +124,7 @@ func (p *ProjectDB) Add(proj Project) error {
 	defer p.mutex.Unlock()
 
 	if _, index := p.find(proj.Name); index != -1 {
-		return errors.New(fmt.Sprintf("Project already exists: %s", proj.Name))
+		return fmt.Errorf("project already exists: %s", proj.Name)
 	}
 
 	if err := p.writeProject(proj); err != nil {
@@ -167,7 +166,7 @@ func (p *ProjectDB) Update(f func() *Project) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Project not found: %s", proj.Name))
+	return fmt.Errorf("project not found: %s", proj.Name)
 }
 
 // projectsExceptFor returns a new list of projects except for the project
