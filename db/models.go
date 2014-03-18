@@ -7,16 +7,32 @@ import (
 )
 
 var (
-	ProjectsModel      *model.Model
+	// ProjectsModel is the model for projects
+	ProjectsModel *model.Model
+
+	// ProjectEventsModel is the model for project events
 	ProjectEventsModel *model.Model
-	DataDirsModel      *model.Model
-	DataFilesModel     *model.Model
-	Projects           *model.Query
-	ProjectEvents      *model.Query
-	DataDirs           *model.Query
-	DataFiles          *model.Query
+
+	// DataDirsModel is the model for datadirs
+	DataDirsModel *model.Model
+
+	// DataFilesModel is the model for datafiles
+	DataFilesModel *model.Model
+
+	// Projects is the query model for projects
+	Projects *model.Query
+
+	// ProjectEvents is the query model for project events
+	ProjectEvents *model.Query
+
+	// DataDirs is the query model for datadirs
+	DataDirs *model.Query
+
+	// DataFiles is the query model for datafiles.
+	DataFiles *model.Query
 )
 
+// Use sets the database connection for all the models.
 func Use(db *sqlx.DB) {
 	Projects = ProjectsModel.Q(db)
 	ProjectEvents = ProjectEventsModel.Q(db)
