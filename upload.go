@@ -69,7 +69,7 @@ func createProject(projectName string) (*Project2DatadirIds, error) {
 
 	uri := Config.ApiUrlPath("/projects")
 	var data Project2DatadirIds
-	_, err := client.JsonStr(j).JsonPost(uri, &data)
+	_, err := client.JSONStr(j).JSONPost(uri, &data)
 
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func createDataDir(projectId, projectPath, dirPath, parentId string) (string, er
 	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
 	var data MCId
 	uri := Config.ApiUrlPath("/datadirs")
-	_, err := client.JsonStr(j).JsonPost(uri, &data)
+	_, err := client.JSONStr(j).JSONPost(uri, &data)
 
 	if err != nil {
 		return "", err
@@ -100,7 +100,7 @@ func makeDatadirName(projectPath, dirPath string) string {
 func fileAlreadyUploaded(ddirId, filename string) bool {
 	uri := Config.ApiUrlPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
 	var rv map[string]interface{}
-	status, err := client.JsonGet(uri, &rv)
+	status, err := client.JSONGet(uri, &rv)
 
 	if err != nil {
 		return false
