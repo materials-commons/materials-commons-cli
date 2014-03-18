@@ -22,17 +22,17 @@ func TestBinaryUrl(t *testing.T) {
 	}
 	url := "http://localhost"
 	for _, os := range oss {
-		binaryUrl := binaryUrlForRuntime(url, os)
-		expectedUrl, _ := expected[os]
-		if binaryUrl != expectedUrl {
-			t.Fatalf("Bad url %s, expected %s\n", binaryUrl, expectedUrl)
+		binaryURL := binaryURLForRuntime(url, os)
+		expectedURL, _ := expected[os]
+		if binaryURL != expectedURL {
+			t.Fatalf("Bad url %s, expected %s\n", binaryURL, expectedURL)
 		}
 	}
 
-	expectedUrl, _ := expected[runtime.GOOS]
-	binaryUrl := binaryUrl(url)
-	if binaryUrl != expectedUrl {
-		t.Fatalf("Bad url %s, expected %s\n", binaryUrl, expectedUrl)
+	expectedURL, _ := expected[runtime.GOOS]
+	binaryURL := binaryURL(url)
+	if binaryURL != expectedURL {
+		t.Fatalf("Bad url %s, expected %s\n", binaryURL, expectedURL)
 	}
 }
 
@@ -45,7 +45,7 @@ func TestDownloadNewBinary(t *testing.T) {
 	ts := httptest.NewServer(http.FileServer(http.Dir("test_data")))
 	defer ts.Close()
 
-	path, err := downloadNewBinary(binaryUrlForRuntime(ts.URL, "linux"))
+	path, err := downloadNewBinary(binaryURLForRuntime(ts.URL, "linux"))
 	if err != nil {
 		t.Fatalf("Unexpected error on download %s\n", err.Error())
 	}

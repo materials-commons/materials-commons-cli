@@ -9,8 +9,8 @@ var _ = fmt.Println
 
 var (
 	expectedTop = ProjectFileEntry{
-		Id:          "0",
-		ParentId:    "",
+		ID:          "0",
+		ParentID:    "",
 		Path:        "/tmp/tproj",
 		HrefPath:    "",
 		DisplayName: "/tmp/tproj",
@@ -18,8 +18,8 @@ var (
 	}
 
 	expectedChildDir = ProjectFileEntry{
-		Id:          "1",
-		ParentId:    "0",
+		ID:          "1",
+		ParentID:    "0",
 		Path:        "/tmp/tproj/a",
 		HrefPath:    "",
 		DisplayName: "a",
@@ -27,8 +27,8 @@ var (
 	}
 
 	expectedDF = ProjectFileEntry{
-		Id:          "2",
-		ParentId:    "1",
+		ID:          "2",
+		ParentID:    "1",
 		Path:        "/tmp/tproj/a/a.txt",
 		HrefPath:    "tproj/a/a.txt",
 		DisplayName: "a.txt",
@@ -79,12 +79,12 @@ func TestBuildTreeBadProj(t *testing.T) {
 }
 
 func compare(child, expected ProjectFileEntry, clen int, t *testing.T) {
-	if child.Id != expected.Id {
-		t.Fatalf("Ids not equal, expected %s, got %s", expected.Id, child.Id)
+	if child.ID != expected.ID {
+		t.Fatalf("Ids not equal, expected %s, got %s", expected.ID, child.ID)
 	}
 
-	if child.ParentId != expected.ParentId {
-		t.Fatalf("ParentIds not equal, expected %s, got %s", expected.ParentId, child.ParentId)
+	if child.ParentID != expected.ParentID {
+		t.Fatalf("ParentIds not equal, expected %s, got %s", expected.ParentID, child.ParentID)
 	}
 
 	if child.Path != expected.Path {

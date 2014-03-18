@@ -19,7 +19,7 @@ func TestCreateNewUser(t *testing.T) {
 		t.Fatalf("No username\n")
 	}
 
-	if u.Apikey == "" {
+	if u.APIKey == "" {
 		t.Fatalf("No apikey\n")
 	}
 
@@ -31,14 +31,14 @@ func TestCreateNewUser(t *testing.T) {
 
 func TestSaveUser(t *testing.T) {
 	u, _ := NewUserFrom("test_data")
-	u.Apikey = "abc123"
+	u.APIKey = "abc123"
 	err := u.Save()
 	if err != nil {
 		t.Fatalf("Save returned error %s\n", err.Error())
 	}
 
 	u2, _ := NewUserFrom("test_data")
-	if u2.Apikey != "abc123" {
-		t.Fatalf("Expected apikey to be abc123, got %s\n", u2.Apikey)
+	if u2.APIKey != "abc123" {
+		t.Fatalf("Expected apikey to be abc123, got %s\n", u2.APIKey)
 	}
 }

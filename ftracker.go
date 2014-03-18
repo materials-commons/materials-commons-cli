@@ -12,7 +12,7 @@ import (
 
 var (
 	// ErrBadProjectFileStatusString status string is unknown.
-	ErrBadProjectFileStatusString   = fmt.Errorf("unknown string value for ProjectFileStatus")
+	ErrBadProjectFileStatusString = fmt.Errorf("unknown string value for ProjectFileStatus")
 
 	// ErrBadProjectFileLocationString file location is unknown
 	ErrBadProjectFileLocationString = fmt.Errorf("unknown string value for ProjectFileLocation")

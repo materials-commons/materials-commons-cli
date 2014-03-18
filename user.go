@@ -54,7 +54,7 @@ func (u *User) readUser() error {
 
 	pieces := strings.Split(string(content), "|")
 	if len(pieces) != 2 {
-		return errors.New("The .user file is corrupted")
+		return errors.New("the .user file is corrupted")
 	}
 
 	u.Username = strings.TrimSpace(pieces[0])

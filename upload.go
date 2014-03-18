@@ -8,17 +8,18 @@ import (
 	"strings"
 )
 
-type Project2DatadirIds struct {
-	ProjectId string `json:"project_id"`
-	DatadirId string `json:"datadir_id"`
+type project2DatadirIDs struct {
+	ProjectID string `json:"project_id"`
+	DatadirID string `json:"datadir_id"`
 }
 
-type MCId struct {
-	Id string `json:"id"`
+type mcID struct {
+	ID string `json:"id"`
 }
 
 var client = ezhttp.NewInsecureClient()
 
+// Upload uploads a project by doing posts. No longer supported.
 func (p Project) Upload() error {
 	ids, err := createProject(p.Name)
 	if err != nil {
@@ -26,13 +27,13 @@ func (p Project) Upload() error {
 	}
 
 	dir2id := make(map[string]string)
-	dir2id[p.Path] = ids.DatadirId
+	dir2id[p.Path] = ids.DatadirID
 
 	filepath.Walk(p.Path, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			if path != p.Path {
-				parentId, _ := dir2id[filepath.Dir(path)]
-				id, err := createDataDir(ids.ProjectId, p.Path, path, parentId)
+				parentID, _ := dir2id[filepath.Dir(path)]
+				id, err := createDataDir(ids.ProjectID, p.Path, path, parentID)
 				if err != nil {
 					return err
 				}
@@ -45,7 +46,7 @@ func (p Project) Upload() error {
 				uri := Config.APIURLPath("/import")
 				var params = map[string]string{
 					"datadir": ddirid,
-					"project": ids.ProjectId,
+					"project": ids.ProjectID,
 				}
 				_, err := client.PostFile(uri, path, "file", params)
 				//resp, err := postFile(ddirid, ids.ProjectId, path, uri, client)
@@ -64,11 +65,11 @@ func (p Project) Upload() error {
 	return nil
 }
 
-func createProject(projectName string) (*Project2DatadirIds, error) {
+func createProject(projectName string) (*project2DatadirIDs, error) {
 	j := `{"name":"` + projectName + `", "description":"Newly created project"}`
 
 	uri := Config.APIURLPath("/projects")
-	var data Project2DatadirIds
+	var data project2DatadirIDs
 	_, err := client.JSONStr(j).JSONPost(uri, &data)
 
 	if err != nil {
@@ -78,10 +79,10 @@ func createProject(projectName string) (*Project2DatadirIds, error) {
 	return &data, nil
 }
 
-func createDataDir(projectId, projectPath, dirPath, parentId string) (string, error) {
+func createDataDir(projectID, projectPath, dirPath, parentID string) (string, error) {
 	ddirName := makeDatadirName(projectPath, dirPath)
-	j := `{"name":"` + ddirName + `", "parent":"` + parentId + `", "project":"` + projectId + `"}`
-	var data MCId
+	j := `{"name":"` + ddirName + `", "parent":"` + parentID + `", "project":"` + projectID + `"}`
+	var data mcID
 	uri := Config.APIURLPath("/datadirs")
 	_, err := client.JSONStr(j).JSONPost(uri, &data)
 
@@ -89,7 +90,7 @@ func createDataDir(projectId, projectPath, dirPath, parentId string) (string, er
 		return "", err
 	}
 
-	return data.Id, nil
+	return data.ID, nil
 }
 
 func makeDatadirName(projectPath, dirPath string) string {
@@ -97,8 +98,8 @@ func makeDatadirName(projectPath, dirPath string) string {
 	return strings.Replace(dirPath, projectPathParent, "", 1)
 }
 
-func fileAlreadyUploaded(ddirId, filename string) bool {
-	uri := Config.APIURLPath("/datafiles/" + ddirId + "/" + filepath.Base(filename))
+func fileAlreadyUploaded(ddirID, filename string) bool {
+	uri := Config.APIURLPath("/datafiles/" + ddirID + "/" + filepath.Base(filename))
 	var rv map[string]interface{}
 	status, err := client.JSONGet(uri, &rv)
 
@@ -115,38 +116,3 @@ func fileAlreadyUploaded(ddirId, filename string) bool {
 
 	return true
 }
-
-/*
-func postFile(ddirId, projectId, filename, uri string, client *http.Client) (*http.Response, error) {
-	body := bytes.NewBufferString("")
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
-	part, err := writer.CreateFormFile("file", filename)
-	if err != nil {
-		return nil, err
-	}
-	file, _ := os.Open(filename)
-	defer file.Close()
-
-	fileContents, err := ioutil.ReadAll(file)
-	part.Write(fileContents)
-
-	boundary := writer.Boundary()
-	closeStr := fmt.Sprintf("\r\n--%s--\r\n", boundary)
-
-	writer.WriteField("datadir", ddirId)
-	writer.WriteField("project", projectId)
-
-	closeBuf := bytes.NewBufferString(closeStr)
-	reader := io.MultiReader(body, file, closeBuf)
-
-	req, err := http.NewRequest("POST", uri, reader)
-
-	req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
-	req.ContentLength = int64(body.Len()) + int64(closeBuf.Len())
-	req.Close = true
-
-	return client.Do(req)
-}
-*/
