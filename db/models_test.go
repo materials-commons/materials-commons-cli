@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/materials-commons/materials/db/schema"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ func init() {
 	dbArgs := fmt.Sprintf("file:%s?cached=shared&mode=rwc", "/tmp/sqltest.db")
 	db, err := sql.Open("sqlite3", dbArgs)
 	if err != nil {
-		panic("Couldn't open test db")
+		panic(fmt.Sprintf("models_test: Couldn't open test db: %s", err))
 	}
 	err = schema.Create(db)
 	if err != nil {

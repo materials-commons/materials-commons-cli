@@ -8,6 +8,7 @@ import (
 	"github.com/materials-commons/base/model"
 	"github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/db/schema"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"testing"
 )
@@ -20,7 +21,7 @@ func init() {
 	dbArgs := fmt.Sprintf("file:%s?cached=shared&mode=rwc", "/tmp/sqltest.db")
 	cdb, err := sql.Open("sqlite3", dbArgs)
 	if err != nil {
-		panic("Couldn't open test db")
+		panic(fmt.Sprintf("project_test: couldn't open db: %s", err))
 	}
 	schema.Create(cdb)
 	cdb.Close()
