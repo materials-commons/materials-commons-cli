@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	"os/user"
 	"path/filepath"
 	"testing"
@@ -31,12 +32,12 @@ func TestCreatedDb(t *testing.T) {
 	db, _ := leveldb.OpenFile("/home/gtarcea/.materials/projectdb/Synthetic Tooth.db", nil)
 	defer db.Close()
 
-	db.CompactRange(leveldb.Range{nil, nil})
+	db.CompactRange(util.Range{Start: nil, Limit: nil})
 	if true {
 		return
 	}
 
-	iter := db.NewIterator(nil)
+	iter := db.NewIterator(nil, nil)
 	defer iter.Release()
 
 	for iter.Next() {

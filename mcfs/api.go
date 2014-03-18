@@ -8,6 +8,7 @@ import (
 	"net"
 )
 
+// NewClient creates a new connection to the file server.
 func NewClient(host string, port int) (*Client, error) {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
@@ -22,10 +23,12 @@ func NewClient(host string, port int) (*Client, error) {
 	return c, nil
 }
 
+// Close closes the connection to the server.
 func (c *Client) Close() {
 	c.conn.Close()
 }
 
+// Login performs a login request.
 func (c *Client) Login(user, apikey string) error {
 	req := protocol.LoginReq{
 		User:   user,
@@ -36,12 +39,14 @@ func (c *Client) Login(user, apikey string) error {
 	return err
 }
 
+// Logout performs a logout request.
 func (c *Client) Logout() error {
 	req := protocol.LogoutReq{}
 	_, err := c.doRequest(req)
 	return err
 }
 
+// doRequest executes a request and waits for the response.
 func (c *Client) doRequest(arg interface{}) (interface{}, error) {
 	req := &protocol.Request{
 		Req: arg,

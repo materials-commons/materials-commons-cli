@@ -5,6 +5,7 @@ import (
 //"github.com/materials-commons/mcfs"
 )
 
+// LookupProject placeholder.
 func (c *Client) LookupProject() {
 
 }

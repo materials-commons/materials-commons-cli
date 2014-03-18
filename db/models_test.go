@@ -37,7 +37,7 @@ func TestProjects(t *testing.T) {
 	proj := schema.Project{
 		Name: "testproject",
 		Path: "/tmp/testproject",
-		MCId: "abc123",
+		MCID: "abc123",
 	}
 
 	err := Projects.Insert(proj)
@@ -55,7 +55,7 @@ func TestProjects(t *testing.T) {
 		t.Fatalf("Expected to get back 1 project and instead got back %d", len(projects))
 	}
 
-	proj.Id = 1 // Set the id because first entry will have id 1
+	proj.ID = 1 // Set the id because first entry will have id 1
 	if projects[0] != proj {
 		t.Fatalf("Inserted proj different than retrieved version: i/r %#v/%#v", proj, projects[0])
 	}
@@ -83,7 +83,7 @@ func TestProjectEvents(t *testing.T) {
 		Path:      "/tmp/testproject/abc.txt",
 		Event:     "Delete",
 		EventTime: time.Now(),
-		ProjectId: 1,
+		ProjectID: 1,
 	}
 
 	err := ProjectEvents.Insert(event)
@@ -102,7 +102,7 @@ func TestProjectEvents(t *testing.T) {
 		t.Fatalf("Expected to get back 1 event and instead got back %d", len(events))
 	}
 
-	event.Id = 1 // we know the first id in the database
+	event.ID = 1 // we know the first id in the database
 	// nil out times since they won't be equal
 	if !event.EventTime.Equal(events[0].EventTime) {
 		t.Fatalf("Inserted event time not equal to retrieved i/r %#v/%#v", event, events[0])
@@ -121,7 +121,7 @@ func TestProjectEvents(t *testing.T) {
 func TestDataFiles(t *testing.T) {
 	now := time.Now()
 	datafile := schema.DataFile{
-		MCId:       "def456",
+		MCID:       "def456",
 		Name:       "abc.txt",
 		Path:       "/tmp/testproject/abc.txt",
 		DataDirID:  1,
@@ -131,7 +131,7 @@ func TestDataFiles(t *testing.T) {
 		LastUpload: now,
 		MTime:      now,
 		Version:    1,
-		ParentMCId: "",
+		ParentMCID: "",
 		Parent:     0,
 	}
 
@@ -150,7 +150,7 @@ func TestDataFiles(t *testing.T) {
 		t.Fatalf("Expected to get back 1 datafile and instead got back %d", len(datafiles))
 	}
 
-	datafile.Id = 1 // we know the first id in the database
+	datafile.ID = 1 // we know the first id in the database
 	if !datafile.LastUpload.Equal(datafiles[0].LastUpload) {
 		t.Fatalf("Inserted datafile upload time not equal to retrieved i/r %#v/%#v", datafile, datafiles[0])
 	}
@@ -190,11 +190,11 @@ func TestDataFiles(t *testing.T) {
 
 func TestDataDirs(t *testing.T) {
 	datadir := schema.DataDir{
-		MCId:       "ghi789",
+		MCID:       "ghi789",
 		ProjectID:  1,
 		Name:       "testproject",
 		Path:       "/tmp/testproject",
-		ParentMCId: "",
+		ParentMCID: "",
 		Parent:     0,
 	}
 	var _ = datadir
@@ -215,7 +215,7 @@ func TestDataDirs(t *testing.T) {
 		t.Fatalf("Expected to get back 1 datadir and instead got back %d", len(datadirs))
 	}
 
-	datadir.Id = 1 // we know the first id in the database
+	datadir.ID = 1 // we know the first id in the database
 	if datadir != datadirs[0] {
 		t.Fatalf("Inserted datadir different than retrieved version: i/r %#v/%#v", datadirs, datadirs[0])
 	}

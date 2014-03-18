@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	ErrPathsDiffer = errors.New("Paths differ")
+	// ErrPathsDiffer the expected and received paths differ.
+	ErrPathsDiffer = errors.New("paths differ")
 )
 
 func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesResp, error) {
@@ -34,6 +35,7 @@ func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesRes
 	}
 }
 
+// CreateProject creates a project on the server.
 func (c *Client) CreateProject(projectName string) (*Project, error) {
 	req := protocol.CreateProjectReq{
 		Name: projectName,
@@ -52,6 +54,7 @@ func (c *Client) CreateProject(projectName string) (*Project, error) {
 	}
 }
 
+// UploadNewProject uploads all files in a project.
 func (c *Client) UploadNewProject(path string) error {
 	var dataDirs = map[string]string{}
 	projectName := filepath.Base(path)
@@ -100,10 +103,13 @@ func (c *Client) UploadNewProject(path string) error {
 	return nil
 }
 
+// LoadFromRemote placeholder.
 func (c *Client) LoadFromRemote(path string) error {
 	return nil
 }
 
+// IndexProject placeholder - asks the server for the current view of the project and
+// compares it with the local view.
 func (c *Client) IndexProject(path string) error {
 	var project *schema.Project
 	var err error

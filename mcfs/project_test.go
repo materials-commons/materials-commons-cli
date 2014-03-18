@@ -42,7 +42,7 @@ func TestProjectExistence(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to retrieve existing project")
 	}
-	p.Id = proj.Id
+	p.ID = proj.ID
 	if *proj != p {
 		t.Errorf("Retrieve project differs from inserted version i/r %#v/%#v", p, proj)
 	}

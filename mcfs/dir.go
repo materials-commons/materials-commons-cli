@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// CreateDir makes a request to the server to create a directory.
 func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID string, err error) {
 	i := strings.Index(path, projectName)
 	if i == -1 {
@@ -34,6 +35,7 @@ func (c *Client) CreateDir(projectID, projectName, path string) (dataDirID strin
 	}
 }
 
+// UploadDirectory uploads a directory. ** Not Implemented and may be removed. **
 func (c *Client) UploadDirectory(projectID, dataDirID string, path string) ([]DataFileUpload, error) {
 	switch {
 	case dataDirID == "":

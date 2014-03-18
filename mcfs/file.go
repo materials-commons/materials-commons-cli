@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 )
 
+// RestartFileUpload restarts a partially completed upload.
 func (c *Client) RestartFileUpload(dataFileID, path string) (bytesUploaded int64, err error) {
 	checksum, size, err := fileInfo(path)
 	if err != nil {
@@ -19,6 +20,7 @@ func (c *Client) RestartFileUpload(dataFileID, path string) (bytesUploaded int64
 	return c.uploadFile(dataFileID, path, checksum, size)
 }
 
+// UploadNewFile uploads a new file to the server.
 func (c *Client) UploadNewFile(projectID, dataDirID, path string) (bytesUploaded int64, dataFileID string, err error) {
 	checksum, size, err := fileInfo(path)
 	if err != nil {

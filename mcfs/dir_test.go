@@ -34,10 +34,10 @@ func TestCreateDir(t *testing.T) {
 	}
 
 	// Test creating an existing directory
-	projId := "c33edab7-a65f-478e-9fa6-9013271c73ea"
+	projID := "c33edab7-a65f-478e-9fa6-9013271c73ea"
 	projName := "Test_Proj"
 	dirPath := "/tmp/Test_Proj/abc"
-	dataDirID, err := c.CreateDir(projId, projName, dirPath)
+	dataDirID, err := c.CreateDir(projID, projName, dirPath)
 	if err != nil {
 		t.Errorf("Creating a directory that already exists returned wrong error code: %s", err)
 	}
