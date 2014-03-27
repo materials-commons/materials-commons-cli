@@ -13,11 +13,8 @@ var (
 	// ProjectEventsModel is the model for project events
 	ProjectEventsModel *model.Model
 
-	// DataDirsModel is the model for datadirs
-	DataDirsModel *model.Model
-
-	// DataFilesModel is the model for datafiles
-	DataFilesModel *model.Model
+	// ProjectFilesModel is the model for project files
+	ProjectFilesModel *model.Model
 
 	// Projects is the query model for projects
 	Projects *model.Query
@@ -25,19 +22,15 @@ var (
 	// ProjectEvents is the query model for project events
 	ProjectEvents *model.Query
 
-	// DataDirs is the query model for datadirs
-	DataDirs *model.Query
-
-	// DataFiles is the query model for datafiles.
-	DataFiles *model.Query
+	// ProjectFiles is the query model for project files
+	ProjectFiles *model.Query
 )
 
 // Use sets the database connection for all the models.
 func Use(db *sqlx.DB) {
 	Projects = ProjectsModel.Q(db)
 	ProjectEvents = ProjectEventsModel.Q(db)
-	DataDirs = DataDirsModel.Q(db)
-	DataFiles = DataFilesModel.Q(db)
+	ProjectFiles = ProjectFilesModel.Q(db)
 }
 
 func init() {
@@ -52,17 +45,9 @@ func init() {
 	}
 	ProjectEventsModel = model.New(schema.ProjectEvent{}, "project_events", peQueries)
 
-	ddirQueries := model.ModelQueries{
-		Insert: `insert into datadirs (mcid, project_id, name, path, parent_mcid, parent)
-                 values (:mcid, :project_id, :name, :path, :parent_mcid, :parent)`,
+	pfQueries := model.ModelQueries{
+		Insert: `insert into project_files (path, size, checksum, mtime, isdir, project_id)
+                 values (:path, :size, :checksum, :mtime, :isdir, :project_id)`,
 	}
-	DataDirsModel = model.New(schema.DataDir{}, "datadirs", ddirQueries)
-
-	dfQueries := model.ModelQueries{
-		Insert: `insert into datafiles
-                  (mcid, name, path, datadir_id, project_id, size, checksum, last_upload, mtime, version, parent_mcid, parent)
-                 values
-                  (:mcid, :name, :path, :datadir_id, :project_id, :size, :checksum, :last_upload, :mtime, :version, :parent_mcid, :parent)`,
-	}
-	DataFilesModel = model.New(schema.DataFile{}, "datafiles", dfQueries)
+	ProjectFilesModel = model.New(schema.ProjectFile{}, "project_files", pfQueries)
 }

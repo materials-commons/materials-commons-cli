@@ -16,6 +16,7 @@ var _ = fmt.Println
 var tdb *sqlx.DB
 
 func init() {
+	os.RemoveAll("/tmp/sqltest.db")
 	var err error
 	dbArgs := fmt.Sprintf("file:%s?cached=shared&mode=rwc", "/tmp/sqltest.db")
 	db, err := sql.Open("sqlite3", dbArgs)
@@ -119,122 +120,48 @@ func TestProjectEvents(t *testing.T) {
 	}
 }
 
-func TestDataFiles(t *testing.T) {
-	now := time.Now()
-	datafile := schema.DataFile{
-		MCID:       "def456",
-		Name:       "abc.txt",
-		Path:       "/tmp/testproject/abc.txt",
-		DataDirID:  1,
-		ProjectID:  1,
-		Size:       10,
-		Checksum:   "fa23ed7",
-		LastUpload: now,
-		MTime:      now,
-		Version:    1,
-		ParentMCID: "",
-		Parent:     0,
-	}
-
-	err := DataFiles.Insert(datafile)
-	if err != nil {
-		t.Fatalf("Insert DataFile %#v into datafiles failed %s", datafile, err)
-	}
-
-	datafiles := []schema.DataFile{}
-	err = DataFiles.Select(&datafiles, "select * from datafiles")
-	if err != nil {
-		t.Fatalf("Select of datafiles failed: %s", err)
-	}
-
-	if len(datafiles) != 1 {
-		t.Fatalf("Expected to get back 1 datafile and instead got back %d", len(datafiles))
-	}
-
-	datafile.ID = 1 // we know the first id in the database
-	if !datafile.LastUpload.Equal(datafiles[0].LastUpload) {
-		t.Fatalf("Inserted datafile upload time not equal to retrieved i/r %#v/%#v", datafile, datafiles[0])
-	}
-
-	if !datafile.MTime.Equal(datafiles[0].MTime) {
-		t.Fatalf("Inserted datafile mtime not equal to retrieved i/r %#v/%#v", datafile, datafiles[0])
-	}
-
-	// set times on both ends since we cannot indirectly compare the times
-	// through structure comparison
-	datafile.LastUpload = now
-	datafile.MTime = now
-	datafiles[0].LastUpload = now
-	datafiles[0].MTime = now
-	if datafile != datafiles[0] {
-		t.Fatalf("Inserted datafile different than retrieved version: i/r %#v/%#v", datafile, datafiles[0])
-	}
-
-	// Test that trigger fired
-	var count int
-	if err = DataFiles.QueryRow("select count(project_id) from project2datafile;").Scan(&count); err != nil {
-		t.Errorf("Select count on project2datafile failed: %s", err)
-	}
-	if count != 1 {
-		t.Errorf("Expected count of 1 for project2datafile, got %d", count)
-	}
-
-	count = 0
-	if err = DataFiles.QueryRow("select count(datadir_id) from datadir2datafile;").Scan(&count); err != nil {
-		t.Errorf("Select count on datadir2datafile failed: %s", err)
-	}
-
-	if count != 1 {
-		t.Errorf("Expected count of 1 for datadir2datafile, got %d", count)
-	}
-}
-
-func TestDataDirs(t *testing.T) {
-	datadir := schema.DataDir{
-		MCID:       "ghi789",
-		ProjectID:  1,
-		Name:       "testproject",
-		Path:       "/tmp/testproject",
-		ParentMCID: "",
-		Parent:     0,
-	}
-	var _ = datadir
-
-	err := DataDirs.Insert(datadir)
-	if err != nil {
-		t.Fatalf("Insert DataDir %#v into datadirs failed %s", datadir, err)
-	}
-
-	datadirs := []schema.DataDir{}
-	err = DataDirs.Select(&datadirs, "select * from datadirs")
-
-	if err != nil {
-		t.Fatalf("Select of datadirs failed: %s", err)
-	}
-
-	if len(datadirs) != 1 {
-		t.Fatalf("Expected to get back 1 datadir and instead got back %d", len(datadirs))
-	}
-
-	datadir.ID = 1 // we know the first id in the database
-	if datadir != datadirs[0] {
-		t.Fatalf("Inserted datadir different than retrieved version: i/r %#v/%#v", datadirs, datadirs[0])
-	}
-
-	// Test that trigger fired
-	var count int
-	if err = DataDirs.QueryRow("select count(project_id) from project2datadir;").Scan(&count); err != nil {
-		t.Errorf("Select count on project2datadir failed: %s", err)
-	}
-	if count != 1 {
-		t.Errorf("Expected count of 1 for project2datadir, got %d", count)
-	}
-
+func TestProjectFiles(t *testing.T) {
 	defer cleanupMT()
+
+	f := schema.ProjectFile{
+		Path:      "/tmp/testproject/abc.txt",
+		ProjectID: 1,
+		MTime:     time.Date(2000, time.November, 12, 12, 0, 0, 0, time.UTC),
+		Checksum:  "abc123",
+		Size:      10,
+	}
+
+	err := ProjectFiles.Insert(f)
+	if err != nil {
+		t.Fatalf("Insert ProjectFile %#v into project_files failed %s", f, err)
+	}
+
+	files := []schema.ProjectFile{}
+	err = ProjectFiles.Select(&files, "Select * from project_files")
+	if err != nil {
+		t.Fatalf("Select of project_files failed: %s", err)
+	}
+
+	if len(files) != 1 {
+		t.Fatalf("Expected to get back 1 file, and instead got back %d", len(files))
+	}
+
+	if !f.MTime.Equal(files[0].MTime) {
+		t.Fatalf("MTime for inserted object is different than retrieved object")
+	}
+
+	// Structure comparison. Times will be different because of pointers so, just set both to now
+	// since we already compared the times.
+	now := time.Now()
+	f.MTime = now
+	files[0].MTime = now
+	f.ID = 1 // We know the first id inserted is one
+	if f != files[0] {
+		t.Fatalf("Inserted object %#v, different from retrieved %#v", f, files[0])
+	}
 }
 
 func cleanupMT() {
-	fmt.Println("cleanupMT")
 	tdb.Close()
 	os.RemoveAll("/tmp/sqltest.db")
 }
