@@ -17,7 +17,10 @@ var (
 	ErrPathsDiffer = errors.New("paths differ")
 )
 
+/*
 func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesResp, error) {
+	return nil, nil
+
 	req := &protocol.ProjectEntriesReq{
 		Name: projectName,
 	}
@@ -33,7 +36,9 @@ func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesRes
 	default:
 		return nil, ErrBadResponseType
 	}
+
 }
+*/
 
 // CreateProject creates a project on the server.
 func (c *Client) CreateProject(projectName string) (*Project, error) {
@@ -120,10 +125,13 @@ func (c *Client) IndexProject(path string) error {
 	case err != nil:
 		return err
 	}
+	var _ = project
 
+	/*
 	entries, err := c.projectEntries(project.Name)
 
 	var _ = entries
+*/
 
 	return nil
 }
@@ -133,7 +141,9 @@ func (c *Client) loadNewProject(path string) error {
 	if err != nil {
 		return err
 	}
+	var _ = project
 
+	/*
 	entryResp, err := c.projectEntries(project.Name)
 	if err != nil {
 		return nil
@@ -156,10 +166,12 @@ func (c *Client) loadNewProject(path string) error {
 			if err != nil {
 				fmt.Printf("err on insert into database %s\n", err)
 			}
+
 		default:
 			// This is a datafile
 		}
 	}
+*/
 
 	return nil
 }
