@@ -32,7 +32,7 @@ func init() {
 	if err != nil {
 		panic("Couldn't reopen db under sqlx")
 	}
-	Use(tdb)
+	use(tdb)
 }
 
 func TestProjects(t *testing.T) {

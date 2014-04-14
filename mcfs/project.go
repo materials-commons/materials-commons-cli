@@ -17,29 +17,6 @@ var (
 	ErrPathsDiffer = errors.New("paths differ")
 )
 
-/*
-func (c *Client) projectEntries(projectName string) (*protocol.ProjectEntriesResp, error) {
-	return nil, nil
-
-	req := &protocol.ProjectEntriesReq{
-		Name: projectName,
-	}
-
-	resp, err := c.doRequest(req)
-	if err != nil {
-		return nil, err
-	}
-
-	switch t := resp.(type) {
-	case protocol.ProjectEntriesResp:
-		return &t, nil
-	default:
-		return nil, ErrBadResponseType
-	}
-
-}
-*/
-
 // CreateProject creates a project on the server.
 func (c *Client) CreateProject(projectName string) (*Project, error) {
 	req := protocol.CreateProjectReq{
@@ -128,10 +105,10 @@ func (c *Client) IndexProject(path string) error {
 	var _ = project
 
 	/*
-	entries, err := c.projectEntries(project.Name)
+		entries, err := c.projectEntries(project.Name)
 
-	var _ = entries
-*/
+		var _ = entries
+	*/
 
 	return nil
 }
@@ -144,34 +121,34 @@ func (c *Client) loadNewProject(path string) error {
 	var _ = project
 
 	/*
-	entryResp, err := c.projectEntries(project.Name)
-	if err != nil {
-		return nil
-	}
-
-	for _, entry := range entryResp.Entries {
-		switch {
-		case entry.DataFileName == "":
-			// This is just a datadir
-			dataDir := schema.DataDir{
-				ProjectID:  project.ID,
-				MCID:       entry.DataDirID,
-				Name:       entry.DataDirName,
-				Path:       "", // TODO: Create the path
-				ParentMCID: "", //TODO: We aren't sending this yet
-				Parent:     0,  // This needs to be computed...
-
-			}
-			err := db.DataDirs.Insert(dataDir)
-			if err != nil {
-				fmt.Printf("err on insert into database %s\n", err)
-			}
-
-		default:
-			// This is a datafile
+		entryResp, err := c.projectEntries(project.Name)
+		if err != nil {
+			return nil
 		}
-	}
-*/
+
+		for _, entry := range entryResp.Entries {
+			switch {
+			case entry.DataFileName == "":
+				// This is just a datadir
+				dataDir := schema.DataDir{
+					ProjectID:  project.ID,
+					MCID:       entry.DataDirID,
+					Name:       entry.DataDirName,
+					Path:       "", // TODO: Create the path
+					ParentMCID: "", //TODO: We aren't sending this yet
+					Parent:     0,  // This needs to be computed...
+
+				}
+				err := db.DataDirs.Insert(dataDir)
+				if err != nil {
+					fmt.Printf("err on insert into database %s\n", err)
+				}
+
+			default:
+				// This is a datafile
+			}
+		}
+	*/
 
 	return nil
 }

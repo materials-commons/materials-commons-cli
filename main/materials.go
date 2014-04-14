@@ -34,6 +34,7 @@ type serverOptions struct {
 
 type projectOptions struct {
 	Project   string   `long:"project" description:"Specify the project"`
+	Stat      bool     `long:"stat" description:"Compares client with servers view and shows differences"`
 	Directory string   `long:"directory" description:"The directory path to the project"`
 	Add       bool     `long:"add" description:"Add the project to the project config file"`
 	Delete    bool     `long:"delete" description:"Delete the project from the project config file"`
@@ -292,6 +293,31 @@ func findDups(dirPath string) {
 	}
 }
 
+func showStat(projectName string) {
+	project, found := materials.CurrentUserProjectDB().Find(projectName)
+	if !found {
+		fmt.Println("No such project:", projectName)
+		return
+	}
+
+	host := materials.Config.MaterialsCommons.UploadHost
+	port := materials.Config.MaterialsCommons.UploadPort
+	c, err := mcfs.NewClient(host, port)
+	if err != nil {
+		fmt.Println("Unable create client", err)
+		return
+	}
+
+	err = c.Login(materials.Config.User.Username, materials.Config.User.APIKey)
+
+	if err != nil {
+		fmt.Println("Unable to login", err)
+		return
+	}
+
+	var _ = project
+}
+
 func main() {
 	materials.ConfigInitialize(mcuser)
 	var opts options
@@ -316,5 +342,7 @@ func main() {
 		findDups(opts.Project.Directory)
 	case opts.Project.Tracking:
 		showTracking(opts.Project.Project, opts.Project.Files)
+	case opts.Project.Stat:
+		showStat(opts.Project.Project)
 	}
 }

@@ -4,6 +4,19 @@ import (
 	"time"
 )
 
+type FType int32
+
+const (
+	// FTypeFile File entry
+	FTypeFile FType = iota // File
+
+	// FTypeDirectory Directory entry
+	FTypeDirectory
+
+	// FTypeLink Soft
+	FTypeLink
+)
+
 // A Project is an instance of a users project.
 type Project struct {
 	ID   int    // Primary key
@@ -21,7 +34,9 @@ type ProjectEvent struct {
 	EventTime time.Time `db:"event_time"` // Time event occurred
 }
 
-// A ProjectFile is a file or directory in the project
+// A ProjectFile is a file or directory entry in the project. The type
+// of entry is represented in the FType field. This currently supports
+//
 type ProjectFile struct {
 	ID        int       // Primary key
 	ProjectID int       `db:"project_id"` // Foreign key to project
@@ -29,5 +44,5 @@ type ProjectFile struct {
 	Size      int64     // Size of file (valid only for files)
 	Checksum  string    // MD5 Hash of file (valid only for files)
 	MTime     time.Time // Last known Modification time
-	IsDir     bool      // True if this entry is a directory
+	FType     string    // Type of entry
 }

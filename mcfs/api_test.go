@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	r "github.com/dancannon/gorethink"
+	"github.com/materials-commons/base/db"
 	"github.com/materials-commons/base/model"
 	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/gohandy/marshaling"
@@ -31,6 +32,8 @@ func init() {
 		"address":  "localhost:30815",
 		"database": "materialscommons",
 	})
+	db.SetAddress("localhost:30815")
+	db.SetDatabase("materialscommons")
 	go mcfsServer(m)
 }
 
@@ -60,7 +63,6 @@ func TestUploadNewFile(t *testing.T) {
 	projectID := "9b18dac4-caff-4dc6-9a18-ae5c6b9c9ca3"
 	dataDirID := "f0ebb733-c75d-4983-8d68-242d688fcf73"
 	uploaded, dataFileID, err := c.UploadNewFile(projectID, dataDirID, filePath)
-	fmt.Printf("%d/%s/%s\n", uploaded, dataFileID, err)
 	if err != nil {
 		t.Fatalf("Upload unexpectedly failed %s", err)
 	}

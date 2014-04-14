@@ -43,7 +43,7 @@ var schemas = []schemaCommand{
                    size       bigint,
                    checksum   varchar(32),
                    mtime      datetime,
-                   isdir      boolean,
+                   ftype      varchar(32),
                    foreign key (project_id) references projects(id)
                 )`,
 	},

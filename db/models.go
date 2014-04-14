@@ -7,14 +7,14 @@ import (
 )
 
 var (
-	// ProjectsModel is the model for projects
-	ProjectsModel *model.Model
+	// projectsModel is the model for projects
+	projectsModel *model.Model
 
-	// ProjectEventsModel is the model for project events
-	ProjectEventsModel *model.Model
+	// projectEventsModel is the model for project events
+	projectEventsModel *model.Model
 
-	// ProjectFilesModel is the model for project files
-	ProjectFilesModel *model.Model
+	// projectFilesModel is the model for project files
+	projectFilesModel *model.Model
 
 	// Projects is the query model for projects
 	Projects *model.Query
@@ -28,26 +28,26 @@ var (
 
 // Use sets the database connection for all the models.
 func Use(db *sqlx.DB) {
-	Projects = ProjectsModel.Q(db)
-	ProjectEvents = ProjectEventsModel.Q(db)
-	ProjectFiles = ProjectFilesModel.Q(db)
+	Projects = projectsModel.Q(db)
+	ProjectEvents = projectEventsModel.Q(db)
+	ProjectFiles = projectFilesModel.Q(db)
 }
 
 func init() {
 	pQueries := model.ModelQueries{
 		Insert: "insert into projects (name, path, mcid) values (:name, :path, :mcid)",
 	}
-	ProjectsModel = model.New(schema.Project{}, "projects", pQueries)
+	projectsModel = model.New(schema.Project{}, "projects", pQueries)
 
 	peQueries := model.ModelQueries{
 		Insert: `insert into project_events (path, event, event_time, project_id)
                  values (:path, :event, :event_time, :project_id)`,
 	}
-	ProjectEventsModel = model.New(schema.ProjectEvent{}, "project_events", peQueries)
+	projectEventsModel = model.New(schema.ProjectEvent{}, "project_events", peQueries)
 
 	pfQueries := model.ModelQueries{
-		Insert: `insert into project_files (path, size, checksum, mtime, isdir, project_id)
-                 values (:path, :size, :checksum, :mtime, :isdir, :project_id)`,
+		Insert: `insert into project_files (path, size, checksum, mtime, ftype, project_id)
+                 values (:path, :size, :checksum, :mtime, :ftype, :project_id)`,
 	}
-	ProjectFilesModel = model.New(schema.ProjectFile{}, "project_files", pfQueries)
+	projectFilesModel = model.New(schema.ProjectFile{}, "project_files", pfQueries)
 }
