@@ -1,8 +1,8 @@
 package mcfs
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 var _ = fmt.Println
