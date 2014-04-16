@@ -293,7 +293,7 @@ func findDups(dirPath string) {
 	}
 }
 
-func showStat(projectName string) {
+func doStat(projectName string) {
 	project, found := materials.CurrentUserProjectDB().Find(projectName)
 	if !found {
 		fmt.Println("No such project:", projectName)
@@ -343,6 +343,6 @@ func main() {
 	case opts.Project.Tracking:
 		showTracking(opts.Project.Project, opts.Project.Files)
 	case opts.Project.Stat:
-		showStat(opts.Project.Project)
+		doStat(opts.Project.Project)
 	}
 }

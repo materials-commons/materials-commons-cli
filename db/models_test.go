@@ -122,14 +122,14 @@ func TestProjectEvents(t *testing.T) {
 
 func TestProjectFiles(t *testing.T) {
 	defer cleanupMT()
-	
+
 	d := time.Date(2000, time.November, 12, 12, 0, 0, 0, time.UTC)
 	f := schema.ProjectFile{
 		Path:      "/tmp/testproject/abc.txt",
 		ProjectID: 1,
 		MTime:     d,
-		CTime: d,
-		ATime: d,
+		CTime:     d,
+		ATime:     d,
 		Checksum:  "abc123",
 		Size:      10,
 		FIDHigh:   20,
@@ -174,5 +174,3 @@ func cleanupMT() {
 	tdb.Close()
 	os.RemoveAll("/tmp/sqltest.db")
 }
-
-
