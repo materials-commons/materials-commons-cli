@@ -46,8 +46,8 @@ func init() {
 	projectEventsModel = model.New(schema.ProjectEvent{}, "project_events", peQueries)
 
 	pfQueries := model.ModelQueries{
-		Insert: `insert into project_files (path, size, checksum, mtime, ftype, project_id)
-                 values (:path, :size, :checksum, :mtime, :ftype, :project_id)`,
+		Insert: `insert into project_files (path, size, checksum, mtime, atime, ctime, ftype, project_id, fidhigh, fidlow)
+                 values (:path, :size, :checksum, :mtime, :atime, :ctime, :ftype, :project_id, :fidhigh, :fidlow)`,
 	}
 	projectFilesModel = model.New(schema.ProjectFile{}, "project_files", pfQueries)
 }

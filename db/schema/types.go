@@ -22,7 +22,7 @@ type Project struct {
 	ID   int    // Primary key
 	Name string // Name of project
 	Path string // Path to project
-	MCID string `db:"mcid"` // Materials Commons id for project
+	MCID string // Materials Commons id for project
 }
 
 // A ProjectEvent is a file change event in the project.
@@ -44,5 +44,9 @@ type ProjectFile struct {
 	Size      int64     // Size of file (valid only for files)
 	Checksum  string    // MD5 Hash of file (valid only for files)
 	MTime     time.Time // Last known Modification time
+	ATime     time.Time // Last access time
+	CTime     time.Time // Creation time
 	FType     string    // Type of entry
+	FIDHigh   int64     // file.FID.IDHigh
+	FIDLow    int64     // file.FID.IDLow
 }

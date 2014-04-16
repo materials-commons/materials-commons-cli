@@ -32,7 +32,7 @@ func init() {
 	if err != nil {
 		panic("Couldn't reopen db under sqlx")
 	}
-	use(tdb)
+	Use(tdb)
 }
 
 func TestProjects(t *testing.T) {
@@ -122,13 +122,18 @@ func TestProjectEvents(t *testing.T) {
 
 func TestProjectFiles(t *testing.T) {
 	defer cleanupMT()
-
+	
+	d := time.Date(2000, time.November, 12, 12, 0, 0, 0, time.UTC)
 	f := schema.ProjectFile{
 		Path:      "/tmp/testproject/abc.txt",
 		ProjectID: 1,
-		MTime:     time.Date(2000, time.November, 12, 12, 0, 0, 0, time.UTC),
+		MTime:     d,
+		CTime: d,
+		ATime: d,
 		Checksum:  "abc123",
 		Size:      10,
+		FIDHigh:   20,
+		FIDLow:    30,
 	}
 
 	err := ProjectFiles.Insert(f)
@@ -154,7 +159,11 @@ func TestProjectFiles(t *testing.T) {
 	// since we already compared the times.
 	now := time.Now()
 	f.MTime = now
+	f.CTime = now
+	f.ATime = now
 	files[0].MTime = now
+	files[0].CTime = now
+	files[0].ATime = now
 	f.ID = 1 // We know the first id inserted is one
 	if f != files[0] {
 		t.Fatalf("Inserted object %#v, different from retrieved %#v", f, files[0])
@@ -165,3 +174,5 @@ func cleanupMT() {
 	tdb.Close()
 	os.RemoveAll("/tmp/sqltest.db")
 }
+
+
