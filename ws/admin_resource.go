@@ -66,10 +66,6 @@ func (ar *adminResource) update(request *restful.Request, response *restful.Resp
 	binaryUpdate := "No"
 
 	if ar.updater.UpdatesAvailable() {
-		if ar.updater.WebsiteUpdate() {
-			websiteUpdate = "Yes"
-		}
-
 		if ar.updater.BinaryUpdate() {
 			binaryUpdate = "Yes"
 		}
@@ -87,10 +83,6 @@ func (ar *adminResource) update(request *restful.Request, response *restful.Resp
 func (ar *adminResource) updates(request *restful.Request, response *restful.Response) {
 	u := updateStatus{}
 	if ar.updater.UpdatesAvailable() {
-		if ar.updater.WebsiteUpdate() {
-			u.Website = true
-		}
-
 		if ar.updater.BinaryUpdate() {
 			u.Server = true
 		}

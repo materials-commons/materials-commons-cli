@@ -13,7 +13,6 @@ import (
 	"github.com/materials-commons/materials/autoupdate"
 	_ "github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/mcfs"
-	"github.com/materials-commons/materials/site"
 	"github.com/materials-commons/materials/ws"
 	"io/ioutil"
 	"os"
@@ -61,12 +60,6 @@ func initialize() {
 	dirPath := filepath.Join(usr.HomeDir, ".materials", "projectdb")
 	err = os.MkdirAll(dirPath, 0777)
 	checkError(err)
-
-	if downloadedTo, err := site.Download(); err == nil {
-		if site.IsNew(downloadedTo) {
-			site.Deploy(downloadedTo)
-		}
-	}
 }
 
 func checkError(err error) {

@@ -59,9 +59,5 @@ func timeStrAfterUpdateInterval() string {
 }
 
 func applyUpdates() {
-	if updater.WebsiteUpdate() {
-		materials.Config.Server.LastWebsiteUpdate = timeStrNow()
-	}
-
 	updater.ApplyUpdates()
 }
