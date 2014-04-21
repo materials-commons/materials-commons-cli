@@ -14,7 +14,7 @@ import (
 	_ "github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/mcfs"
 	"github.com/materials-commons/materials/site"
-	"github.com/materials-commons/materials/wsmaterials"
+	"github.com/materials-commons/materials/ws"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -191,9 +191,9 @@ func startServer(serverOpts serverOptions) {
 	}
 
 	if serverOpts.Retry != 0 {
-		wsmaterials.StartRetry(serverOpts.Retry)
+		ws.StartRetry(serverOpts.Retry)
 	} else {
-		wsmaterials.Start()
+		ws.Start()
 	}
 }
 

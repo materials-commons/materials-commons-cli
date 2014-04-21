@@ -1,4 +1,4 @@
-package wsmaterials
+package ws
 
 import (
 	"github.com/emicklei/go-restful"

@@ -1,4 +1,4 @@
-package wsmaterials
+package ws
 
 /*
  * monitor.go contains the routines for monitoring project files and directory changes. It

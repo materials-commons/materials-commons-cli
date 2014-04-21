@@ -1,7 +1,7 @@
 PACKAGE DOCUMENTATION
 
-package wsmaterials
-    import "github.com/materials-commons/materials/wsmaterials"
+package ws
+    import "github.com/materials-commons/materials/ws"
 
 
 

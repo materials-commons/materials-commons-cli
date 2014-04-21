@@ -1,4 +1,4 @@
-package wsmaterials
+package ws
 
 import (
 	"fmt"

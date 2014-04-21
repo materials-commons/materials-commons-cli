@@ -8,17 +8,6 @@ package db
 VARIABLES
 
 var (
-    // ProjectsModel is the model for projects
-    ProjectsModel *model.Model
-
-    // ProjectEventsModel is the model for project events
-    ProjectEventsModel *model.Model
-
-    // DataDirsModel is the model for datadirs
-    DataDirsModel *model.Model
-
-    // DataFilesModel is the model for datafiles
-    DataFilesModel *model.Model
 
     // Projects is the query model for projects
     Projects *model.Query
@@ -26,15 +15,23 @@ var (
     // ProjectEvents is the query model for project events
     ProjectEvents *model.Query
 
-    // DataDirs is the query model for datadirs
-    DataDirs *model.Query
-
-    // DataFiles is the query model for datafiles.
-    DataFiles *model.Query
+    // ProjectFiles is the query model for project files
+    ProjectFiles *model.Query
 )
 
 
 FUNCTIONS
+
+func Exists() bool
+    Exists returns true if the database exists. This is determined by
+    looking for a database file entry.
+
+func Open() error
+    Open sets up the models and the database. If the database doesn't exist
+    then Open will create the database and it's schema.
+
+func Path() string
+    Path returns the full path to the database file.
 
 func Use(db *sqlx.DB)
     Use sets the database connection for all the models.
