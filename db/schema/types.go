@@ -13,7 +13,7 @@ const (
 	// FTypeDirectory Directory entry
 	FTypeDirectory
 
-	// FTypeLink Soft
+	// FTypeLink Soft link
 	FTypeLink
 )
 
