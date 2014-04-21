@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emicklei/go-restful"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials/autoupdate"
 	"net/http"
 	"os"
@@ -48,7 +49,7 @@ func (ar *adminResource) register(container *restful.Container) {
 
 	ws.Route(ws.GET("/config").Filter(JSONPFilter).To(ar.config).
 		Doc("Returns the configuration settings").
-		Writes(materials.ConfigSettings{}))
+		Writes(config.ConfigSettings{}))
 
 	container.Add(ws)
 }
@@ -100,7 +101,7 @@ func (ar *adminResource) stop(request *restful.Request, response *restful.Respon
 }
 
 func (ar *adminResource) config(request *restful.Request, response *restful.Response) {
-	response.WriteEntity(materials.Config)
+	response.WriteEntity(config.Config)
 }
 
 func sleep(seconds time.Duration) {

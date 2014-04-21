@@ -10,6 +10,8 @@ import (
 	"github.com/materials-commons/base/mc"
 	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials"
+	u "github.com/materials-commons/materials/user"
+	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials/autoupdate"
 	_ "github.com/materials-commons/materials/db"
 	"github.com/materials-commons/materials/mcfs"
@@ -22,7 +24,7 @@ import (
 	"time"
 )
 
-var mcuser, _ = materials.NewCurrentUser()
+var mcuser, _ = u.NewCurrentUser()
 
 type serverOptions struct {
 	AsServer bool   `long:"server" description:"Run as webserver"`
@@ -103,15 +105,15 @@ func convertProjects() {
 }
 
 func setupProjectsDir() {
-	projectDB := filepath.Join(materials.Config.User.DotMaterialsPath(), "projectdb")
+	projectDB := filepath.Join(config.Config.User.DotMaterialsPath(), "projectdb")
 	err := os.MkdirAll(projectDB, os.ModePerm)
 	checkError(err)
 }
 
 func convertProjectsFile() {
-	projectsPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projects")
+	projectsPath := filepath.Join(config.Config.User.DotMaterialsPath(), "projects")
 	projectsFile, err := os.Open(projectsPath)
-	projectdbPath := filepath.Join(materials.Config.User.DotMaterialsPath(), "projectdb")
+	projectdbPath := filepath.Join(config.Config.User.DotMaterialsPath(), "projectdb")
 	checkError(err)
 	defer projectsFile.Close()
 
@@ -147,15 +149,15 @@ func uploadProject(projectName string) {
 		return
 	}
 
-	host := materials.Config.MaterialsCommons.UploadHost
-	port := materials.Config.MaterialsCommons.UploadPort
+	host := config.Config.MaterialsCommons.UploadHost
+	port := config.Config.MaterialsCommons.UploadPort
 	c, err := mcfs.NewClient(host, port)
 	if err != nil {
 		fmt.Println("Unable create client", err)
 		return
 	}
 
-	err = c.Login(materials.Config.User.Username, materials.Config.User.APIKey)
+	err = c.Login(config.Config.User.Username, config.Config.User.APIKey)
 
 	if err != nil {
 		fmt.Println("Unable to login", err)
@@ -176,11 +178,11 @@ func startServer(serverOpts serverOptions) {
 	autoupdate.StartUpdateMonitor()
 
 	if serverOpts.Address != "" {
-		materials.Config.Server.Address = serverOpts.Address
+		config.Config.Server.Address = serverOpts.Address
 	}
 
 	if serverOpts.Port != 0 {
-		materials.Config.Server.Port = serverOpts.Port
+		config.Config.Server.Port = serverOpts.Port
 	}
 
 	if serverOpts.Retry != 0 {
@@ -192,14 +194,14 @@ func startServer(serverOpts serverOptions) {
 
 func showConfig() {
 	fmt.Println("Configuration:")
-	if b, err := json.MarshalIndent(&materials.Config, "", "  "); err != nil {
+	if b, err := json.MarshalIndent(&config.Config, "", "  "); err != nil {
 		fmt.Printf("Unable to display configuration: %s\n", err)
 	} else {
 		fmt.Println(string(b))
 	}
 
 	fmt.Printf("\nEnvironment Variables:\n")
-	for _, envVarName := range materials.EnvironmentVariables {
+	for _, envVarName := range config.EnvironmentVariables {
 		value := os.Getenv(envVarName)
 		if value == "" {
 			value = "Not Set"
@@ -207,7 +209,7 @@ func showConfig() {
 		fmt.Println("  ", envVarName+":", value)
 	}
 
-	fmt.Printf("\nPath to .materials: %s\n\n", materials.Config.User.DotMaterialsPath())
+	fmt.Printf("\nPath to .materials: %s\n\n", config.Config.User.DotMaterialsPath())
 }
 
 func showTracking(projectName string, files []string) {
@@ -293,15 +295,15 @@ func doStat(projectName string) {
 		return
 	}
 
-	host := materials.Config.MaterialsCommons.UploadHost
-	port := materials.Config.MaterialsCommons.UploadPort
+	host := config.Config.MaterialsCommons.UploadHost
+	port := config.Config.MaterialsCommons.UploadPort
 	c, err := mcfs.NewClient(host, port)
 	if err != nil {
 		fmt.Println("Unable create client", err)
 		return
 	}
 
-	err = c.Login(materials.Config.User.Username, materials.Config.User.APIKey)
+	err = c.Login(config.Config.User.Username, config.Config.User.APIKey)
 
 	if err != nil {
 		fmt.Println("Unable to login", err)
@@ -312,7 +314,7 @@ func doStat(projectName string) {
 }
 
 func main() {
-	materials.ConfigInitialize(mcuser)
+	config.ConfigInitialize(mcuser)
 	var opts options
 	flags.Parse(&opts)
 

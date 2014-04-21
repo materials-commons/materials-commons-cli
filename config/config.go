@@ -1,4 +1,4 @@
-package materials
+package config
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+	"github.com/materials-commons/materials/user"
 )
 
 // MaterialsCommonsConfig holds all the configuration information
@@ -34,7 +35,7 @@ type ServerConfig struct {
 
 // UserConfig hold configuration for the user.
 type UserConfig struct {
-	*User
+	*user.User
 	DefaultProject string
 }
 
@@ -77,7 +78,7 @@ var EnvironmentVariables = []string{
 //*********************************************************
 
 // ConfigInitialize initializes the configuration.
-func ConfigInitialize(user *User) {
+func ConfigInitialize(user *user.User) {
 	Config.User.User = user
 	Config.setConfigOverrides()
 }

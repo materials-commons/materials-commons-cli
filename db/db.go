@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/materials-commons/gohandy/file"
-	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials/db/schema"
 	_ "github.com/mattn/go-sqlite3"
 	"path/filepath"
@@ -46,5 +46,5 @@ func Exists() bool {
 
 // Path returns the full path to the database file.
 func Path() string {
-	return filepath.Join(materials.Config.User.DotMaterialsPath(), "materials.db")
+	return filepath.Join(config.Config.User.DotMaterialsPath(), "materials.db")
 }

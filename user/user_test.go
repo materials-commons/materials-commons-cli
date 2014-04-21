@@ -1,4 +1,4 @@
-package materials
+package user
 
 import (
 	"fmt"

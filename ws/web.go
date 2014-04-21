@@ -3,6 +3,7 @@ package ws
 import (
 	"fmt"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
 	"net/http"
 	"os"
 	"time"
@@ -31,10 +32,10 @@ func StartRetry(retryCount int) {
 func setupSite() string {
 	container := NewRegisteredServicesContainer()
 	http.Handle("/", container)
-	dir := http.Dir(materials.Config.Server.Webdir)
+	dir := http.Dir(config.Config.Server.Webdir)
 	http.Handle("/materials/", http.StripPrefix("/materials/", http.FileServer(dir)))
 	setupProjects()
-	addr := fmt.Sprintf("%s:%d", materials.Config.Server.Address, materials.Config.Server.Port)
+	addr := fmt.Sprintf("%s:%d", config.Config.Server.Address, config.Config.Server.Port)
 	return addr
 }
 

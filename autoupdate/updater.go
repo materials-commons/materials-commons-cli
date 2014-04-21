@@ -2,6 +2,7 @@ package autoupdate
 
 import (
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
 )
 
 // A Updater keeps track of the status of binary and website updates
@@ -24,7 +25,7 @@ func NewUpdater() *Updater {
 func (u *Updater) UpdatesAvailable() bool {
 	updateAvailable := false
 
-	if materials.Update(materials.Config.MaterialsCommons.Download) {
+	if materials.Update(config.Config.MaterialsCommons.Download) {
 		updateAvailable = true
 		u.binaryUpdated = true
 	}

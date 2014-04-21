@@ -1,4 +1,4 @@
-package materials
+package config
 
 import (
 	"encoding/json"
@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+	"github.com/materials-commons/materials/user"
 )
 
 var _ = fmt.Printf
 
 func TestNoConfigNoEnv(t *testing.T) {
-	u, _ := NewUserFrom("test_data/noconfig")
+	u, _ := user.NewUserFrom("test_data/noconfig")
 	ConfigInitialize(u)
 	if Config.MaterialsCommons.API != "https://api.materialscommons.org" {
 		t.Fatalf("api value incorrect %s\n", Config.MaterialsCommons.API)
@@ -53,7 +54,7 @@ func TestNoConfigNoEnv(t *testing.T) {
 }
 
 func TestWithEnvSetting(t *testing.T) {
-	u, _ := NewUserFrom("test_data/noconfig")
+	u, _ := user.NewUserFrom("test_data/noconfig")
 	os.Setenv("MCURL", "http://localhost")
 	ConfigInitialize(u)
 	if Config.MaterialsCommons.URL != "http://localhost" {
@@ -62,7 +63,7 @@ func TestWithEnvSetting(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	u, _ := NewUserFrom("test_data/noconfig")
+	u, _ := user.NewUserFrom("test_data/noconfig")
 	ConfigInitialize(u)
 	_, err := json.MarshalIndent(Config, "", "   ")
 	if err != nil {

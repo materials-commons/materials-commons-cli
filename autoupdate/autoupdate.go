@@ -2,7 +2,7 @@ package autoupdate
 
 import (
 	"bitbucket.org/kardianos/osext"
-	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials/util"
 	"os"
 	"time"
@@ -30,7 +30,7 @@ func setLastUpdateServer() {
 		return
 	}
 
-	materials.Config.Server.LastServerUpdate = util.FormatTime(finfo.ModTime())
+	config.Config.Server.LastServerUpdate = util.FormatTime(finfo.ModTime())
 }
 
 // updateMonitor is the back ground monitor that checks for
@@ -38,12 +38,12 @@ func setLastUpdateServer() {
 // for updates every materials.Config.UpdateCheckInterval().
 func updateMonitor() {
 	for {
-		materials.Config.Server.LastUpdateCheck = timeStrNow()
-		materials.Config.Server.NextUpdateCheck = timeStrAfterUpdateInterval()
+		config.Config.Server.LastUpdateCheck = timeStrNow()
+		config.Config.Server.NextUpdateCheck = timeStrAfterUpdateInterval()
 		if updater.UpdatesAvailable() {
 			applyUpdates()
 		}
-		time.Sleep(materials.Config.Server.UpdateCheckInterval)
+		time.Sleep(config.Config.Server.UpdateCheckInterval)
 	}
 }
 
@@ -54,7 +54,7 @@ func timeStrNow() string {
 
 func timeStrAfterUpdateInterval() string {
 	n := time.Now()
-	n = n.Add(materials.Config.Server.UpdateCheckInterval)
+	n = n.Add(config.Config.Server.UpdateCheckInterval)
 	return util.FormatTime(n)
 }
 

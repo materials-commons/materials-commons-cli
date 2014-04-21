@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/googollee/go-socket.io"
 	"github.com/materials-commons/gohandy/fs"
+	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials"
 	"net/http"
 	"os"
@@ -43,7 +44,7 @@ func startMonitor() {
 // the old materials service is stopping, and the new one is starting.
 func startHTTP(retryCount int, sio *socketio.SocketIOServer) {
 	for i := 0; i < retryCount; i++ {
-		address := fmt.Sprintf(":%d", materials.Config.Server.SocketIOPort)
+		address := fmt.Sprintf(":%d", config.Config.Server.SocketIOPort)
 		fmt.Println(http.ListenAndServe(address, sio))
 		time.Sleep(1000 * time.Millisecond)
 	}

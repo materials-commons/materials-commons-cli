@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"github.com/materials-commons/materials/config"
 )
 
 // ProjectDB contains a list of user projects and information that
@@ -26,7 +27,7 @@ var currentUserDBOnce sync.Once
 // regardless of how many times it is called.
 func CurrentUserProjectDB() *ProjectDB {
 	currentUserDBOnce.Do(func() {
-		projectsPath := filepath.Join(Config.User.DotMaterialsPath(), "projectdb")
+		projectsPath := filepath.Join(config.Config.User.DotMaterialsPath(), "projectdb")
 		var err error
 		currentUserDB, err = OpenProjectDB(projectsPath)
 		if err != nil {

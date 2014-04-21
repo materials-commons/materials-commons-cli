@@ -3,13 +3,15 @@ package main
 import (
 	"bitbucket.org/kardianos/osext"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
+	"github.com/materials-commons/materials/user"
 	"path/filepath"
 	"testing"
 )
 
 func TestConvertProjects(t *testing.T) {
-	u, _ := materials.NewUserFrom("../test_data/conversion")
-	materials.ConfigInitialize(u)
+	u, _ := user.NewUserFrom("../test_data/conversion")
+	config.ConfigInitialize(u)
 	convertProjects()
 
 	// Make sure the conversion went correctly
@@ -42,8 +44,8 @@ func verify(project *materials.Project, path, status string, t *testing.T) {
 }
 
 func TestAddProject(t *testing.T) {
-	u, _ := materials.NewUserFrom("../test_data")
-	materials.ConfigInitialize(u)
+	u, _ := user.NewUserFrom("../test_data")
+	config.ConfigInitialize(u)
 
 	// Test add new project
 	folderPath, _ := osext.ExecutableFolder()

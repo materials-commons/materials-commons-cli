@@ -5,6 +5,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"path/filepath"
 	"time"
+	"github.com/materials-commons/materials/config"
 )
 
 // ProjectFileChange contains information about the change that
@@ -69,7 +70,7 @@ func (p *Project) RemoveFileChange(path string) {
 
 // OpenDB opens the project database for a project.
 func (p *Project) OpenDB() error {
-	path := filepath.Join(Config.User.DotMaterialsPath(), "projectdb", p.Name+".db")
+	path := filepath.Join(config.Config.User.DotMaterialsPath(), "projectdb", p.Name+".db")
 	var err error
 	p.DB, err = leveldb.OpenFile(path, nil)
 	if err == nil {
