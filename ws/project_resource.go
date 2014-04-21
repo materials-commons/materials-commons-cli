@@ -52,10 +52,6 @@ func (p projectResource) register(container *restful.Container) {
 		Reads(materials.Project{}).
 		Writes(materials.Project{}))
 
-	ws.Route(ws.GET("/{project-name}/upload").To(p.uploadProject).
-		Doc("Uploads/imports a project to Materials Commons").
-		Param(ws.PathParameter("project-name", "name of the project").DataType("string")))
-
 	ws.Route(ws.GET("/{project-name}/changes").To(p.getProjectChanges).
 		Doc("Lists all the file system changes for a project").
 		Param(ws.PathParameter("project-name", "name of the project").DataType("string")).
@@ -155,27 +151,6 @@ func (p *projectResource) updateProject(request *restful.Request, response *rest
 		response.WriteErrorString(http.StatusNotAcceptable, err.Error())
 	} else {
 		response.WriteEntity(project)
-	}
-}
-
-func (p *projectResource) uploadProject(request *restful.Request, response *restful.Response) {
-	projectName := request.PathParameter("project-name")
-	project, found := p.Find(projectName)
-	if found {
-		err := project.Upload()
-		if err != nil {
-			response.WriteErrorString(http.StatusServiceUnavailable, "Unable to upload project")
-		} else {
-			p.Update(func() *materials.Project {
-				project.Status = "Loaded"
-				return project
-			})
-			response.WriteErrorString(http.StatusCreated, "Project uploaded")
-		}
-	} else {
-		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusNotFound,
-			fmt.Sprintf("Project not found: %s", projectName))
 	}
 }
 
