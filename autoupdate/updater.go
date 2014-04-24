@@ -8,15 +8,15 @@ import (
 // A Updater keeps track of the status of binary and website updates
 // and downloads updates when they are avaiable.
 type Updater struct {
-	downloaded     string
-	binaryUpdated  bool
+	downloaded    string
+	binaryUpdated bool
 }
 
 // NewUpdater creates a new Updater instance.
 func NewUpdater() *Updater {
 	return &Updater{
-		downloaded:     "",
-		binaryUpdated:  false,
+		downloaded:    "",
+		binaryUpdated: false,
 	}
 }
 

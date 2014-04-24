@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"github.com/googollee/go-socket.io"
 	"github.com/materials-commons/gohandy/fs"
-	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials"
+	"github.com/materials-commons/materials/config"
 	"net/http"
 	"os"
 	"time"
@@ -30,7 +30,7 @@ type projectFileStatus struct {
 func startMonitor() {
 	sio := socketio.NewSocketIOServer(&socketio.Config{})
 	sio.On("connect", func(ns *socketio.NameSpace) {
-		fmt.Println("connect")
+		// Nothing to do
 	})
 	sio.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		// Nothing to do
@@ -87,6 +87,7 @@ func projectWatcher(project *materials.Project, projectdb *materials.ProjectDB, 
 	}
 }
 
+// broadcastEvent takes a file system event and broadcasts it on socketIO.
 func broadcastEvent(event fs.Event, projectName string, sio *socketio.SocketIOServer) {
 	eventType := eventType2String(event)
 	pfs := &projectFileStatus{
@@ -94,10 +95,10 @@ func broadcastEvent(event fs.Event, projectName string, sio *socketio.SocketIOSe
 		FilePath: event.Name,
 		Event:    eventType,
 	}
-	fmt.Printf("%#v\n", pfs)
 	sio.Broadcast("file", pfs)
 }
 
+// trackEvent persists a file system event for a project to the projects list of events file.
 func trackEvent(event fs.Event, project *materials.Project, projectdb *materials.ProjectDB) {
 	if event.IsCreate() || event.IsModify() || event.IsDelete() {
 		eventType := eventType2String(event)

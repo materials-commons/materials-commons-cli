@@ -2,12 +2,13 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/materials-commons/materials/user"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
-	"github.com/materials-commons/materials/user"
 )
 
 // MaterialsCommonsConfig holds all the configuration information
@@ -79,6 +80,7 @@ var EnvironmentVariables = []string{
 
 // ConfigInitialize initializes the configuration.
 func ConfigInitialize(user *user.User) {
+	fmt.Println("ConfigInitialize")
 	Config.User.User = user
 	Config.setConfigOverrides()
 }

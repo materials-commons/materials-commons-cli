@@ -3,11 +3,11 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/materials-commons/materials/user"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
-	"github.com/materials-commons/materials/user"
 )
 
 var _ = fmt.Printf

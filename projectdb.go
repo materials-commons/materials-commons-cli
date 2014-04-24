@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/materials-commons/gohandy/file"
+	"github.com/materials-commons/materials/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
-	"github.com/materials-commons/materials/config"
 )
 
 // ProjectDB contains a list of user projects and information that
