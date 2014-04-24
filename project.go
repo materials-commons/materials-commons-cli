@@ -1,7 +1,6 @@
 package materials
 
 import (
-	"fmt"
 	"github.com/materials-commons/materials/config"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -71,7 +70,6 @@ func (p *Project) RemoveFileChange(path string) {
 
 // OpenDB opens the project database for a project.
 func (p *Project) OpenDB() error {
-	fmt.Println("p.Name", p.Name)
 	path := filepath.Join(config.Config.User.DotMaterialsPath(), "projectdb", p.Name+".db")
 	var err error
 	p.DB, err = leveldb.OpenFile(path, nil)

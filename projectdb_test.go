@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/materials-commons/materials/config"
+	"github.com/materials-commons/materials/user"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -15,7 +16,8 @@ const testData = "test_data/.materials/projectdb"
 const corruptedData = "test_data/corrupted/.materials/projectdb"
 
 func TestWrite(t *testing.T) {
-	config.ConfigInitialize(nil)
+	u, _ := user.NewUserFrom("test_data")
+	config.ConfigInitialize(u)
 	if true {
 		return
 	}

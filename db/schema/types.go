@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// FType is the type of file
 type FType int32
 
 const (

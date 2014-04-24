@@ -6,7 +6,7 @@ import (
 	"github.com/materials-commons/gohandy/file"
 	"github.com/materials-commons/materials/config"
 	"github.com/materials-commons/materials/db/schema"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // Implicit import of driver
 	"path/filepath"
 )
 
