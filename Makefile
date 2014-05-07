@@ -3,7 +3,7 @@
 all: fmt test bin
 
 bin:
-	(cd main; go build materials.go)
+	(cd main; godep go build materials.go)
 
 docs:
 	./makedocs.sh

@@ -20,10 +20,6 @@ export MCDOWNLOADURL=""
 export MCAPIURL=""
 export MCURL=""
 
-#mcfs/mcfs --db-connect='localhost:30815'&
-#MCFSPID=$!
-
-go test -v ./...
+godep go test -v ./...
 rm -rf /tmp/tproj
 
-#kill -HUP $MCFSPID
