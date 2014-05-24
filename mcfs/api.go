@@ -69,7 +69,7 @@ func (c *Client) doRequest(arg interface{}) (interface{}, error) {
 	return resp.Resp, nil
 }
 
-// doRequest executes a request that doesn't expect a response
+// doRequestNoResp executes a request that doesn't expect a response
 func (c *Client) doRequestNoResp(arg interface{}) error {
 	req := &protocol.Request{Req: arg}
 	if err := c.Marshal(req); err != nil {
