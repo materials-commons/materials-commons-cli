@@ -12,8 +12,19 @@ import (
 	"gorm.io/gorm"
 )
 
+// ProjectWalkerHandlerFn is the type definition for the callback functions used by the ProjectWalker.
+// This methods must be thread safe as they can be called in parallel.
 type ProjectWalkerHandlerFn func(projectPath, realPath string, finfo os.FileInfo) error
 
+// ProjectWalker is a file walker for the project space. It will walk the entire local project
+// space calling the ChangedFileHandlerFn and UnknownFileHandlerFn whenever it encounters a
+// file or directory that meets the criteria for unknown or changed. Additionally, it will ignore
+// files and directories that have been marked as ignored. This can happen because the files
+// are marked as ignored in an .mcignore file, or because they are in the database ignored_files
+// table. The project walker has an SkipUnknownDirs flag that changes how it handles directories
+// that are unknown. By default, this flag is set to true. This means when it encounters an
+// unknown directory it will return filepath.SkipDir and not process any of the files or directories
+// under that directory. If SkipUnknownDirs is false then it will descend into the directory.
 type ProjectWalker struct {
 	ignoredFileStor      stor.IgnoredFileStor
 	fileStor             stor.FileStor
@@ -32,11 +43,16 @@ func NewProjectWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn Pr
 	}
 }
 
+// Walk will walk the directory path. It uses parallel file walker underneath.
 func (w *ProjectWalker) Walk(path string) error {
 	return walker.Walk(path, w.walkCallback, walker.WithErrorCallback(w.walkerErrorCallback))
 }
 
+// walkCallback is called by walker.Walk for each file/directory it encounters. This
+// method must be thread safe.
 func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
+	// If the directory is the <project>/.mc directory then skip it. This directory is
+	// where the mcc command stores its metadata and database.
 	if finfo.IsDir() && path == config.GetProjectMCDirPath() {
 		return filepath.SkipDir
 	}
@@ -48,6 +64,9 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 		return nil
 	}
 
+	// We want two representations of the file. It's full path and its project path. The
+	// project path starts with a / (slash), whereas the full path is the local file system
+	// full path to the file/directory.
 	projectPath := util.ToProjectPath(path)
 
 	if w.ignoredFileStor.FileIsIgnored(projectPath) {
@@ -62,7 +81,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 		}
 
 		if finfo.IsDir() && w.SkipUnknownDirs {
-			// If it's an unknown directory, and is not the project root then we can skip it.
+			// If it's an unknown directory, and *is not* the project root then we can skip it.
 			if path != config.GetProjectRootPath() {
 				return filepath.SkipDir
 			}
@@ -72,7 +91,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 	}
 
 	if finfo.IsDir() {
-		// If we are here then this is a known directory. There is nothing
+		// If we are here then this is a **KNOWN** directory. There is nothing
 		// we need to do for the directory.
 		return nil
 	}
@@ -87,7 +106,10 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 	return nil
 }
 
-func (w *ProjectWalker) walkerErrorCallback(path string, err error) error {
+// walkerErrorCallback is called whenever the parallel walker encounters an error.
+// We skip permission errors, and only return an error that will cause walking to
+// stop if it's not a permission error.
+func (w *ProjectWalker) walkerErrorCallback(_ string, err error) error {
 	if os.IsPermission(err) {
 		return nil
 	}
@@ -96,6 +118,12 @@ func (w *ProjectWalker) walkerErrorCallback(path string, err error) error {
 	return err
 }
 
+// fileIsChanged compares the mtime from the database with the current file system mtime.
+// If these are different then the file has potentially changed. Potentially means that
+// a determination of if it has changed can only be made by seeing if the sizes are
+// different, or if they are the same, if the checksums have changed. We leave this
+// determination to the callback for changed files to give them flexibility in how
+// to handle this.
 func (w *ProjectWalker) fileIsChanged(f *model.File, finfo os.FileInfo) bool {
 	if f.LMtime.Before(finfo.ModTime()) {
 		// If the Local MTime we have for this file is before the MTime in the file system
