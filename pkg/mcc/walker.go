@@ -19,6 +19,7 @@ type ProjectWalker struct {
 	fileStor             stor.FileStor
 	ChangedFileHandlerFn ProjectWalkerHandlerFn
 	UnknownFileHandlerFn ProjectWalkerHandlerFn
+	SkipUnknownDirs      bool
 }
 
 func NewProjectWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn ProjectWalkerHandlerFn) *ProjectWalker {
@@ -27,6 +28,7 @@ func NewProjectWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn Pr
 		fileStor:             stor.NewGormFileStor(db),
 		ChangedFileHandlerFn: changedFileHandlerFn,
 		UnknownFileHandlerFn: unknownFileHandlerFn,
+		SkipUnknownDirs:      true,
 	}
 }
 
@@ -41,6 +43,8 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 
 	filename := filepath.Base(path)
 	if filename == ".mcignore" {
+		// Skip .mcignore files. These are project local and are used to specify what files
+		// to skip processing.
 		return nil
 	}
 
@@ -56,6 +60,14 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 		if err := w.UnknownFileHandlerFn(projectPath, path, finfo); err != nil {
 			// do something
 		}
+
+		if finfo.IsDir() && w.SkipUnknownDirs {
+			// If it's an unknown directory, and is not the project root then we can skip it.
+			if path != config.GetProjectRootPath() {
+				return filepath.SkipDir
+			}
+		}
+
 		return nil
 	}
 
