@@ -4,6 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/materials-commons/materials-commons-cli/pkg/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"gorm.io/gorm"
 )
 
@@ -24,6 +26,8 @@ var addCmd = &cobra.Command{
 	Long:  `Add unknown and/or changed files to be uploaded.`,
 	Run:   runAddCmd,
 }
+
+var addFlags *pflag.FlagSet
 
 func runAddCmd(cmd *cobra.Command, args []string) {
 
@@ -36,15 +40,15 @@ func runAddCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	allFlag, _ := addCmd.Flags().GetBool("all")
+	allFlag, _ := addFlags.GetBool("all")
 
 	if allFlag {
 		fa.addFiles(true, true)
 		return
 	}
 
-	changedFlag, _ := addCmd.Flags().GetBool("changed")
-	unknownFlag, _ := addCmd.Flags().GetBool("unknown")
+	changedFlag, _ := addFlags.GetBool("changed")
+	unknownFlag, _ := addFlags.GetBool("unknown")
 
 	if changedFlag || unknownFlag {
 		fa.addFiles(changedFlag, unknownFlag)
@@ -94,14 +98,28 @@ func (a *fileAdder) addSpecifiedFiles(args []string) {
 
 		// if we are here then this is an unknown file or a file that is known but its MTime
 		// changed from what is stored in the database.
-		if _, err := a.addedFileStor.AddFile(projectPath); err != nil {
-			log.Printf("Unable to add file %q: %s", fullPath, err)
-		}
+		fmt.Printf("Adding file: %q\n", fullPath)
+		//if _, err := a.addedFileStor.AddFile(projectPath); err != nil {
+		//	log.Printf("Unable to add file %q: %s", fullPath, err)
+		//}
 	}
 }
 
 func (a *fileAdder) addFiles(changedFiles bool, unknownFiles bool) {
-	projectWalker := mcc.NewProjectWalker(a.db, a.changedFileHandler, a.unknownFileHandler)
+	var (
+		changedFileHandler mcc.ProjectWalkerHandlerFn = nil
+		unknownFileHandler mcc.ProjectWalkerHandlerFn = nil
+	)
+
+	if changedFiles {
+		changedFileHandler = a.changedFileHandler
+	}
+
+	if unknownFiles {
+		unknownFileHandler = a.unknownFileHandler
+	}
+
+	projectWalker := mcc.NewProjectWalker(a.db, changedFileHandler, unknownFileHandler)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 		log.Fatalf("Unable to add files: %s", err)
 	}
@@ -115,16 +133,16 @@ func (a *fileAdder) fileIsKnownAndMTimeIsUnchanged(projectPath, path string) boo
 	f, err := a.fileStor.GetFileByPath(projectPath)
 	if err != nil {
 		// Couldn't retrieve, assume unknown
-		return true
+		return false
 	}
 
 	finfo, err := os.Stat(path)
 	if err != nil {
 		// stat failed, but file exists in database. Print a warning to the user
-		// and return false meaning that the file is known, and acting like the
+		// and return true meaning that the file is known, and acting like the
 		// mtime is unchanged.
 		log.Printf("The file %q does not appear to exist: %s", path, err)
-		return false
+		return true
 	}
 
 	if f.LMtime.Before(finfo.ModTime()) {
@@ -137,13 +155,15 @@ func (a *fileAdder) fileIsKnownAndMTimeIsUnchanged(projectPath, path string) boo
 	return true
 }
 
-func (a *fileAdder) changedFileHandler(projectPath, _ string, _ os.FileInfo) error {
-	_, _ = a.addedFileStor.AddFile(projectPath)
+func (a *fileAdder) changedFileHandler(projectPath, path string, _ os.FileInfo) error {
+	//_, _ = a.addedFileStor.AddFile(projectPath)
+	fmt.Printf("Adding changed file %q\n", path)
 	return nil
 }
 
-func (a *fileAdder) unknownFileHandler(projectPath, _ string, _ os.FileInfo) error {
-	_, _ = a.addedFileStor.AddFile(projectPath)
+func (a *fileAdder) unknownFileHandler(projectPath, path string, _ os.FileInfo) error {
+	//_, _ = a.addedFileStor.AddFile(projectPath)
+	fmt.Printf("Adding unknown file %q\n", path)
 	return nil
 }
 
@@ -152,4 +172,5 @@ func init() {
 	addCmd.Flags().BoolP("all", "a", false, "Add all unknown and changed files")
 	addCmd.Flags().BoolP("unknown", "u", false, "Add all unknown files")
 	addCmd.Flags().BoolP("changed", "c", false, "Add all changed files")
+	addFlags = addCmd.Flags()
 }
