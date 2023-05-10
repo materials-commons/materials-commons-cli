@@ -76,8 +76,10 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 	f, err := w.fileStor.GetFileByPath(projectPath)
 	if err != nil {
 		// Error looking up file, assume it's an unknown file
-		if err := w.UnknownFileHandlerFn(projectPath, path, finfo); err != nil {
-			// do something
+		if w.UnknownFileHandlerFn != nil {
+			if err := w.UnknownFileHandlerFn(projectPath, path, finfo); err != nil {
+				// do something
+			}
 		}
 
 		if finfo.IsDir() && w.SkipUnknownDirs {
@@ -97,8 +99,10 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 	}
 
 	if w.fileMTimeIsChanged(f, finfo) {
-		if err := w.ChangedFileHandlerFn(projectPath, path, finfo); err != nil {
-			// do something
+		if w.ChangedFileHandlerFn != nil {
+			if err := w.ChangedFileHandlerFn(projectPath, path, finfo); err != nil {
+				// do something
+			}
 		}
 		return nil
 	}
