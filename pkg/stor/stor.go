@@ -11,3 +11,10 @@ type IgnoredFileStor interface {
 type FileStor interface {
 	GetFileByPath(path string) (*model.File, error)
 }
+
+type AddedFileStor interface {
+	AddFile(path string) (*model.AddedFile, error)
+}
+
+type ConflictFileStor interface {
+}
