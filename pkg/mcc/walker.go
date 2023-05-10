@@ -96,7 +96,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 		return nil
 	}
 
-	if w.fileIsChanged(f, finfo) {
+	if w.fileMTimeIsChanged(f, finfo) {
 		if err := w.ChangedFileHandlerFn(projectPath, path, finfo); err != nil {
 			// do something
 		}
@@ -118,13 +118,13 @@ func (w *ProjectWalker) walkerErrorCallback(_ string, err error) error {
 	return err
 }
 
-// fileIsChanged compares the mtime from the database with the current file system mtime.
+// fileMTimeIsChanged compares the mtime from the database with the current file system mtime.
 // If these are different then the file has potentially changed. Potentially means that
 // a determination of if it has changed can only be made by seeing if the sizes are
 // different, or if they are the same, if the checksums have changed. We leave this
 // determination to the callback for changed files to give them flexibility in how
 // to handle this.
-func (w *ProjectWalker) fileIsChanged(f *model.File, finfo os.FileInfo) bool {
+func (w *ProjectWalker) fileMTimeIsChanged(f *model.File, finfo os.FileInfo) bool {
 	if f.LMtime.Before(finfo.ModTime()) {
 		// If the Local MTime we have for this file is before the MTime in the file system
 		// then the file has potentially changed. We will only know for sure by computing
