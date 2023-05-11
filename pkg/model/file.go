@@ -2,12 +2,14 @@ package model
 
 import (
 	"time"
+
+	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 )
 
 type File struct {
 	ID        uint      `json:"id"`
 	RemoteID  uint      `json:"remote_id"`
-	Path      string    `json:"path"`
+	Path      string    `json:"path" gorm:"unique"`
 	LMtime    time.Time `json:"lmtime" gorm:"column:lmtime"`
 	RMtime    time.Time `json:"rmtime" gorm:"column:rmtime"`
 	LChecksum string    `json:"lchecksum" gorm:"column:lchecksum"`
@@ -19,9 +21,9 @@ type File struct {
 }
 
 func (f File) IsDir() bool {
-	return f.FType == "d"
+	return f.FType == mcc.FTypeDirectory
 }
 
 func (f File) IsFile() bool {
-	return f.FType == "f"
+	return f.FType == mcc.FTypeFile
 }

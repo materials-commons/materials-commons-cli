@@ -13,7 +13,8 @@ type FileStor interface {
 }
 
 type AddedFileStor interface {
-	AddFile(path, reason string) (*model.AddedFile, error)
+	AddFile(path, reason, ftype string) (*model.AddedFile, error)
+	GetFileByPath(path string) (*model.AddedFile, error)
 }
 
 type ConflictFileStor interface {

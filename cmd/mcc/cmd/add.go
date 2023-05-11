@@ -97,7 +97,11 @@ func (a *fileAdder) addSpecifiedFiles(args []string) {
 
 		projectPath := util.ToProjectPath(fullPath)
 
-		switch fileState := a.fileStatusDeterminer.DetermineFileStatus(projectPath, fullPath); fileState {
+		fileState, ftype := a.fileStatusDeterminer.DetermineFileStatus(projectPath, fullPath)
+		switch fileState {
+		case mcc.FileAlreadyAdded:
+			// Nothing to do
+
 		case mcc.FileIgnored:
 			// Nothing to do
 
@@ -106,15 +110,16 @@ func (a *fileAdder) addSpecifiedFiles(args []string) {
 
 		case mcc.FileMTimeChanged:
 			fmt.Printf("Adding changed file: %q\n", fullPath)
-			//if _, err := a.addedFileStor.AddFile(projectPath, model.ReasonFileChanged); err != nil {
-			//	log.Printf("Unable to add file %q: %s", fullPath, err)
-			//}
+
+			if _, err := a.addedFileStor.AddFile(projectPath, mcc.FileChanged, ftype); err != nil {
+				log.Printf("Unable to add file %q: %s", fullPath, err)
+			}
 
 		case mcc.FileUnknown:
 			fmt.Printf("Adding unknown file: %q\n", fullPath)
-			//if _, err := a.addedFileStor.AddFile(projectPath, model.ReasonFileUnknown); err != nil {
-			//	log.Printf("Unable to add file %q: %s", fullPath, err)
-			//}
+			if _, err := a.addedFileStor.AddFile(projectPath, mcc.FileUnknown, ftype); err != nil {
+				log.Printf("Unable to add file %q: %s", fullPath, err)
+			}
 
 		case mcc.FileMissing:
 			log.Printf("File %q is in the project database, but appears to be deleted\n", fullPath)
