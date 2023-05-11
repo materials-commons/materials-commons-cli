@@ -11,7 +11,7 @@ import (
 
 // removeAddCmd represents the removeAdd command
 var removeAddCmd = &cobra.Command{
-	Use:   "removeAdd",
+	Use:   "remove-add",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:

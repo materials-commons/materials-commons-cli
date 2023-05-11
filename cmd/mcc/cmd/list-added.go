@@ -11,14 +11,9 @@ import (
 
 // listAddedCmd represents the listAdded command
 var listAddedCmd = &cobra.Command{
-	Use:   "listAdded",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "list-added",
+	Short: "List added files.",
+	Long:  `List added files.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("listAdded called")
 	},
