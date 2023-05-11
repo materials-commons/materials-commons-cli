@@ -10,6 +10,7 @@ import (
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,7 @@ func runStatusCmd(cmd *cobra.Command, args []string) {
 	go sr.run(ctx) // start the statusReceiver thread
 
 	// Walk the project determining and printing file status.
-	projectWalker := mcc.NewProjectWalker(db, sw.changedFileHandler, sw.unknownFileHandler)
+	projectWalker := project.NewWalker(db, sw.changedFileHandler, sw.unknownFileHandler)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 		log.Fatalf("Unable to get status: %s", err)
 	}
@@ -90,7 +91,7 @@ func (r *statusReceiver) sendStatus(fstatus *fileStatus) {
 	r.in <- fstatus
 }
 
-// statusWalkerState is used to handle the different status's for files that the ProjectWalker finds.
+// statusWalkerState is used to handle the different status's for files that the Walker finds.
 // It has two callbacks (changedFileHandler and unknownFileHandler) that are called by the project walker.
 // It constructs and sends the status to the statusReceiver.
 type statusWalkerState struct {

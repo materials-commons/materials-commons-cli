@@ -1,22 +1,22 @@
-package mcc
+package project
 
 import (
 	"os"
 	"path/filepath"
 
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
+	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
-	"github.com/materials-commons/materials-commons-cli/pkg/util"
 	"github.com/saracen/walker"
 	"gorm.io/gorm"
 )
 
-// ProjectWalkerHandlerFn is the type definition for the callback functions used by the ProjectWalker.
+// WalkerHandlerFn is the type definition for the callback functions used by the Walker.
 // This methods must be thread safe as they can be called in parallel.
-type ProjectWalkerHandlerFn func(projectPath, realPath string, finfo os.FileInfo) error
+type WalkerHandlerFn func(projectPath, realPath string, finfo os.FileInfo) error
 
-// ProjectWalker is a file walker for the project space. It will walk the entire local project
+// Walker is a file walker for the project space. It will walk the entire local project
 // space calling the ChangedFileHandlerFn and UnknownFileHandlerFn whenever it encounters a
 // file or directory that meets the criteria for unknown or changed. Additionally, it will ignore
 // files and directories that have been marked as ignored. This can happen because the files
@@ -25,16 +25,16 @@ type ProjectWalkerHandlerFn func(projectPath, realPath string, finfo os.FileInfo
 // that are unknown. By default, this flag is set to true. This means when it encounters an
 // unknown directory it will return filepath.SkipDir and not process any of the files or directories
 // under that directory. If SkipUnknownDirs is false then it will descend into the directory.
-type ProjectWalker struct {
+type Walker struct {
 	ignoredFileStor      stor.IgnoredFileStor
 	fileStor             stor.FileStor
-	ChangedFileHandlerFn ProjectWalkerHandlerFn
-	UnknownFileHandlerFn ProjectWalkerHandlerFn
+	ChangedFileHandlerFn WalkerHandlerFn
+	UnknownFileHandlerFn WalkerHandlerFn
 	SkipUnknownDirs      bool
 }
 
-func NewProjectWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn ProjectWalkerHandlerFn) *ProjectWalker {
-	return &ProjectWalker{
+func NewWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn WalkerHandlerFn) *Walker {
+	return &Walker{
 		ignoredFileStor:      stor.NewGormIgnoredFileStor(db),
 		fileStor:             stor.NewGormFileStor(db),
 		ChangedFileHandlerFn: changedFileHandlerFn,
@@ -44,13 +44,13 @@ func NewProjectWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn Pr
 }
 
 // Walk will walk the directory path. It uses parallel file walker underneath.
-func (w *ProjectWalker) Walk(path string) error {
+func (w *Walker) Walk(path string) error {
 	return walker.Walk(path, w.walkCallback, walker.WithErrorCallback(w.walkerErrorCallback))
 }
 
 // walkCallback is called by walker.Walk for each file/directory it encounters. This
 // method must be thread safe.
-func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
+func (w *Walker) walkCallback(path string, finfo os.FileInfo) error {
 	// If the directory is the <project>/.mc directory then skip it. This directory is
 	// where the mcc command stores its metadata and database.
 	if finfo.IsDir() && path == config.GetProjectMCDirPath() {
@@ -67,7 +67,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 	// We want two representations of the file. It's full path and its project path. The
 	// project path starts with a / (slash), whereas the full path is the local file system
 	// full path to the file/directory.
-	projectPath := util.ToProjectPath(path)
+	projectPath := mcc.ToProjectPath(path)
 
 	if w.ignoredFileStor.FileIsIgnored(projectPath) {
 		return nil
@@ -113,7 +113,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 // walkerErrorCallback is called whenever the parallel walker encounters an error.
 // We skip permission errors, and only return an error that will cause walking to
 // stop if it's not a permission error.
-func (w *ProjectWalker) walkerErrorCallback(_ string, err error) error {
+func (w *Walker) walkerErrorCallback(_ string, err error) error {
 	if os.IsPermission(err) {
 		return nil
 	}
@@ -128,7 +128,7 @@ func (w *ProjectWalker) walkerErrorCallback(_ string, err error) error {
 // different, or if they are the same, if the checksums have changed. We leave this
 // determination to the callback for changed files to give them flexibility in how
 // to handle this.
-func (w *ProjectWalker) fileMTimeIsChanged(f *model.File, finfo os.FileInfo) bool {
+func (w *Walker) fileMTimeIsChanged(f *model.File, finfo os.FileInfo) bool {
 	if f.LMtime.Before(finfo.ModTime()) {
 		// If the Local MTime we have for this file is before the MTime in the file system
 		// then the file has potentially changed. We will only know for sure by computing

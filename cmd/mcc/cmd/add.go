@@ -12,8 +12,8 @@ import (
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
-	"github.com/materials-commons/materials-commons-cli/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gorm.io/gorm"
@@ -66,7 +66,7 @@ type fileAdder struct {
 	ignoredFileStor      stor.IgnoredFileStor
 	addedFileStor        stor.AddedFileStor
 	fileStor             stor.FileStor
-	fileStatusDeterminer *mcc.FileStatusDeterminer
+	fileStatusDeterminer *project.FileStatusDeterminer
 }
 
 func newFileAdder(db *gorm.DB) *fileAdder {
@@ -75,7 +75,7 @@ func newFileAdder(db *gorm.DB) *fileAdder {
 		ignoredFileStor:      stor.NewGormIgnoredFileStor(db),
 		addedFileStor:        stor.NewGormAddedFileStor(db),
 		fileStor:             stor.NewGormFileStor(db),
-		fileStatusDeterminer: mcc.NewFileStatusDeterminer(db),
+		fileStatusDeterminer: project.NewFileStatusDeterminer(db),
 	}
 }
 
@@ -95,7 +95,7 @@ func (a *fileAdder) addSpecifiedFiles(args []string) {
 			fullPath = filepath.Join(cwd, fullPath)
 		}
 
-		projectPath := util.ToProjectPath(fullPath)
+		projectPath := mcc.ToProjectPath(fullPath)
 
 		fileState, ftype := a.fileStatusDeterminer.DetermineFileStatus(projectPath, fullPath)
 		switch fileState {
@@ -132,8 +132,8 @@ func (a *fileAdder) addSpecifiedFiles(args []string) {
 
 func (a *fileAdder) addFiles(changedFiles bool, unknownFiles bool) {
 	var (
-		changedFileHandler mcc.ProjectWalkerHandlerFn = nil
-		unknownFileHandler mcc.ProjectWalkerHandlerFn = nil
+		changedFileHandler project.WalkerHandlerFn = nil
+		unknownFileHandler project.WalkerHandlerFn = nil
 	)
 
 	if changedFiles {
@@ -144,7 +144,7 @@ func (a *fileAdder) addFiles(changedFiles bool, unknownFiles bool) {
 		unknownFileHandler = a.unknownFileHandler
 	}
 
-	projectWalker := mcc.NewProjectWalker(a.db, changedFileHandler, unknownFileHandler)
+	projectWalker := project.NewWalker(a.db, changedFileHandler, unknownFileHandler)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 		log.Fatalf("Unable to add files: %s", err)
 	}

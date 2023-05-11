@@ -1,12 +1,14 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"fmt"
 
+	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
+	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/model"
+	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // listAddedCmd represents the listAdded command
@@ -14,21 +16,101 @@ var listAddedCmd = &cobra.Command{
 	Use:   "list-added",
 	Short: "List added files.",
 	Long:  `List added files.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("listAdded called")
-	},
+	Run:   runListAddedCmd,
+}
+
+var listAddedFlags *pflag.FlagSet
+
+func runListAddedCmd(cmd *cobra.Command, args []string) {
+	unknownFlag, _ := listAddedFlags.GetBool("unknown")
+	changedFlag, _ := listAddedFlags.GetBool("changed")
+
+	if !unknownFlag && !changedFlag && len(args) == 0 {
+		// If neither flag is specified, then the command was run without any flags. We treat
+		// this as if the user wants to see all added file types.
+		showStatusAllAddedFiles()
+		return
+	}
+
+	if len(args) > 0 {
+		// The user has asked to see the status on specific files
+		showStatusSpecificFiles(args)
+		return
+	}
+
+	// If we are here then the user has specified at least one flag
+	showStatusForAddedFileByReason(unknownFlag, changedFlag)
+}
+
+func showStatusAllAddedFiles() {
+	db := mcdb.MustConnectToDB()
+
+	var addedFiles []model.AddedFile
+	offset := 0
+	pageSize := 100
+	for {
+		err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error
+		if err != nil {
+			break
+		}
+
+		for _, f := range addedFiles {
+			fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+		}
+		offset = offset + pageSize
+	}
+}
+
+func showStatusSpecificFiles(paths []string) {
+	db := mcdb.MustConnectToDB()
+	addedFileStor := stor.NewGormAddedFileStor(db)
+
+	var (
+		err error
+		f   *model.AddedFile
+	)
+
+	for _, p := range paths {
+		projectPath := mcc.ToProjectPath(p)
+
+		if f, err = addedFileStor.GetFileByPath(projectPath); err != nil {
+			fmt.Printf("%s not in added files\n", p)
+			continue
+		}
+
+		fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+	}
+}
+
+func showStatusForAddedFileByReason(unknown bool, changed bool) {
+	db := mcdb.MustConnectToDB()
+
+	var addedFiles []model.AddedFile
+	offset := 0
+	pageSize := 100
+	for {
+		err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error
+		if err != nil {
+			break
+		}
+
+		for _, f := range addedFiles {
+			switch {
+			case unknown && f.IsUnknown():
+				fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+
+			case changed && f.IsChanged():
+				fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+			}
+		}
+		offset = offset + pageSize
+	}
 }
 
 func init() {
 	rootCmd.AddCommand(listAddedCmd)
+	listAddedCmd.Flags().BoolP("unknown", "u", false, "Add all unknown files")
+	listAddedCmd.Flags().BoolP("changed", "c", false, "Add all changed files")
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listAddedCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listAddedCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	listAddedFlags = listAddedCmd.Flags()
 }

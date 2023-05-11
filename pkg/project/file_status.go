@@ -1,8 +1,9 @@
-package mcc
+package project
 
 import (
 	"os"
 
+	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"gorm.io/gorm"
@@ -33,34 +34,34 @@ func (d *FileStatusDeterminer) DetermineFileStatus(projectPath, path string) (st
 
 	if af, err := d.addedFileStor.GetFileByPath(projectPath); err == nil {
 		// We found a file matching path in the added_files table
-		return FileAlreadyAdded, af.FType
+		return mcc.FileAlreadyAdded, af.FType
 	}
 
 	if d.ignoredFileStor.FileIsIgnored(projectPath) {
-		return FileIgnored, FTypeUnknown
+		return mcc.FileIgnored, mcc.FTypeUnknown
 	}
 
 	if finfo, err = os.Stat(path); err != nil {
 		// stat failed, but file exists in database.
-		return FileMissing, FTypeUnknown
+		return mcc.FileMissing, mcc.FTypeUnknown
 	}
 
-	ftype := FTypeFile
+	ftype := mcc.FTypeFile
 	if finfo.IsDir() {
-		ftype = FTypeDirectory
+		ftype = mcc.FTypeDirectory
 	}
 
 	if f, err = d.fileStor.GetFileByPath(projectPath); err != nil {
 		// Couldn't retrieve, assume unknown
-		return FileUnknown, ftype
+		return mcc.FileUnknown, ftype
 	}
 
 	if f.LMtime.Before(finfo.ModTime()) {
 		// file has newer mtime than what is stored in database, so return FileChanged
-		return FileMTimeChanged, f.FType
+		return mcc.FileMTimeChanged, f.FType
 	}
 
 	// If we are here, then the file exists in the database and on the file system and the mtimes match, so
 	// the file is both known and hasn't changed.
-	return FileKnownAndUnchanged, f.FType
+	return mcc.FileKnownAndUnchanged, f.FType
 }

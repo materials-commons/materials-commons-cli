@@ -5,8 +5,8 @@ package cmd
 
 import (
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
-	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,7 @@ var pushCmd = &cobra.Command{
 func runPushCmd(cmd *cobra.Command, args []string) {
 	db := mcdb.MustConnectToDB()
 
-	projectWalker := mcc.NewProjectWalker(db, nil, nil)
+	projectWalker := project.NewWalker(db, nil, nil)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 
 	}
