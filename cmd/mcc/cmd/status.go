@@ -49,15 +49,6 @@ func runStatusCmd(cmd *cobra.Command, args []string) {
 	cancel()
 }
 
-// StatusUnknown file is unknown
-const StatusUnknown = "U"
-
-// StatusChanged - file is known but has potentially changed (mtime has been updated)
-const StatusChanged = "C"
-
-const FTypeDirectory = "D"
-const FTypeFile = "F"
-
 // fileStatus represents the status of a file. It is sent along a channel to the statusReceiver
 type fileStatus struct {
 	Path        string // The file system path
@@ -113,23 +104,23 @@ func newStatusWalkerState(sr *statusReceiver) *statusWalkerState {
 // changedFileHandler is called when a file's mtime has been changed. It sends a fileStatus message
 // with status StatusChanged.
 func (w *statusWalkerState) changedFileHandler(projectPath, path string, finfo os.FileInfo) error {
-	w.sendStatus(projectPath, path, StatusChanged, finfo)
+	w.sendStatus(projectPath, path, mcc.FileChanged, finfo)
 	return nil
 }
 
 // unknownFileHandler is called when a file is not known (in the project local database). It sends
 // a fileStatus with StatusUnknown.
 func (w *statusWalkerState) unknownFileHandler(projectPath, path string, finfo os.FileInfo) error {
-	w.sendStatus(projectPath, path, StatusUnknown, finfo)
+	w.sendStatus(projectPath, path, mcc.FileUnknown, finfo)
 	return nil
 }
 
 // sendStatus constructs the fileStatus, determines the file type and sends the message.
 func (w *statusWalkerState) sendStatus(projectPath, path, status string, finfo os.FileInfo) {
-	ftype := FTypeFile
+	ftype := mcc.FTypeFile
 
 	if finfo.IsDir() {
-		ftype = FTypeDirectory
+		ftype = mcc.FTypeDirectory
 	}
 
 	fstatus := &fileStatus{

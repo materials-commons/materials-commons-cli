@@ -35,10 +35,13 @@ func runAddCmd(cmd *cobra.Command, args []string) {
 
 	fa := newFileAdder(db)
 
+	// If there are any args then the user is adding specific files
 	if len(args) != 0 {
 		fa.addSpecifiedFiles(args)
 		return
 	}
+
+	// If we are here then the user specified types of files to add - unknown, changed or both
 
 	allFlag, _ := addFlags.GetBool("all")
 
@@ -56,22 +59,28 @@ func runAddCmd(cmd *cobra.Command, args []string) {
 	}
 }
 
+// fileAdder handles adding files. These are either specific files the user
+// has specified, or files that the project walker has identified.
 type fileAdder struct {
-	db              *gorm.DB
-	ignoredFileStor stor.IgnoredFileStor
-	addedFileStor   stor.AddedFileStor
-	fileStor        stor.FileStor
+	db                   *gorm.DB
+	ignoredFileStor      stor.IgnoredFileStor
+	addedFileStor        stor.AddedFileStor
+	fileStor             stor.FileStor
+	fileStatusDeterminer *mcc.FileStatusDeterminer
 }
 
 func newFileAdder(db *gorm.DB) *fileAdder {
 	return &fileAdder{
-		db:              db,
-		ignoredFileStor: stor.NewGormIgnoredFileStor(db),
-		addedFileStor:   stor.NewGormAddedFileStor(db),
-		fileStor:        stor.NewGormFileStor(db),
+		db:                   db,
+		ignoredFileStor:      stor.NewGormIgnoredFileStor(db),
+		addedFileStor:        stor.NewGormAddedFileStor(db),
+		fileStor:             stor.NewGormFileStor(db),
+		fileStatusDeterminer: mcc.NewFileStatusDeterminer(db),
 	}
 }
 
+// addSpecifiedFiles adds files the user has passed in as args. It checks each of the files to
+// make sure they are either changed or unknown. If a file is ignored then it is not added.
 func (a *fileAdder) addSpecifiedFiles(args []string) {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -88,20 +97,31 @@ func (a *fileAdder) addSpecifiedFiles(args []string) {
 
 		projectPath := util.ToProjectPath(fullPath)
 
-		if a.ignoredFileStor.FileIsIgnored(projectPath) {
-			continue
-		}
+		switch fileState := a.fileStatusDeterminer.DetermineFileStatus(projectPath, fullPath); fileState {
+		case mcc.FileIgnored:
+			// Nothing to do
 
-		if a.fileIsKnownAndMTimeIsUnchanged(projectPath, fullPath) {
-			continue
-		}
+		case mcc.FileKnownAndUnchanged:
+			// Nothing to do
 
-		// if we are here then this is an unknown file or a file that is known but its MTime
-		// changed from what is stored in the database.
-		fmt.Printf("Adding file: %q\n", fullPath)
-		//if _, err := a.addedFileStor.AddFile(projectPath); err != nil {
-		//	log.Printf("Unable to add file %q: %s", fullPath, err)
-		//}
+		case mcc.FileMTimeChanged:
+			fmt.Printf("Adding changed file: %q\n", fullPath)
+			//if _, err := a.addedFileStor.AddFile(projectPath, model.ReasonFileChanged); err != nil {
+			//	log.Printf("Unable to add file %q: %s", fullPath, err)
+			//}
+
+		case mcc.FileUnknown:
+			fmt.Printf("Adding unknown file: %q\n", fullPath)
+			//if _, err := a.addedFileStor.AddFile(projectPath, model.ReasonFileUnknown); err != nil {
+			//	log.Printf("Unable to add file %q: %s", fullPath, err)
+			//}
+
+		case mcc.FileMissing:
+			log.Printf("File %q is in the project database, but appears to be deleted\n", fullPath)
+
+		default:
+			// Shouldn't happen - nothing to do
+		}
 	}
 }
 
@@ -125,44 +145,14 @@ func (a *fileAdder) addFiles(changedFiles bool, unknownFiles bool) {
 	}
 }
 
-// fileIsKnownAndMTimeIsUnchanged returns true if the file is in the sqlite database
-// and the mtime for the file and what is stored in the database are the same. Otherwise,
-// it will return false. There is one special case: if the file is in the database, but
-// the stat failed, we return true, meaning the file
-func (a *fileAdder) fileIsKnownAndMTimeIsUnchanged(projectPath, path string) bool {
-	f, err := a.fileStor.GetFileByPath(projectPath)
-	if err != nil {
-		// Couldn't retrieve, assume unknown
-		return false
-	}
-
-	finfo, err := os.Stat(path)
-	if err != nil {
-		// stat failed, but file exists in database. Print a warning to the user
-		// and return true meaning that the file is known, and acting like the
-		// mtime is unchanged.
-		log.Printf("The file %q does not appear to exist: %s", path, err)
-		return true
-	}
-
-	if f.LMtime.Before(finfo.ModTime()) {
-		// file has newer mtime than what is stored in database, so return false so file can be added
-		return false
-	}
-
-	// If we are here, then the file exists in the database and on the file system and the mtimes match, so
-	// return true signifying that the file shouldn't be added.
-	return true
-}
-
 func (a *fileAdder) changedFileHandler(projectPath, path string, _ os.FileInfo) error {
-	//_, _ = a.addedFileStor.AddFile(projectPath)
+	//_, _ = a.addedFileStor.AddFile(projectPath, mcc.FileChanged)
 	fmt.Printf("Adding changed file %q\n", path)
 	return nil
 }
 
 func (a *fileAdder) unknownFileHandler(projectPath, path string, _ os.FileInfo) error {
-	//_, _ = a.addedFileStor.AddFile(projectPath)
+	//_, _ = a.addedFileStor.AddFile(projectPath, mcc.FileUnknown)
 	fmt.Printf("Adding unknown file %q\n", path)
 	return nil
 }
