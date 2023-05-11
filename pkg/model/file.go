@@ -14,6 +14,8 @@ type File struct {
 	RChecksum string    `json:"rchecksum" gorm:"column:rchecksum"`
 	FType     string    `json:"ftype" gorm:"column:ftype"`
 	State     string    `json:"state" gorm:"column:state"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (f File) IsDir() bool {
