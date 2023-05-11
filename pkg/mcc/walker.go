@@ -78,7 +78,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 		// Error looking up file, assume it's an unknown file
 		if w.UnknownFileHandlerFn != nil {
 			if err := w.UnknownFileHandlerFn(projectPath, path, finfo); err != nil {
-				// do something
+				// ignore error
 			}
 		}
 
@@ -101,7 +101,7 @@ func (w *ProjectWalker) walkCallback(path string, finfo os.FileInfo) error {
 	if w.fileMTimeIsChanged(f, finfo) {
 		if w.ChangedFileHandlerFn != nil {
 			if err := w.ChangedFileHandlerFn(projectPath, path, finfo); err != nil {
-				// do something
+				// ignore error
 			}
 		}
 		return nil
