@@ -14,9 +14,10 @@ func NewGormAddedFileStor(db *gorm.DB) *GormAddedFileStor {
 	return &GormAddedFileStor{db: db}
 }
 
-func (s *GormAddedFileStor) AddFile(path string) (*model.AddedFile, error) {
+func (s *GormAddedFileStor) AddFile(path, reason string) (*model.AddedFile, error) {
 	fileToAdd := &model.AddedFile{
-		Path: path,
+		Path:   path,
+		Reason: reason,
 	}
 
 	err := mcdb.WithTxRetryDefault(s.db, func(tx *gorm.DB) error {
