@@ -150,15 +150,27 @@ func (a *fileAdder) addFiles(changedFiles bool, unknownFiles bool) {
 	}
 }
 
-func (a *fileAdder) changedFileHandler(projectPath, path string, _ os.FileInfo) error {
-	//_, _ = a.addedFileStor.AddFile(projectPath, mcc.FileChanged)
+func (a *fileAdder) changedFileHandler(projectPath, path string, finfo os.FileInfo) error {
 	fmt.Printf("Adding changed file %q\n", path)
+
+	ftype := mcc.FTypeFile
+	if finfo.IsDir() {
+		ftype = mcc.FTypeDirectory
+	}
+	_, _ = a.addedFileStor.AddFile(projectPath, mcc.FileChanged, ftype)
+
 	return nil
 }
 
-func (a *fileAdder) unknownFileHandler(projectPath, path string, _ os.FileInfo) error {
-	//_, _ = a.addedFileStor.AddFile(projectPath, mcc.FileUnknown)
+func (a *fileAdder) unknownFileHandler(projectPath, path string, finfo os.FileInfo) error {
 	fmt.Printf("Adding unknown file %q\n", path)
+
+	ftype := mcc.FTypeFile
+	if finfo.IsDir() {
+		ftype = mcc.FTypeDirectory
+	}
+	_, _ = a.addedFileStor.AddFile(projectPath, mcc.FileUnknown, ftype)
+
 	return nil
 }
 
