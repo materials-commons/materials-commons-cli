@@ -43,14 +43,18 @@ func runListAddedCmd(cmd *cobra.Command, args []string) {
 }
 
 func showStatusAllAddedFiles() {
+	fmt.Println("showStatusAllAddedFiles")
 	db := mcdb.MustConnectToDB()
 
 	var addedFiles []model.AddedFile
 	offset := 0
 	pageSize := 100
 	for {
-		err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error
-		if err != nil {
+		if err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error; err != nil {
+			break
+		}
+
+		if len(addedFiles) == 0 {
 			break
 		}
 
@@ -89,8 +93,11 @@ func showStatusForAddedFileByReason(unknown bool, changed bool) {
 	offset := 0
 	pageSize := 100
 	for {
-		err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error
-		if err != nil {
+		if err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error; err != nil {
+			break
+		}
+
+		if len(addedFiles) == 0 {
 			break
 		}
 
