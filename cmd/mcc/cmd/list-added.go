@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
 	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 // listAddedCmd represents the listAdded command
@@ -19,11 +19,9 @@ var listAddedCmd = &cobra.Command{
 	Run:   runListAddedCmd,
 }
 
-var listAddedFlags *pflag.FlagSet
-
 func runListAddedCmd(cmd *cobra.Command, args []string) {
-	unknownFlag, _ := listAddedFlags.GetBool("unknown")
-	changedFlag, _ := listAddedFlags.GetBool("changed")
+	unknownFlag, _ := cmd.Flags().GetBool("unknown")
+	changedFlag, _ := cmd.Flags().GetBool("changed")
 
 	if !unknownFlag && !changedFlag && len(args) == 0 {
 		// If neither flag is specified, then the command was run without any flags. We treat
@@ -43,35 +41,24 @@ func runListAddedCmd(cmd *cobra.Command, args []string) {
 }
 
 func showStatusAllAddedFiles() {
-	db := mcdb.MustConnectToDB()
+	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
+	err := addedFileStor.ListPaged(func(f *model.AddedFile) error {
+		fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
+		return nil
+	})
 
-	var addedFiles []model.AddedFile
-	offset := 0
-	pageSize := 100
-	for {
-		if err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error; err != nil {
-			break
-		}
-
-		if len(addedFiles) == 0 {
-			break
-		}
-
-		for _, f := range addedFiles {
-			fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
-		}
-		offset = offset + pageSize
+	if err != nil {
+		log.Fatalf("Error retrieving added files: %s", err)
 	}
 }
 
 func showStatusSpecificFiles(paths []string) {
-	db := mcdb.MustConnectToDB()
-	addedFileStor := stor.NewGormAddedFileStor(db)
-
 	var (
 		err error
 		f   *model.AddedFile
 	)
+
+	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
 
 	for _, p := range paths {
 		projectPath := mcc.ToProjectPath(p)
@@ -86,30 +73,20 @@ func showStatusSpecificFiles(paths []string) {
 }
 
 func showStatusForAddedFileByReason(unknown bool, changed bool) {
-	db := mcdb.MustConnectToDB()
+	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
+	err := addedFileStor.ListPaged(func(f *model.AddedFile) error {
+		switch {
+		case unknown && f.IsUnknown():
+			fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
 
-	var addedFiles []model.AddedFile
-	offset := 0
-	pageSize := 100
-	for {
-		if err := db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error; err != nil {
-			break
+		case changed && f.IsChanged():
+			fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
 		}
+		return nil
+	})
 
-		if len(addedFiles) == 0 {
-			break
-		}
-
-		for _, f := range addedFiles {
-			switch {
-			case unknown && f.IsUnknown():
-				fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
-
-			case changed && f.IsChanged():
-				fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
-			}
-		}
-		offset = offset + pageSize
+	if err != nil {
+		log.Fatalf("Error retrieving added files: %s", err)
 	}
 }
 
@@ -117,6 +94,4 @@ func init() {
 	rootCmd.AddCommand(listAddedCmd)
 	listAddedCmd.Flags().BoolP("unknown", "u", false, "Add all unknown files")
 	listAddedCmd.Flags().BoolP("changed", "c", false, "Add all changed files")
-
-	listAddedFlags = listAddedCmd.Flags()
 }

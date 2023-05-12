@@ -34,3 +34,27 @@ func (s *GormAddedFileStor) GetFileByPath(path string) (*model.AddedFile, error)
 	err := s.db.Where("path = ?", path).First(&f).Error
 	return &f, err
 }
+
+func (s *GormAddedFileStor) ListPaged(fn func(f *model.AddedFile) error) error {
+	var addedFiles []model.AddedFile
+	offset := 0
+	pageSize := 100
+	for {
+		if err := s.db.Offset(offset).Limit(pageSize).Find(&addedFiles).Error; err != nil {
+			return err
+		}
+
+		if len(addedFiles) == 0 {
+			break
+		}
+
+		for _, f := range addedFiles {
+			if err := fn(&f); err != nil {
+				break
+			}
+		}
+		offset = offset + pageSize
+	}
+
+	return nil
+}

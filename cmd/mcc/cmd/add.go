@@ -15,7 +15,6 @@ import (
 	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"gorm.io/gorm"
 )
 
@@ -26,8 +25,6 @@ var addCmd = &cobra.Command{
 	Long:  `Add unknown and/or changed files to be uploaded.`,
 	Run:   runAddCmd,
 }
-
-var addFlags *pflag.FlagSet
 
 func runAddCmd(cmd *cobra.Command, args []string) {
 
@@ -43,15 +40,15 @@ func runAddCmd(cmd *cobra.Command, args []string) {
 
 	// If we are here then the user specified types of files to add - unknown, changed or both
 
-	allFlag, _ := addFlags.GetBool("all")
+	allFlag, _ := cmd.Flags().GetBool("all")
 
 	if allFlag {
 		fa.addFiles(true, true)
 		return
 	}
 
-	changedFlag, _ := addFlags.GetBool("changed")
-	unknownFlag, _ := addFlags.GetBool("unknown")
+	changedFlag, _ := cmd.Flags().GetBool("changed")
+	unknownFlag, _ := cmd.Flags().GetBool("unknown")
 
 	if changedFlag || unknownFlag {
 		fa.addFiles(changedFlag, unknownFlag)
@@ -179,5 +176,4 @@ func init() {
 	addCmd.Flags().BoolP("all", "a", false, "Add all unknown and changed files")
 	addCmd.Flags().BoolP("unknown", "u", false, "Add all unknown files")
 	addCmd.Flags().BoolP("changed", "c", false, "Add all changed files")
-	addFlags = addCmd.Flags()
 }

@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
 	"github.com/materials-commons/materials-commons-cli/pkg/model"
+	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
 )
 
@@ -18,24 +20,14 @@ var listConflictsCmd = &cobra.Command{
 }
 
 func runListConflictsCmd(cmd *cobra.Command, args []string) {
-	db := mcdb.MustConnectToDB()
-	var conflictFiles []model.Conflict
+	conflictStor := stor.NewGormConflictStor(mcdb.MustConnectToDB())
+	err := conflictStor.ListPaged(func(f *model.Conflict) error {
+		fmt.Printf("%s\n", mcc.ToFullPath(f.File.Path))
+		return nil
+	})
 
-	offset := 0
-	pageSize := 100
-	for {
-		if err := db.Offset(offset).Limit(pageSize).Preload("Files").Find(&conflictFiles).Error; err != nil {
-			break
-		}
-
-		if len(conflictFiles) == 0 {
-			break
-		}
-
-		for _, f := range conflictFiles {
-			fmt.Printf("%s\n", mcc.ToFullPath(f.File.Path))
-		}
-		offset = offset + pageSize
+	if err != nil {
+		log.Fatalf("Error retrieving conflicts: %s", err)
 	}
 }
 
