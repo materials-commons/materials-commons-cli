@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -12,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// conflictsCmd represents the conflicts command
+// listConflictsCmd represents the conflicts command
 var listConflictsCmd = &cobra.Command{
 	Use:   "list-conflicts",
 	Short: "Lists all files that were changed locally that pull would have overwritten.",
