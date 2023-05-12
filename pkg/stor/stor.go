@@ -22,4 +22,5 @@ type ConflictFileStor interface {
 	ResolveConflictByPath(path string) error
 	ResolveAllConflicts() error
 	ListPaged(fn func(conflict *model.Conflict) error) error
+	GetConflictByPath(path string) (*model.Conflict, error)
 }
