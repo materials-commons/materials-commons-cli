@@ -43,7 +43,6 @@ func runListAddedCmd(cmd *cobra.Command, args []string) {
 }
 
 func showStatusAllAddedFiles() {
-	fmt.Println("showStatusAllAddedFiles")
 	db := mcdb.MustConnectToDB()
 
 	var addedFiles []model.AddedFile
@@ -59,7 +58,7 @@ func showStatusAllAddedFiles() {
 		}
 
 		for _, f := range addedFiles {
-			fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+			fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
 		}
 		offset = offset + pageSize
 	}
@@ -82,7 +81,7 @@ func showStatusSpecificFiles(paths []string) {
 			continue
 		}
 
-		fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+		fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
 	}
 }
 
@@ -104,10 +103,10 @@ func showStatusForAddedFileByReason(unknown bool, changed bool) {
 		for _, f := range addedFiles {
 			switch {
 			case unknown && f.IsUnknown():
-				fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+				fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
 
 			case changed && f.IsChanged():
-				fmt.Printf("%s %s (%s)", f.Reason, f.Path, f.FType)
+				fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
 			}
 		}
 		offset = offset + pageSize
