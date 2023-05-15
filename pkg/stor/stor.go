@@ -16,6 +16,8 @@ type AddedFileStor interface {
 	AddFile(path, reason, ftype string) (*model.AddedFile, error)
 	GetFileByPath(path string) (*model.AddedFile, error)
 	ListPaged(fn func(f *model.AddedFile) error) error
+	RemoveAll() error
+	RemoveByPath(path string) error
 }
 
 type ConflictFileStor interface {
