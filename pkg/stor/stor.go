@@ -24,3 +24,7 @@ type ConflictFileStor interface {
 	ListPaged(fn func(conflict *model.Conflict) error) error
 	GetConflictByPath(path string) (*model.Conflict, error)
 }
+
+type Model interface {
+	model.Conflict | model.File | model.AddedFile | model.IgnoredFile
+}

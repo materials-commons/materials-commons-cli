@@ -32,32 +32,16 @@ func (s *GormConflictStor) ResolveAllConflicts() error {
 	})
 }
 
+// ListPaged pages through all the conflicts, the callback method is called on each
+// conflict. If the method returns a non-nil error then ListPaged will immediately
+// stop execution.
 func (s *GormConflictStor) ListPaged(fn func(conflict *model.Conflict) error) error {
-	var conflictFiles []model.Conflict
-	offset := 0
-	pageSize := 100
-	for {
-		if err := s.db.Offset(offset).Limit(pageSize).Find(&conflictFiles).Error; err != nil {
-			return err
-		}
-
-		if len(conflictFiles) == 0 {
-			break
-		}
-
-		for _, f := range conflictFiles {
-			if err := fn(&f); err != nil {
-				break
-			}
-		}
-		offset = offset + pageSize
-	}
-
-	return nil
+	return listPaged(s.db, fn)
 }
 
 func (s *GormConflictStor) GetConflictByPath(path string) (*model.Conflict, error) {
 	var f model.Conflict
 	err := s.db.Where("path = ?", path).First(&f).Error
 	return &f, err
+
 }
