@@ -129,7 +129,7 @@ func (w *Walker) walkerErrorCallback(_ string, err error) error {
 // determination to the callback for changed files to give them flexibility in how
 // to handle this.
 func (w *Walker) fileMTimeIsChanged(f *model.File, finfo os.FileInfo) bool {
-	if f.LMtime.Before(finfo.ModTime()) {
+	if f.LMTime.Before(finfo.ModTime()) {
 		// If the Local MTime we have for this file is before the MTime in the file system
 		// then the file has potentially changed. We will only know for sure by computing
 		// the checksum, but for now we can just set this file as changed and a candidate

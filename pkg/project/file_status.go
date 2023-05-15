@@ -56,7 +56,7 @@ func (d *FileStatusDeterminer) DetermineFileStatus(projectPath, path string) (st
 		return mcc.FileUnknown, ftype
 	}
 
-	if f.LMtime.Before(finfo.ModTime()) {
+	if f.LMTime.Before(finfo.ModTime()) {
 		// file has newer mtime than what is stored in database, so return FileChanged
 		return mcc.FileMTimeChanged, f.FType
 	}
