@@ -15,7 +15,8 @@ type IgnoredFile struct {
 	Path string `json:"path"`
 
 	// FType can be FTypeFile or FTypeDirectory
-	FType     string    `json:"ftype" gorm:"column:ftype"`
+	FType string `json:"ftype" gorm:"column:ftype"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
