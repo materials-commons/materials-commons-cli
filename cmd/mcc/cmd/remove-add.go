@@ -5,35 +5,58 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
 )
 
 // removeAddCmd represents the removeAdd command
 var removeAddCmd = &cobra.Command{
 	Use:   "remove-add",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Remove added files(s).",
+	Long:  `Remove added files(s).`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		all, _ := cmd.Flags().GetBool("all")
+		if all && len(args) != 0 {
+			return fmt.Errorf("args not allowed if --all flag is specified")
+		}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("removeAdd called")
+		if !all && len(args) == 0 {
+			return fmt.Errorf("you must specify files to remove when the --all flag is not used")
+		}
+
+		return nil
 	},
+	Run: func(cmd *cobra.Command, args []string) {
+		all, _ := cmd.Flags().GetBool("all")
+		if all {
+			removeAllAddedFiles()
+			return
+		}
+
+		removeSpecifiedFiles(args)
+	},
+}
+
+func removeAllAddedFiles() {
+	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
+	if err := addedFileStor.RemoveAll(); err != nil {
+		log.Fatalf("Error removing all added files: %s", err)
+	}
+}
+
+func removeSpecifiedFiles(files []string) {
+	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
+	for _, filePath := range files {
+		if err := addedFileStor.RemoveByPath(filePath); err != nil {
+			log.Printf("Error deleting %q: %s\n", filePath, err)
+		}
+	}
 }
 
 func init() {
 	rootCmd.AddCommand(removeAddCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// removeAddCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// removeAddCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	removeAddCmd.Flags().BoolP("all", "a", false, "Remove all added files")
 }
