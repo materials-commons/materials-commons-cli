@@ -27,6 +27,10 @@ type ConflictFileStor interface {
 	GetConflictByPath(path string) (*model.Conflict, error)
 }
 
+type ProjectStor interface {
+	GetProject() (*model.Project, error)
+}
+
 type Model interface {
 	model.Conflict | model.File | model.AddedFile | model.IgnoredFile
 }
