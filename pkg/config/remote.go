@@ -1,4 +1,4 @@
-package model
+package config
 
 type Remote struct {
 	MCUrl    string `json:"mcurl"`
@@ -7,6 +7,6 @@ type Remote struct {
 }
 
 type ConfigRemote struct {
-	DefaultRemote *Remote  `json:"default_remote"`
+	DefaultRemote Remote   `json:"default_remote"`
 	Remotes       []Remote `json:"remotes"`
 }

@@ -2,12 +2,11 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/materials-commons/materials-commons-cli/pkg/model"
 )
 
 var (
@@ -21,7 +20,9 @@ var (
 
 	configPath string
 
-	remote model.ConfigRemote
+	remote ConfigRemote
+
+	remoteRead bool
 )
 
 // GetTxRetry returns the number of times to retry a failed transaction. The minimum is 3. It uses
@@ -48,7 +49,8 @@ func GetProjectMCConfig() string {
 
 	config := filepath.Join(GetProjectMCDirPath(), "config.json")
 
-	if _, err := os.Stat(config); err != nil {
+	if _, err := os.Stat(config); err == nil {
+		fmt.Printf("found %s\n", config)
 		configPath = config
 		return configPath
 	}
@@ -60,7 +62,7 @@ func GetProjectMCConfig() string {
 
 	config = filepath.Join(homeDir, ".materialscommons", "config.json")
 
-	if _, err := os.Stat(config); err != nil {
+	if _, err := os.Stat(config); err == nil {
 		configPath = config
 		return configPath
 	}
@@ -119,37 +121,18 @@ func MustReadAPIKey() string {
 		return apikey
 	}
 
-	if remote.DefaultRemote != nil && remote.DefaultRemote.MCAPIKey != "" {
+	if _, err := GetRemote(); err != nil {
+		log.Fatalf("Failed to read config: %s", err)
+	}
+
+	if remote.DefaultRemote.MCAPIKey != "" {
 		return remote.DefaultRemote.MCAPIKey
 	}
 
-	config := GetProjectMCConfig()
+	log.Fatalf("No default mcapikey set")
 
-	if config == "" {
-		log.Fatalf("Cannot find config.json")
-	}
-
-	contents, err := os.ReadFile(config)
-	if err != nil {
-		log.Fatalf("Unable to read %q: %s", config, err)
-	}
-
-	var c model.ConfigRemote
-	if err := json.Unmarshal(contents, &c); err != nil {
-		log.Fatalf("Unable to unmarshal %q: %s", config, err)
-	}
-
-	if c.DefaultRemote == nil {
-		log.Fatalf("No default remote set")
-	}
-
-	if c.DefaultRemote.MCAPIKey == "" {
-		log.Fatalf("Default mcapikey not set in %q", config)
-	}
-
-	remote.DefaultRemote = c.DefaultRemote
-
-	return c.DefaultRemote.MCAPIKey
+	// Not reachable
+	return ""
 }
 
 func MustReadMCUrl() string {
@@ -158,37 +141,45 @@ func MustReadMCUrl() string {
 		return mcurl
 	}
 
-	if remote.DefaultRemote != nil && remote.DefaultRemote.MCUrl != "" {
+	if _, err := GetRemote(); err != nil {
+		log.Fatalf("Failed to read config: %s", err)
+	}
+
+	if remote.DefaultRemote.MCUrl != "" {
 		return remote.DefaultRemote.MCUrl
+	}
+
+	log.Fatalf("No default mcurl set")
+
+	// Not reachable
+	return ""
+}
+
+func GetRemote() (ConfigRemote, error) {
+	if remoteRead {
+		return remote, nil
 	}
 
 	config := GetProjectMCConfig()
 
 	if config == "" {
-		log.Fatalf("Cannot find config.json")
+		return remote, fmt.Errorf("cannot find config.json")
 	}
 
 	contents, err := os.ReadFile(config)
 	if err != nil {
-		log.Fatalf("Unable to read %q: %s", config, err)
+		return remote, fmt.Errorf("unable to read %q: %s", config, err)
 	}
 
-	var c model.ConfigRemote
-	if err := json.Unmarshal(contents, &c); err != nil {
-		log.Fatalf("Unable to unmarshal %q: %s", config, err)
+	if err := json.Unmarshal(contents, &remote); err != nil {
+		return remote, fmt.Errorf("unable to unmarshal %q: %s", config, err)
 	}
 
-	if c.DefaultRemote == nil {
-		log.Fatalf("No default remote set")
-	}
+	fmt.Printf("remote = %#v\n", remote)
 
-	if c.DefaultRemote.MCUrl == "" {
-		log.Fatalf("Default mcurl not set in %q", config)
-	}
+	remoteRead = true
 
-	remote.DefaultRemote = c.DefaultRemote
-
-	return c.DefaultRemote.MCUrl
+	return remote, nil
 }
 
 func GetWSScheme() string {
