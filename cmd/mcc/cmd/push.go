@@ -40,9 +40,9 @@ var (
 
 func runPushCmd(cmd *cobra.Command, args []string) {
 	db := mcdb.MustConnectToDB()
-
-	pushMCUrl = config.MustReadMCUrl()
-	pushMCAPIKey = config.MustReadAPIKey()
+	//
+	//pushMCUrl = config.MustReadMCUrl()
+	//pushMCAPIKey = config.MustReadAPIKey()
 
 	projectStor := stor.NewGormProjectStor(db)
 	p, err := projectStor.GetProject()

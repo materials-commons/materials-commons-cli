@@ -1,9 +1,7 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -19,10 +17,6 @@ var (
 	projectRootPath string
 
 	configPath string
-
-	remote ConfigRemote
-
-	remoteRead bool
 )
 
 // GetTxRetry returns the number of times to retry a failed transaction. The minimum is 3. It uses
@@ -113,73 +107,6 @@ func GetProjectRootPath() string {
 
 		dir = childDir
 	}
-}
-
-func MustReadAPIKey() string {
-	apikey := os.Getenv("MCAPIKEY")
-	if apikey != "" {
-		return apikey
-	}
-
-	if _, err := GetRemote(); err != nil {
-		log.Fatalf("Failed to read config: %s", err)
-	}
-
-	if remote.DefaultRemote.MCAPIKey != "" {
-		return remote.DefaultRemote.MCAPIKey
-	}
-
-	log.Fatalf("No default mcapikey set")
-
-	// Not reachable
-	return ""
-}
-
-func MustReadMCUrl() string {
-	mcurl := os.Getenv("MCURL")
-	if mcurl != "" {
-		return mcurl
-	}
-
-	if _, err := GetRemote(); err != nil {
-		log.Fatalf("Failed to read config: %s", err)
-	}
-
-	if remote.DefaultRemote.MCUrl != "" {
-		return remote.DefaultRemote.MCUrl
-	}
-
-	log.Fatalf("No default mcurl set")
-
-	// Not reachable
-	return ""
-}
-
-func GetRemote() (ConfigRemote, error) {
-	if remoteRead {
-		return remote, nil
-	}
-
-	config := GetProjectMCConfig()
-
-	if config == "" {
-		return remote, fmt.Errorf("cannot find config.json")
-	}
-
-	contents, err := os.ReadFile(config)
-	if err != nil {
-		return remote, fmt.Errorf("unable to read %q: %s", config, err)
-	}
-
-	if err := json.Unmarshal(contents, &remote); err != nil {
-		return remote, fmt.Errorf("unable to unmarshal %q: %s", config, err)
-	}
-
-	fmt.Printf("remote = %#v\n", remote)
-
-	remoteRead = true
-
-	return remote, nil
 }
 
 func GetWSScheme() string {

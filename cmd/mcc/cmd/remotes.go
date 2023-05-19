@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/materials-commons/materials-commons-cli/pkg/config"
+	"github.com/materials-commons/materials-commons-cli/pkg/model"
+	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
 )
 
@@ -17,59 +18,54 @@ var remotesCmd = &cobra.Command{
 }
 
 func runRemotesCmd(cmd *cobra.Command, args []string) {
-	remote, err := config.GetRemote()
-	fmt.Printf("got remote = %#v\n", remote)
+	remoteStor := stor.MustLoadJsonRemoteStor()
+	defaultRemote, err := remoteStor.GetDefaultRemote()
 	mcapikeyFromEnv := os.Getenv("MCAPIKEY")
 	mcurlFromEnv := os.Getenv("MCURL")
 
 	if err != nil {
-		fmt.Println("Error trying to read config:", err)
-
-		if config.GetProjectMCConfig() == "" {
-			fmt.Println("  Warning - No config.json found.")
-		} else {
-			fmt.Println("  Warning - Unable to remote config.json at:", config.GetProjectMCConfig())
-		}
-
-		if mcapikeyFromEnv != "" {
-			fmt.Println("Your API Key is set from the environment (MCAPIKEY):", mcapikeyFromEnv)
-		}
-
-		if mcurlFromEnv != "" {
-			fmt.Println("Your Server URL is set from the environment (MCURL):", mcurlFromEnv)
-		}
-
-		return
+		fmt.Printf("No default defaultRemote set: %s", err)
 	}
 
-	// If we are here then a config.json existed and was read
-	fmt.Printf("Your config.json is located at %q\n", config.GetProjectMCConfig())
-
 	if mcapikeyFromEnv != "" {
-		fmt.Println("Your API Key is set from the environment (MCAPIKEY):", mcapikeyFromEnv)
+		fmt.Printf("The default defaultRemote apikey is set from the environment (MCAPIKEY).\n")
 	}
 
 	if mcurlFromEnv != "" {
-		fmt.Println("Your Server URL is set from the environment (MCURL):", mcurlFromEnv)
+		fmt.Printf("The default defaultRemote server url is set from the environment (MCURL).\n")
 	}
 
-	fmt.Println("Your config.json has the following settings:")
-	if remote.DefaultRemote.MCAPIKey == "" && remote.DefaultRemote.MCUrl == "" {
-		fmt.Println("   You have have no default remote set.")
-		return
+	fmt.Printf("\nDefault Remote:\n")
+	fmt.Printf("  EMail    : %s\n", defaultRemote.EMail)
+	fmt.Printf("  ServerURL: %s\n", defaultRemote.MCUrl)
+	fmt.Printf("  APIKey   : %s\n", defaultRemote.MCAPIKey)
+
+	fmt.Printf("\nOther Remotes:\n")
+	err = remoteStor.ListPaged(func(r *model.Remote) error {
+		if isSameAsDefaultRemote(defaultRemote, r) {
+			// Skip showing a remote equal to the default remote
+			return nil
+		}
+		fmt.Printf("    Remote:\n")
+		fmt.Printf("      EMail    : %s\n", r.EMail)
+		fmt.Printf("      ServerURL: %s\n", r.MCUrl)
+		fmt.Printf("      APIKey   : %s\n\n", r.MCAPIKey)
+		return nil
+	})
+
+	if err != nil {
+		fmt.Printf("Error listing other remotes: %s\n", err)
+	}
+}
+
+func isSameAsDefaultRemote(defaultRemote, remote *model.Remote) bool {
+	if defaultRemote.MCAPIKey == remote.MCAPIKey &&
+		defaultRemote.MCUrl == remote.MCUrl &&
+		defaultRemote.EMail == remote.EMail {
+		return true
 	}
 
-	if remote.DefaultRemote.MCAPIKey == "" {
-		fmt.Println("  You have a default remote, but the mcapikey isn't set.")
-	} else {
-		fmt.Printf("  Your default mcapikey is %q, unless overridden by the environment (MCAPIKEY).", remote.DefaultRemote.MCAPIKey)
-	}
-
-	if remote.DefaultRemote.MCUrl == "" {
-		fmt.Println("  You have a default remote, but the mcurl isn't set.")
-	} else {
-		fmt.Printf("  Your default mcurl is %q, unless overridden by the environment (MCURL).", remote.DefaultRemote.MCUrl)
-	}
+	return false
 }
 
 func init() {

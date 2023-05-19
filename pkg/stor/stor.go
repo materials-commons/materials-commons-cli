@@ -31,6 +31,12 @@ type ProjectStor interface {
 	GetProject() (*model.Project, error)
 }
 
+type RemoteStor interface {
+	GetDefaultRemote() (*model.Remote, error)
+	GetRemoteByUserServerUrl(email, serverUrl string) (*model.Remote, error)
+	ListPaged(fn func(remote *model.Remote) error) error
+}
+
 type Model interface {
 	model.Conflict | model.File | model.AddedFile | model.IgnoredFile
 }
