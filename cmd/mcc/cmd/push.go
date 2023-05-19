@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -33,16 +30,13 @@ var pushCmd = &cobra.Command{
 }
 
 var (
-	pushMCUrl     string
-	pushMCAPIKey  string
 	pushProjectId uint
 )
 
 func runPushCmd(cmd *cobra.Command, args []string) {
 	db := mcdb.MustConnectToDB()
-	//
-	//pushMCUrl = config.MustReadMCUrl()
-	//pushMCAPIKey = config.MustReadAPIKey()
+
+	MustLoadDefaultRemote()
 
 	projectStor := stor.NewGormProjectStor(db)
 	p, err := projectStor.GetProject()
@@ -66,7 +60,7 @@ func newUploader() *uploader {
 }
 
 func uploadFile(pathToFile string) error {
-	u := url.URL{Scheme: config.GetWSScheme(), Host: pushMCUrl, Path: "/ws"}
+	u := url.URL{Scheme: config.GetWSScheme(), Host: DefaultRemote.MCUrl, Path: "/ws"}
 	websocket.DefaultDialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -83,7 +77,7 @@ func uploadFile(pathToFile string) error {
 
 	var incomingReq protocol.IncomingRequestType
 
-	if !authenticate(c, pushMCAPIKey) {
+	if !authenticate(c, DefaultRemote.MCAPIKey) {
 		log.Fatalf("Unable to authenticate")
 	}
 
