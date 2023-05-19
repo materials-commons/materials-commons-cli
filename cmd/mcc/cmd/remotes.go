@@ -25,20 +25,21 @@ func runRemotesCmd(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		fmt.Printf("No default defaultRemote set: %s", err)
-	}
+	} else {
 
-	if mcapikeyFromEnv != "" {
-		fmt.Printf("The default defaultRemote apikey is set from the environment (MCAPIKEY).\n")
-	}
+		if mcapikeyFromEnv != "" {
+			fmt.Printf("The default default remote apikey is set from the environment (MCAPIKEY).\n")
+		}
 
-	if mcurlFromEnv != "" {
-		fmt.Printf("The default defaultRemote server url is set from the environment (MCURL).\n")
-	}
+		if mcurlFromEnv != "" {
+			fmt.Printf("The default default remote server url is set from the environment (MCURL).\n")
+		}
 
-	fmt.Printf("\nDefault Remote:\n")
-	fmt.Printf("  EMail    : %s\n", defaultRemote.EMail)
-	fmt.Printf("  ServerURL: %s\n", defaultRemote.MCUrl)
-	fmt.Printf("  APIKey   : %s\n", defaultRemote.MCAPIKey)
+		fmt.Printf("\nDefault Remote:\n")
+		fmt.Printf("  EMail    : %s\n", defaultRemote.EMail)
+		fmt.Printf("  ServerURL: %s\n", defaultRemote.MCUrl)
+		fmt.Printf("  APIKey   : %s\n", defaultRemote.MCAPIKey)
+	}
 
 	fmt.Printf("\nOther Remotes:\n")
 	err = remoteStor.ListPaged(func(r *model.Remote) error {
