@@ -26,21 +26,21 @@ func runListAddedCmd(cmd *cobra.Command, args []string) {
 	if !unknownFlag && !changedFlag && len(args) == 0 {
 		// If neither flag is specified, then the command was run without any flags. We treat
 		// this as if the user wants to see all added file types.
-		showStatusAllAddedFiles()
+		showStatusOfAllAddedFiles()
 		return
 	}
 
 	if len(args) > 0 {
 		// The user has asked to see the status on specific files
-		showStatusSpecificFiles(args)
+		showStatusOfSpecificFiles(args)
 		return
 	}
 
 	// If we are here then the user has specified at least one flag
-	showStatusForAddedFileByReason(unknownFlag, changedFlag)
+	showStatusForAddedFilesByReason(unknownFlag, changedFlag)
 }
 
-func showStatusAllAddedFiles() {
+func showStatusOfAllAddedFiles() {
 	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
 	err := addedFileStor.ListPaged(func(f *model.AddedFile) error {
 		fmt.Printf("%s %s (%s)\n", f.Reason, mcc.ToFullPath(f.Path), f.FType)
@@ -52,7 +52,7 @@ func showStatusAllAddedFiles() {
 	}
 }
 
-func showStatusSpecificFiles(paths []string) {
+func showStatusOfSpecificFiles(paths []string) {
 	var (
 		err error
 		f   *model.AddedFile
@@ -72,7 +72,7 @@ func showStatusSpecificFiles(paths []string) {
 	}
 }
 
-func showStatusForAddedFileByReason(unknown bool, changed bool) {
+func showStatusForAddedFilesByReason(unknown bool, changed bool) {
 	addedFileStor := stor.NewGormAddedFileStor(mcdb.MustConnectToDB())
 	err := addedFileStor.ListPaged(func(f *model.AddedFile) error {
 		switch {
