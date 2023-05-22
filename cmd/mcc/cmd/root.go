@@ -19,10 +19,6 @@ var rootCmd = &cobra.Command{
 	Long:  `mcc <subcommand>`,
 }
 
-var (
-	DefaultRemote *model.Remote
-)
-
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -32,14 +28,19 @@ func Execute() {
 	}
 }
 
-func MustLoadDefaultRemote() {
-	var err error
+func MustLoadDefaultRemote() *model.Remote {
+	var (
+		err           error
+		defaultRemote *model.Remote
+	)
 
 	remoteStor := stor.MustLoadJsonRemoteStor()
-	DefaultRemote, err = remoteStor.GetDefaultRemote()
+	defaultRemote, err = remoteStor.GetDefaultRemote()
 	if err != nil {
 		log.Fatalf("No default remote set: %s", err)
 	}
+
+	return defaultRemote
 }
 
 func init() {

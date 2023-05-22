@@ -29,22 +29,22 @@ var pushCmd = &cobra.Command{
 	Run:   runPushCmd,
 }
 
-var (
-	pushProjectId uint
-)
-
 func runPushCmd(cmd *cobra.Command, args []string) {
+	remoteStor := stor.MustLoadJsonRemoteStor()
+	defaultRemote, err := remoteStor.GetDefaultRemote()
+	if err != nil {
+		log.Fatalf("No default remote set: %s", err)
+	}
+
 	db := mcdb.MustConnectToDB()
-
-	MustLoadDefaultRemote()
-
 	projectStor := stor.NewGormProjectStor(db)
 	p, err := projectStor.GetProject()
 	if err != nil {
 		log.Fatalf("Unable to retrieve project: %s", err)
 	}
 
-	pushProjectId = p.ID
+	uploader := newUploader(defaultRemote.MCUrl, defaultRemote.MCAPIKey, p.ID)
+	_ = uploader
 
 	projectWalker := project.NewWalker(db, nil, nil)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
@@ -53,14 +53,17 @@ func runPushCmd(cmd *cobra.Command, args []string) {
 }
 
 type uploader struct {
+	mcurl     string
+	apikey    string
+	projectID uint
 }
 
-func newUploader() *uploader {
-	return &uploader{}
+func newUploader(mcurl, apikey string, projectID uint) *uploader {
+	return &uploader{mcurl: mcurl, apikey: apikey, projectID: projectID}
 }
 
-func uploadFile(pathToFile string) error {
-	u := url.URL{Scheme: config.GetWSScheme(), Host: DefaultRemote.MCUrl, Path: "/ws"}
+func (up *uploader) uploadFile(pathToFile string) error {
+	u := url.URL{Scheme: config.GetWSScheme(), Host: up.mcurl, Path: "/ws"}
 	websocket.DefaultDialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -77,7 +80,7 @@ func uploadFile(pathToFile string) error {
 
 	var incomingReq protocol.IncomingRequestType
 
-	if !authenticate(c, DefaultRemote.MCAPIKey) {
+	if !up.authenticate(c) {
 		log.Fatalf("Unable to authenticate")
 	}
 
@@ -179,7 +182,7 @@ func uploadFile(pathToFile string) error {
 	return nil
 }
 
-func authenticate(c *websocket.Conn, key string) bool {
+func (up *uploader) authenticate(c *websocket.Conn) bool {
 	var req protocol.IncomingRequestType
 	req.RequestType = protocol.AuthenticateReq
 	if err := c.WriteJSON(req); err != nil {
@@ -187,8 +190,8 @@ func authenticate(c *websocket.Conn, key string) bool {
 	}
 
 	auth := protocol.AuthenticateRequest{
-		APIToken:  key,
-		ProjectID: int(pushProjectId),
+		APIToken:  up.apikey,
+		ProjectID: int(up.projectID),
 	}
 
 	if err := c.WriteJSON(auth); err != nil {
