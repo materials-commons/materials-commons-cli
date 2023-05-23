@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 )
 
@@ -116,4 +117,30 @@ func GetWSScheme() string {
 	}
 
 	return wsScheme
+}
+
+func GetMaxThreads() int {
+	maxThreads := os.Getenv("MC_MAX_THREADS")
+	if maxThreads == "" {
+		return reasonableNumberOfThreads(runtime.NumCPU())
+	}
+
+	threads, err := strconv.Atoi(maxThreads)
+	if err != nil {
+		return reasonableNumberOfThreads(runtime.NumCPU())
+	}
+
+	return threads
+}
+
+func reasonableNumberOfThreads(maxThreads int) int {
+	if maxThreads > 10 {
+		return 10
+	}
+
+	if maxThreads < 3 {
+		return 3
+	}
+
+	return maxThreads
 }
