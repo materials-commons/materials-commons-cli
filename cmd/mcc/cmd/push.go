@@ -50,8 +50,15 @@ func runPushCmd(cmd *cobra.Command, args []string) {
 	threadPool := pool.New().WithMaxGoroutines(config.GetMaxThreads())
 	err = addedFileStor.ListPaged(func(f *model.AddedFile) error {
 		threadPool.Go(func() {
-			uploader := newUploader(defaultRemote.MCUrl, defaultRemote.MCAPIKey, p.ID, bar, addedFileStor)
-			_ = uploader.uploadFile(f.Path)
+			uploader := newUploader().
+				withMCURL(defaultRemote.MCUrl).
+				withAPIKey(defaultRemote.MCAPIKey).
+				withProgressBar(bar).
+				withAddedFileStor(addedFileStor).
+				withProjectID(p.ID)
+			if err := uploader.uploadFile(f.Path); err != nil {
+				log.Printf("Error uploading file %q: %s", f.Path, err)
+			}
 		})
 		return nil
 	})
@@ -69,8 +76,32 @@ type uploader struct {
 	addedFileStor stor.AddedFileStor
 }
 
-func newUploader(mcurl, apikey string, projectID uint, bar *progressbar.ProgressBar, addedFileStor stor.AddedFileStor) *uploader {
-	return &uploader{mcurl: mcurl, apikey: apikey, projectID: projectID, bar: bar, addedFileStor: addedFileStor}
+func newUploader() *uploader {
+	return &uploader{}
+}
+
+func (up *uploader) withMCURL(mcurl string) *uploader {
+	up.mcurl = mcurl
+	return up
+}
+
+func (up *uploader) withAPIKey(apikey string) *uploader {
+	up.apikey = apikey
+	return up
+}
+
+func (up *uploader) withProgressBar(bar *progressbar.ProgressBar) *uploader {
+	up.bar = bar
+	return up
+}
+
+func (up *uploader) withAddedFileStor(addedFileStor stor.AddedFileStor) *uploader {
+	up.addedFileStor = addedFileStor
+	return up
+}
+func (up *uploader) withProjectID(projectID uint) *uploader {
+	up.projectID = projectID
+	return up
 }
 
 func (up *uploader) uploadFile(pathToFile string) error {
