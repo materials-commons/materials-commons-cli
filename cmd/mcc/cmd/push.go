@@ -6,6 +6,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net/url"
+	"os"
+
 	"github.com/gorilla/websocket"
 	"github.com/materials-commons/hydra/pkg/mcft/protocol"
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
@@ -16,10 +21,6 @@ import (
 	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/spf13/cobra"
-	"io"
-	"log"
-	"net/url"
-	"os"
 )
 
 // pushCmd represents the push command
