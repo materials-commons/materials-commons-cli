@@ -6,19 +6,20 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net/url"
-	"os"
-
 	"github.com/gorilla/websocket"
 	"github.com/materials-commons/hydra/pkg/mcft/protocol"
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
-	"github.com/materials-commons/materials-commons-cli/pkg/project"
+	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
+	"github.com/schollz/progressbar/v3"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/spf13/cobra"
+	"io"
+	"log"
+	"net/url"
+	"os"
 )
 
 // pushCmd represents the push command
@@ -43,23 +44,32 @@ func runPushCmd(cmd *cobra.Command, args []string) {
 		log.Fatalf("Unable to retrieve project: %s", err)
 	}
 
-	uploader := newUploader(defaultRemote.MCUrl, defaultRemote.MCAPIKey, p.ID)
-	_ = uploader
+	addedFileStor := stor.NewGormAddedFileStor(db)
+	bar := progressbar.DefaultBytes(-1, "Uploading")
+	threadPool := pool.New().WithMaxGoroutines(config.GetMaxThreads())
+	err = addedFileStor.ListPaged(func(f *model.AddedFile) error {
+		threadPool.Go(func() {
+			uploader := newUploader(defaultRemote.MCUrl, defaultRemote.MCAPIKey, p.ID, bar, addedFileStor)
+			_ = uploader.uploadFile(f.Path)
+		})
+		return nil
+	})
 
-	projectWalker := project.NewWalker(db, nil, nil)
-	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
-
+	if err != nil {
+		fmt.Printf("Error during upload: %s\n", err)
 	}
 }
 
 type uploader struct {
-	mcurl     string
-	apikey    string
-	projectID uint
+	mcurl         string
+	apikey        string
+	projectID     uint
+	bar           *progressbar.ProgressBar
+	addedFileStor stor.AddedFileStor
 }
 
-func newUploader(mcurl, apikey string, projectID uint) *uploader {
-	return &uploader{mcurl: mcurl, apikey: apikey, projectID: projectID}
+func newUploader(mcurl, apikey string, projectID uint, bar *progressbar.ProgressBar, addedFileStor stor.AddedFileStor) *uploader {
+	return &uploader{mcurl: mcurl, apikey: apikey, projectID: projectID, bar: bar, addedFileStor: addedFileStor}
 }
 
 func (up *uploader) uploadFile(pathToFile string) error {
@@ -138,7 +148,7 @@ func (up *uploader) uploadFile(pathToFile string) error {
 			return err
 		}
 
-		_, _ = io.Copy(hasher, bytes.NewBuffer(data[:n]))
+		_, _ = io.Copy(io.MultiWriter(hasher, up.bar), bytes.NewBuffer(data[:n]))
 
 		var status protocol.StatusResponse
 		if err := c.ReadJSON(&status); err != nil {
@@ -177,6 +187,11 @@ func (up *uploader) uploadFile(pathToFile string) error {
 	if status.IsError {
 		log.Printf("Error uploading file: %s", status.Status)
 		return errors.New("failed upload - checksums didn't match")
+	}
+
+	// If we are here then the upload was successful, so delete the AddedFile entry
+	if err := up.addedFileStor.RemoveByPath(pathToFile); err != nil {
+		log.Printf("Error removing added file %q: %s\n", pathToFile, err)
 	}
 
 	return nil
