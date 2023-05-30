@@ -63,6 +63,8 @@ func runPushCmd(cmd *cobra.Command, args []string) {
 		return nil
 	})
 
+	_ = bar.Close()
+
 	if err != nil {
 		fmt.Printf("Error during upload: %s\n", err)
 	}
