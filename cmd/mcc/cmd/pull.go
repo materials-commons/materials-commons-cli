@@ -1,39 +1,55 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"fmt"
+	"log"
 
+	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
 )
 
 // pullCmd represents the pull command
 var pullCmd = &cobra.Command{
 	Use:   "pull",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Pulls (downloads) files from the server.",
+	Long:  `Pulls (downloads) files from the server.`,
+	Run:   runPullCmd,
+}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pull called")
-	},
+func runPullCmd(cmd *cobra.Command, args []string) {
+	remoteStor := stor.MustLoadJsonRemoteStor()
+	defaultRemote, err := remoteStor.GetDefaultRemote()
+	if err != nil {
+		log.Fatalf("No default remote set: %s", err)
+	}
+
+	_ = defaultRemote
+
+	db := mcdb.MustConnectToDB()
+	projectStor := stor.NewGormProjectStor(db)
+	p, err := projectStor.GetProject()
+	if err != nil {
+		log.Fatalf("Unable to retrieve project: %s", err)
+	}
+
+	_ = p
+
+	if len(args) != 0 {
+		pullSpecificFiles()
+		return
+	}
+
+	pullDownloadedDirs()
+}
+
+func pullSpecificFiles() {
+
+}
+
+func pullDownloadedDirs() {
+
 }
 
 func init() {
 	rootCmd.AddCommand(pullCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// pullCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// pullCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
