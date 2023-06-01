@@ -26,21 +26,43 @@ type WalkerHandlerFn func(projectPath, realPath string, finfo os.FileInfo) error
 // unknown directory it will return filepath.SkipDir and not process any of the files or directories
 // under that directory. If SkipUnknownDirs is false then it will descend into the directory.
 type Walker struct {
-	ignoredFileStor      stor.IgnoredFileStor
-	fileStor             stor.FileStor
-	ChangedFileHandlerFn WalkerHandlerFn
-	UnknownFileHandlerFn WalkerHandlerFn
-	SkipUnknownDirs      bool
+	ignoredFileStor        stor.IgnoredFileStor
+	fileStor               stor.FileStor
+	ChangedFileHandlerFn   WalkerHandlerFn
+	UnknownFileHandlerFn   WalkerHandlerFn
+	UnchangedFileHandlerFn WalkerHandlerFn
+	SkipUnknownDirs        bool
 }
 
-func NewWalker(db *gorm.DB, changedFileHandlerFn, unknownFileHandlerFn WalkerHandlerFn) *Walker {
+func NewWalker(db *gorm.DB) *Walker {
 	return &Walker{
-		ignoredFileStor:      stor.NewGormIgnoredFileStor(db),
-		fileStor:             stor.NewGormFileStor(db),
-		ChangedFileHandlerFn: changedFileHandlerFn,
-		UnknownFileHandlerFn: unknownFileHandlerFn,
-		SkipUnknownDirs:      true,
+		ignoredFileStor:        stor.NewGormIgnoredFileStor(db),
+		fileStor:               stor.NewGormFileStor(db),
+		ChangedFileHandlerFn:   nil,
+		UnchangedFileHandlerFn: nil,
+		UnknownFileHandlerFn:   nil,
+		SkipUnknownDirs:        true,
 	}
+}
+
+func (w *Walker) WithChangedFileHandler(changedFileHandlerFn WalkerHandlerFn) *Walker {
+	w.ChangedFileHandlerFn = changedFileHandlerFn
+	return w
+}
+
+func (w *Walker) WithUnchangedFileHandler(unchangedFileHandlerFn WalkerHandlerFn) *Walker {
+	w.UnchangedFileHandlerFn = unchangedFileHandlerFn
+	return w
+}
+
+func (w *Walker) WithUnknownFileHandler(unknownFileHandlerFn WalkerHandlerFn) *Walker {
+	w.UnknownFileHandlerFn = unknownFileHandlerFn
+	return w
+}
+
+func (w *Walker) WithSkipUnknownDirs(skip bool) *Walker {
+	w.SkipUnknownDirs = skip
+	return w
 }
 
 // Walk will walk the directory path. It uses parallel file walker underneath.
@@ -78,7 +100,7 @@ func (w *Walker) walkCallback(path string, finfo os.FileInfo) error {
 		// Error looking up file, assume it's an unknown file
 		if w.UnknownFileHandlerFn != nil {
 			if err := w.UnknownFileHandlerFn(projectPath, path, finfo); err != nil {
-				// ignore error
+				return err
 			}
 		}
 
@@ -100,14 +122,15 @@ func (w *Walker) walkCallback(path string, finfo os.FileInfo) error {
 
 	if w.fileMTimeIsChanged(f, finfo) {
 		if w.ChangedFileHandlerFn != nil {
-			if err := w.ChangedFileHandlerFn(projectPath, path, finfo); err != nil {
-				// ignore error
-			}
+			return w.ChangedFileHandlerFn(projectPath, path, finfo)
+		}
+		return nil
+	} else {
+		if w.UnchangedFileHandlerFn != nil {
+			return w.UnchangedFileHandlerFn(projectPath, path, finfo)
 		}
 		return nil
 	}
-
-	return nil
 }
 
 // walkerErrorCallback is called whenever the parallel walker encounters an error.

@@ -141,7 +141,9 @@ func (a *fileAdder) addFiles(changedFiles bool, unknownFiles bool) {
 		unknownFileHandler = a.unknownFileHandler
 	}
 
-	projectWalker := project.NewWalker(a.db, changedFileHandler, unknownFileHandler)
+	projectWalker := project.NewWalker(a.db).
+		WithChangedFileHandler(changedFileHandler).
+		WithUnknownFileHandler(unknownFileHandler)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 		log.Fatalf("Unable to add files: %s", err)
 	}

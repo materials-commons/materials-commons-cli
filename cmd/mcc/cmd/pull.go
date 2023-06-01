@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"log"
+	"os"
 
+	"github.com/materials-commons/materials-commons-cli/pkg/config"
+	"github.com/materials-commons/materials-commons-cli/pkg/mcapi"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/spf13/cobra"
 )
@@ -47,7 +51,37 @@ func pullSpecificFiles() {
 }
 
 func pullDownloadedDirs() {
+	changedFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		return nil
+	}
 
+	unknownFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		return nil
+	}
+
+	unchangedFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		return nil
+	}
+	db := mcdb.MustConnectToDB()
+
+	projectStor := stor.NewGormProjectStor(db)
+	p, err := projectStor.GetProject()
+	c := mcapi.NewClient("", "")
+	files, err := c.ListDirectoryByPath(int(p.ID), "/")
+	_ = files
+
+	if err != nil {
+		log.Fatalf("Unable")
+	}
+
+	projectWalker := project.NewWalker(db).
+		WithChangedFileHandler(changedFileHandler).
+		WithUnknownFileHandler(unknownFileHandler).
+		WithUnchangedFileHandler(unchangedFileHandler).
+		WithSkipUnknownDirs(false)
+	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
+		log.Fatalf("Unable to add files: %s", err)
+	}
 }
 
 func init() {

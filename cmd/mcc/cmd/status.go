@@ -41,7 +41,9 @@ func runStatusCmd(cmd *cobra.Command, args []string) {
 	go sr.run(ctx) // start the statusReceiver thread
 
 	// Walk the project determining and printing file status.
-	projectWalker := project.NewWalker(db, sw.changedFileHandler, sw.unknownFileHandler)
+	projectWalker := project.NewWalker(db).
+		WithChangedFileHandler(sw.changedFileHandler).
+		WithUnknownFileHandler(sw.unknownFileHandler)
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 		log.Fatalf("Unable to get status: %s", err)
 	}
