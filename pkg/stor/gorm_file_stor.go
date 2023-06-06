@@ -1,6 +1,7 @@
 package stor
 
 import (
+	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
 	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"gorm.io/gorm"
 )
@@ -21,4 +22,12 @@ func (s *GormFileStor) GetFileByPath(path string) (*model.File, error) {
 	}
 
 	return &f, nil
+}
+
+func (s *GormFileStor) AddFile(f model.File) (*model.File, error) {
+	fileToAdd := f
+	err := mcdb.WithTxRetryDefault(s.db, func(tx *gorm.DB) error {
+		return tx.Create(&fileToAdd).Error
+	})
+	return &fileToAdd, err
 }

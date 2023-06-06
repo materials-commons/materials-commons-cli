@@ -10,6 +10,7 @@ type IgnoredFileStor interface {
 
 type FileStor interface {
 	GetFileByPath(path string) (*model.File, error)
+	AddFile(f model.File) (*model.File, error)
 }
 
 type AddedFileStor interface {
@@ -37,6 +38,16 @@ type RemoteStor interface {
 	ListPaged(fn func(remote *model.Remote) error) error
 }
 
+type LocalFileStor interface {
+	ListPaged(fn func(f *model.LocalFile) error) error
+	GetLocalFileByPath(path string) (*model.LocalFile, error)
+}
+
+type RemoteFileStor interface {
+	ListPaged(fn func(f *model.RemoteFile) error) error
+	GetRemoteFileByPath(path string) (*model.RemoteFile, error)
+}
+
 type Model interface {
-	model.Conflict | model.File | model.AddedFile | model.IgnoredFile
+	model.Conflict | model.File | model.AddedFile | model.IgnoredFile | model.LocalFile | model.RemoteFile
 }
