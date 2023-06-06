@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/materials-commons/materials-commons-cli/pkg/config"
-	"github.com/materials-commons/materials-commons-cli/pkg/mcapi"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
 	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
@@ -50,29 +51,40 @@ func pullSpecificFiles() {
 
 }
 
+var mu sync.Mutex
+
 func pullDownloadedDirs() {
 	changedFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		mu.Lock()
+		defer mu.Unlock()
+		fmt.Printf("changed file: %s\n", path)
 		return nil
 	}
 
 	unknownFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		mu.Lock()
+		defer mu.Unlock()
+		fmt.Printf("unknown file: %s\n", path)
 		return nil
 	}
 
 	unchangedFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		mu.Lock()
+		defer mu.Unlock()
+		fmt.Printf("unchanged file: %s\n", path)
 		return nil
 	}
 	db := mcdb.MustConnectToDB()
 
-	projectStor := stor.NewGormProjectStor(db)
-	p, err := projectStor.GetProject()
-	c := mcapi.NewClient("", "")
-	files, err := c.ListDirectoryByPath(int(p.ID), "/")
-	_ = files
-
-	if err != nil {
-		log.Fatalf("Unable")
-	}
+	//projectStor := stor.NewGormProjectStor(db)
+	//p, err := projectStor.GetProject()
+	//c := mcapi.NewClient("", "")
+	//files, err := c.ListDirectoryByPath(int(p.ID), "/")
+	//_ = files
+	//
+	//if err != nil {
+	//	log.Fatalf("Unable")
+	//}
 
 	projectWalker := project.NewWalker(db).
 		WithChangedFileHandler(changedFileHandler).
