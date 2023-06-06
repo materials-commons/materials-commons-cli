@@ -20,8 +20,8 @@ func listPaged[M Model](db *gorm.DB, fn func(m *M) error) error {
 			break
 		}
 
-		for _, f := range items {
-			if err := fn(&f); err != nil {
+		for _, item := range items {
+			if err := fn(&item); err != nil {
 				break
 			}
 		}
