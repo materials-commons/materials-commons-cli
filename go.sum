@@ -18,8 +18,8 @@ github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkr
 github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
 github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
 github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213/go.mod h1:vNUNkEQ1e29fT/6vq2aBdFsgNPmy8qMdSay1npru+Sw=
-github.com/materials-commons/hydra v0.0.0-20230314162233-6ec5e0b0793a h1:XHyu3BI31k3OP/zBmtBsInBi/geHwoX15rcKgXmS10I=
-github.com/materials-commons/hydra v0.0.0-20230314162233-6ec5e0b0793a/go.mod h1:v75GeRTvkBstG30s6Ifoz5RzY+N9MMjuj+1qcn78V4I=
+github.com/materials-commons/hydra v0.0.0-20230601172110-a62f2bb5e873 h1:q8fkD79bSaeX5HQqb6TT3ECqZF/WV88BVabnwWEgU68=
+github.com/materials-commons/hydra v0.0.0-20230601172110-a62f2bb5e873/go.mod h1:v75GeRTvkBstG30s6Ifoz5RzY+N9MMjuj+1qcn78V4I=
 github.com/mattn/go-isatty v0.0.17/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/mattn/go-runewidth v0.0.14 h1:+xnbZSEeDbOIg5/mE6JF0w6n9duR1l3/WmbinWVwUuU=
 github.com/mattn/go-runewidth v0.0.14/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=

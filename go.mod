@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/materials-commons/hydra v0.0.0-20230314162233-6ec5e0b0793a
+	github.com/materials-commons/hydra v0.0.0-20230601172110-a62f2bb5e873
 	github.com/saracen/walker v0.1.3
 	github.com/schollz/progressbar/v3 v3.13.1
 	github.com/sourcegraph/conc v0.3.0
