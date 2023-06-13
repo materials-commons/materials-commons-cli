@@ -291,6 +291,7 @@ func (d *downloader) downloadFile(path string) error {
 			err = d.writeFileBlock(f, c)
 		case protocol.FinishDownloadReq:
 			err = d.finishDownload(c)
+			return nil
 		}
 	}
 
