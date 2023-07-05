@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +19,8 @@ var (
 	projectRootPath string
 
 	configPath string
+
+	globalConfigPath string
 )
 
 // GetTxRetry returns the number of times to retry a failed transaction. The minimum is 3. It uses
@@ -63,6 +66,62 @@ func GetProjectMCConfig() string {
 	}
 
 	return ""
+}
+
+func GetGlobalMCConfigPath() string {
+	if globalConfigPath != "" {
+		return globalConfigPath
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	config := filepath.Join(homeDir, ".materialscommons", "config.json")
+
+	if _, err := os.Stat(config); err == nil {
+		globalConfigPath = config
+		return globalConfigPath
+	}
+
+	return ""
+}
+
+func GetMCAPIToken() string {
+	return GetGlobalDefaultByKey("mcapikey")
+}
+
+func GetMCURL() string {
+	return GetGlobalDefaultByKey("mcurl")
+}
+
+func GetGlobalDefaultByKey(key string) string {
+	configPath := GetGlobalMCConfigPath()
+	contents, err := os.ReadFile(configPath)
+	if err != nil {
+		return ""
+	}
+
+	var configMap map[string]interface{}
+
+	if err := json.Unmarshal(contents, &configMap); err != nil {
+		return ""
+	}
+
+	defaultRemote, ok := configMap["default_remote"]
+	if !ok {
+		return ""
+	}
+
+	drMap := defaultRemote.(map[string]interface{})
+	keyValue, ok := drMap[key]
+
+	if !ok {
+		return ""
+	}
+
+	return keyValue.(string)
 }
 
 // GetProjectDBPath returns the path to the project.db file. <PROJECTROOT>/.mc/project.db

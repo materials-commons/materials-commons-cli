@@ -3,6 +3,7 @@ package mcapi
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/materials-commons/hydra/pkg/mcdb/mcmodel"
@@ -18,6 +19,7 @@ var ErrAuth = errors.New("authentication failed")
 var tlsConfig = tls.Config{InsecureSkipVerify: true}
 
 func NewClient(token, baseUrl string) *Client {
+	fmt.Printf("NewClient token = '%s', baseUrl = '%s'\n", token, baseUrl)
 	return &Client{
 		APIToken: token,
 		BaseURL:  baseUrl,
@@ -26,6 +28,10 @@ func NewClient(token, baseUrl string) *Client {
 }
 
 func (c *Client) ListDirectoryByPath(projectID int, path string) ([]mcmodel.File, error) {
-	_, err := c.rc.R().SetAuthToken(c.APIToken).Post("")
-	return nil, err
+	var files []mcmodel.File
+	_, err := c.rc.R().SetAuthToken(c.APIToken).
+		SetQueryParam("path", path).
+		SetResult(files).
+		Post(fmt.Sprintf("%s/projects/%d/directories_by_path", c.BaseURL, projectID))
+	return files, err
 }

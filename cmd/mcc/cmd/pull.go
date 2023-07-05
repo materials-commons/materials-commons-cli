@@ -97,7 +97,6 @@ func gatherStatus(db *gorm.DB, projectID int) {
 	go fsStatusReciever.Run(ctx)
 
 	changedFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
-		fmt.Println("changed")
 		fs := &mcc.FileStatus{
 			Path:        path,
 			ProjectPath: projectPath,
@@ -106,12 +105,10 @@ func gatherStatus(db *gorm.DB, projectID int) {
 		}
 
 		fsStatusReciever.SendStatus(fs)
-		fmt.Println("past SendStatus")
 		return nil
 	}
 
 	unknownFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
-		fmt.Println("unknown")
 		fs := &mcc.FileStatus{
 			Path:        path,
 			ProjectPath: projectPath,
@@ -120,12 +117,10 @@ func gatherStatus(db *gorm.DB, projectID int) {
 		}
 
 		fsStatusReciever.SendStatus(fs)
-		fmt.Println("past SendStatus")
 		return nil
 	}
 
 	unchangedFileHandler := func(projectPath, path string, finfo os.FileInfo) error {
-		fmt.Println("unchanged")
 		fs := &mcc.FileStatus{
 			Path:        path,
 			ProjectPath: projectPath,
@@ -134,7 +129,6 @@ func gatherStatus(db *gorm.DB, projectID int) {
 		}
 
 		fsStatusReciever.SendStatus(fs)
-		fmt.Println("past SendStatus")
 		return nil
 	}
 
@@ -144,7 +138,6 @@ func gatherStatus(db *gorm.DB, projectID int) {
 		WithUnchangedFileHandler(unchangedFileHandler).
 		WithSkipUnknownDirs(false)
 
-	fmt.Println("start walking")
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
 		log.Fatalf("Unable to add files: %s", err)
 	}
@@ -158,17 +151,17 @@ func gatherStatus(db *gorm.DB, projectID int) {
 	}
 
 	for _, status := range fsHandler.unknownFiles {
-		fmt.Println("Known File:", status.Path)
+		fmt.Println("Unknown File:", status.Path)
 	}
 
 	for _, status := range fsHandler.changedFiles {
-		fmt.Println("Known File:", status.Path)
+		fmt.Println("Changed File:", status.Path)
 	}
 
 	// For known files and directories download changes. We will make parallel
 	// calls to get directory contents.
 	threadPool := pool.New()
-	c := mcapi.NewClient("", "")
+	c := mcapi.NewClient(config.GetMCAPIToken(), config.GetMCURL())
 	var mu sync.Mutex
 	var allFiles []mcmodel.File
 
@@ -186,19 +179,24 @@ func gatherStatus(db *gorm.DB, projectID int) {
 	}
 
 	downloader := newDownloader()
+	_ = downloader
 
 	// Now that we've collected all file status and
 	// all the files in the directories we care about
 	// from Materials Commons, we can begin downloading
 	// files that should be downloaded.
 	for _, file := range allFiles {
+		fmt.Printf("%s is", file.Path)
 		if fsHandler.isDownloadable(file.Path) {
-			threadPool.Go(func() {
-				f := file
-				if err := downloader.downloadFile(f.Path); err != nil {
-					log.Printf("Failure downloading file: %s\n", err)
-				}
-			})
+			fmt.Println(" downloadable")
+			//threadPool.Go(func() {
+			//	f := file
+			//	if err := downloader.downloadFile(f.Path); err != nil {
+			//		log.Printf("Failure downloading file: %s\n", err)
+			//	}
+			//})
+		} else {
+			fmt.Println(" not downloadable")
 		}
 	}
 }
@@ -363,7 +361,7 @@ func (h *pullFileStatusHandler) isDownloadable(path string) bool {
 	}
 
 	if _, ok := h.changedFiles[path]; ok {
-		// Known file that has changed
+		// Known file that has changed and hasn't been uploaded, so we can't download it
 		return false
 	}
 

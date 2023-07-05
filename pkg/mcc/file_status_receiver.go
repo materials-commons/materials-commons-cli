@@ -2,7 +2,6 @@ package mcc
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 )
@@ -32,9 +31,7 @@ func (r *FileStatusReceiver) Run(c context.Context) {
 	for {
 		select {
 		case fstatus := <-r.in:
-			fmt.Println("Calling HandlerFn")
 			r.HandlerFn(fstatus)
-			fmt.Println("Past HandlerFn")
 		case <-c.Done():
 			return
 		case <-time.After(10 * time.Second):
