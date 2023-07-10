@@ -31,6 +31,7 @@ type Walker struct {
 	ChangedFileHandlerFn   WalkerHandlerFn
 	UnknownFileHandlerFn   WalkerHandlerFn
 	UnchangedFileHandlerFn WalkerHandlerFn
+	KnownDirHandlerFn      WalkerHandlerFn
 	SkipUnknownDirs        bool
 }
 
@@ -41,6 +42,7 @@ func NewWalker(db *gorm.DB) *Walker {
 		ChangedFileHandlerFn:   nil,
 		UnchangedFileHandlerFn: nil,
 		UnknownFileHandlerFn:   nil,
+		KnownDirHandlerFn:      nil,
 		SkipUnknownDirs:        true,
 	}
 }
@@ -57,6 +59,11 @@ func (w *Walker) WithUnchangedFileHandler(unchangedFileHandlerFn WalkerHandlerFn
 
 func (w *Walker) WithUnknownFileHandler(unknownFileHandlerFn WalkerHandlerFn) *Walker {
 	w.UnknownFileHandlerFn = unknownFileHandlerFn
+	return w
+}
+
+func (w *Walker) WithKnownDirHandler(knownDirHandlerFn WalkerHandlerFn) *Walker {
+	w.KnownDirHandlerFn = knownDirHandlerFn
 	return w
 }
 
@@ -115,8 +122,13 @@ func (w *Walker) walkCallback(path string, finfo os.FileInfo) error {
 	}
 
 	if finfo.IsDir() {
-		// If we are here then this is a **KNOWN** directory. There is nothing
-		// we need to do for the directory.
+		// If we are here then this is a **KNOWN** directory.
+
+		if w.KnownDirHandlerFn != nil {
+			if err := w.KnownDirHandlerFn(projectPath, path, finfo); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 

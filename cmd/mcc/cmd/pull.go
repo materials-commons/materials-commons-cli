@@ -132,10 +132,23 @@ func gatherStatus(db *gorm.DB, projectID int) {
 		return nil
 	}
 
+	knownDirHandler := func(projectPath, path string, finfo os.FileInfo) error {
+		fmt.Printf("knownDirHandler: %s, project path = %s\n", path, projectPath)
+		fs := &mcc.FileStatus{
+			Path:        path,
+			ProjectPath: projectPath,
+			Status:      mcc.FileKnownAndUnchanged,
+			FInfo:       finfo,
+		}
+		fsStatusReciever.SendStatus(fs)
+		return nil
+	}
+
 	projectWalker := project.NewWalker(db).
 		WithChangedFileHandler(changedFileHandler).
 		WithUnknownFileHandler(unknownFileHandler).
 		WithUnchangedFileHandler(unchangedFileHandler).
+		WithKnownDirHandler(knownDirHandler).
 		WithSkipUnknownDirs(false)
 
 	if err := projectWalker.Walk(config.GetProjectRootPath()); err != nil {
@@ -165,18 +178,23 @@ func gatherStatus(db *gorm.DB, projectID int) {
 	var mu sync.Mutex
 	var allFiles []mcmodel.File
 
-	for _, path := range fsHandler.knownDirectories {
+	for _, status := range fsHandler.knownDirectories {
 		threadPool.Go(func() {
-			files, err := c.ListDirectoryByPath(projectID, path)
+			fmt.Println("Calling ListDirectoryByPath on", status.ProjectPath)
+			files, err := c.ListDirectoryByPath(projectID, status.ProjectPath)
 			if err != nil {
+				fmt.Printf("   Error %s\n", err)
 				return
 			}
 
+			fmt.Printf("got %#v\n", files)
 			mu.Lock()
 			defer mu.Unlock()
 			allFiles = append(allFiles, files...)
 		})
 	}
+
+	threadPool.Wait()
 
 	downloader := newDownloader()
 	_ = downloader
@@ -327,17 +345,18 @@ type pullFileStatusHandler struct {
 	knownFiles       map[string]*mcc.FileStatus
 	unknownFiles     map[string]*mcc.FileStatus
 	changedFiles     map[string]*mcc.FileStatus
-	knownDirectories []string
+	knownDirectories map[string]*mcc.FileStatus
 }
 
 func newPullFileStatusHandler() *pullFileStatusHandler {
 	h := &pullFileStatusHandler{
-		knownFiles:   make(map[string]*mcc.FileStatus),
-		unknownFiles: make(map[string]*mcc.FileStatus),
-		changedFiles: make(map[string]*mcc.FileStatus),
+		knownFiles:       make(map[string]*mcc.FileStatus),
+		unknownFiles:     make(map[string]*mcc.FileStatus),
+		changedFiles:     make(map[string]*mcc.FileStatus),
+		knownDirectories: make(map[string]*mcc.FileStatus),
 	}
 
-	h.knownDirectories = append(h.knownDirectories, "/")
+	h.knownDirectories["/"] = nil
 
 	return h
 }
@@ -350,7 +369,11 @@ func (h *pullFileStatusHandler) handler(fs *mcc.FileStatus) {
 		h.changedFiles[fs.Path] = fs
 	default:
 		// File is known
-		h.knownFiles[fs.Path] = fs
+		if fs.FInfo.IsDir() {
+			h.knownDirectories[fs.Path] = fs
+		} else {
+			h.knownFiles[fs.Path] = fs
+		}
 	}
 }
 
