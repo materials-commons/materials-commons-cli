@@ -1,6 +1,8 @@
 package stor
 
 import (
+	"fmt"
+
 	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"gorm.io/gorm"
 )
@@ -16,5 +18,6 @@ func NewGormProjectStor(db *gorm.DB) *GormProjectStor {
 func (s *GormProjectStor) GetProject() (*model.Project, error) {
 	var p model.Project
 	err := s.db.First(&p).Error
+	fmt.Printf("%#v\n", p)
 	return &p, err
 }

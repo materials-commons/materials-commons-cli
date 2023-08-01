@@ -29,9 +29,12 @@ func NewClient(token, baseUrl string) *Client {
 
 func (c *Client) ListDirectoryByPath(projectID int, path string) ([]mcmodel.File, error) {
 	var files []mcmodel.File
-	_, err := c.rc.R().SetAuthToken(c.APIToken).
+	resp, err := c.rc.R().SetAuthToken(c.APIToken).
 		SetQueryParam("path", path).
 		SetResult(files).
-		Post(fmt.Sprintf("%s/projects/%d/directories_by_path", c.BaseURL, projectID))
+		Get(fmt.Sprintf("%s/projects/%d/directories_by_path", c.BaseURL, projectID))
+	if resp.IsError() {
+		return files, fmt.Errorf("api call failed: %d/%s", resp.StatusCode(), resp.Status())
+	}
 	return files, err
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/materials-commons/materials-commons-cli/pkg/mcapi"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcc"
 	"github.com/materials-commons/materials-commons-cli/pkg/mcdb"
+	"github.com/materials-commons/materials-commons-cli/pkg/model"
 	"github.com/materials-commons/materials-commons-cli/pkg/project"
 	"github.com/materials-commons/materials-commons-cli/pkg/stor"
 	"github.com/schollz/progressbar/v3"
@@ -44,6 +45,7 @@ func runPullCmd(cmd *cobra.Command, args []string) {
 	db := mcdb.MustConnectToDB()
 	projectStor := stor.NewGormProjectStor(db)
 	p, err := projectStor.GetProject()
+	fmt.Printf("ProjectID = %d\n", p.ID)
 	if err != nil {
 		log.Fatalf("Unable to retrieve project: %s", err)
 	}
@@ -55,7 +57,7 @@ func runPullCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	pullDownloadedDirs()
+	pullDownloadedDirs(p)
 }
 
 func pullSpecificFiles() {
@@ -64,7 +66,7 @@ func pullSpecificFiles() {
 
 var mu sync.Mutex
 
-func pullDownloadedDirs() {
+func pullDownloadedDirs(project *model.Project) {
 
 	db := mcdb.MustConnectToDB()
 
@@ -87,7 +89,7 @@ func pullDownloadedDirs() {
 	// aren't already downloaded. However, a user can ask to explicitly download new directories
 	// or can give exact paths to pull.
 
-	gatherStatus(db, 1)
+	gatherStatus(db, int(project.ID))
 }
 
 func gatherStatus(db *gorm.DB, projectID int) {
@@ -179,17 +181,33 @@ func gatherStatus(db *gorm.DB, projectID int) {
 	var allFiles []mcmodel.File
 
 	for _, status := range fsHandler.knownDirectories {
+		_ = status
 		threadPool.Go(func() {
-			fmt.Println("Calling ListDirectoryByPath on", status.ProjectPath)
+			mu.Lock()
+			mu.Unlock()
+			fmt.Println("doing a directory", status)
+		})
+	}
+
+	for _, status := range fsHandler.knownDirectories {
+		status := status
+		if status == nil {
+			continue
+		}
+		threadPool.Go(func() {
+			mu.Lock()
+			defer mu.Unlock()
 			files, err := c.ListDirectoryByPath(projectID, status.ProjectPath)
 			if err != nil {
 				fmt.Printf("   Error %s\n", err)
 				return
 			}
 
-			fmt.Printf("got %#v\n", files)
 			mu.Lock()
 			defer mu.Unlock()
+			if len(files) == 0 {
+				return
+			}
 			allFiles = append(allFiles, files...)
 		})
 	}
